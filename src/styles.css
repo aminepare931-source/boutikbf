@@ -1,0 +1,417 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* BoutikBF Design System — premium, minimal, warm accent */
+
+@theme inline {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.75rem;
+
+  --background: oklch(0.99 0.005 80);
+  --foreground: oklch(0.18 0.02 260);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.02 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.02 260);
+
+  /* Burkina Faso red primary */
+  --primary: oklch(0.6 0.22 27);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --secondary: oklch(0.96 0.01 80);
+  --secondary-foreground: oklch(0.22 0.02 260);
+
+  --muted: oklch(0.96 0.008 80);
+  --muted-foreground: oklch(0.5 0.02 260);
+
+  --accent: oklch(0.95 0.09 95);
+  --accent-foreground: oklch(0.25 0.05 55);
+
+  --destructive: oklch(0.6 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.58 0.16 155);
+  --success-foreground: oklch(0.99 0 0);
+  --warning: oklch(0.85 0.17 95);
+  --warning-foreground: oklch(0.2 0.02 60);
+
+  --border: oklch(0.92 0.008 80);
+  --input: oklch(0.92 0.008 80);
+  --ring: oklch(0.6 0.22 27);
+
+  --chart-1: oklch(0.6 0.22 27);
+  --chart-2: oklch(0.58 0.16 155);
+  --chart-3: oklch(0.82 0.17 95);
+  --chart-4: oklch(0.65 0.2 320);
+  --chart-5: oklch(0.6 0.13 200);
+
+  --bf-red: oklch(0.6 0.22 27);
+  --bf-yellow: oklch(0.85 0.17 95);
+  --bf-green: oklch(0.55 0.16 155);
+
+  --sidebar: oklch(0.98 0.005 80);
+  --sidebar-foreground: oklch(0.22 0.02 260);
+  --sidebar-primary: oklch(0.6 0.22 27);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.94 0.01 80);
+  --sidebar-accent-foreground: oklch(0.22 0.02 260);
+  --sidebar-border: oklch(0.92 0.008 80);
+  --sidebar-ring: oklch(0.6 0.22 27);
+
+  --gradient-primary: linear-gradient(135deg, oklch(0.6 0.22 27), oklch(0.55 0.16 155));
+  --gradient-bf: linear-gradient(
+    135deg,
+    oklch(0.6 0.22 27) 0%,
+    oklch(0.85 0.17 95) 50%,
+    oklch(0.55 0.16 155) 100%
+  );
+  --gradient-surface: linear-gradient(180deg, oklch(1 0 0), oklch(0.97 0.008 80));
+  --shadow-elegant: 0 8px 30px -12px oklch(0.6 0.22 27 / 0.28);
+  --shadow-soft: 0 1px 2px oklch(0.2 0.02 260 / 0.04), 0 4px 16px oklch(0.2 0.02 260 / 0.06);
+}
+
+.dark {
+  --background: oklch(0.16 0.015 260);
+  --foreground: oklch(0.96 0.005 80);
+
+  --card: oklch(0.2 0.02 260);
+  --card-foreground: oklch(0.96 0.005 80);
+  --popover: oklch(0.2 0.02 260);
+  --popover-foreground: oklch(0.96 0.005 80);
+
+  --primary: oklch(0.68 0.2 30);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --secondary: oklch(0.26 0.02 260);
+  --secondary-foreground: oklch(0.96 0.005 80);
+
+  --muted: oklch(0.24 0.02 260);
+  --muted-foreground: oklch(0.68 0.02 260);
+
+  --accent: oklch(0.3 0.08 95);
+  --accent-foreground: oklch(0.96 0.02 60);
+
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.65 0.16 155);
+  --success-foreground: oklch(0.15 0.02 60);
+  --warning: oklch(0.85 0.17 95);
+  --warning-foreground: oklch(0.15 0.02 60);
+
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.68 0.2 30);
+
+  --chart-1: oklch(0.68 0.2 30);
+  --chart-2: oklch(0.65 0.16 155);
+  --chart-3: oklch(0.85 0.17 95);
+  --chart-4: oklch(0.72 0.2 320);
+  --chart-5: oklch(0.7 0.13 200);
+
+  --bf-red: oklch(0.68 0.2 30);
+  --bf-yellow: oklch(0.85 0.17 95);
+  --bf-green: oklch(0.65 0.16 155);
+
+  --sidebar: oklch(0.14 0.015 260);
+  --sidebar-foreground: oklch(0.9 0.005 80);
+  --sidebar-primary: oklch(0.68 0.2 30);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.22 0.02 260);
+  --sidebar-accent-foreground: oklch(0.96 0.005 80);
+  --sidebar-border: oklch(1 0 0 / 6%);
+  --sidebar-ring: oklch(0.68 0.2 30);
+
+  --gradient-primary: linear-gradient(135deg, oklch(0.68 0.2 30), oklch(0.6 0.16 155));
+  --gradient-bf: linear-gradient(
+    135deg,
+    oklch(0.68 0.2 30) 0%,
+    oklch(0.85 0.17 95) 50%,
+    oklch(0.6 0.16 155) 100%
+  );
+  --gradient-surface: linear-gradient(180deg, oklch(0.2 0.02 260), oklch(0.16 0.015 260));
+  --shadow-elegant: 0 8px 40px -10px oklch(0.68 0.2 30 / 0.4);
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.3), 0 6px 20px oklch(0 0 0 / 0.35);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html,
+  body {
+    font-family: var(--font-sans);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+@utility bg-gradient-primary {
+  background-image: var(--gradient-primary);
+}
+@utility bg-gradient-surface {
+  background-image: var(--gradient-surface);
+}
+@utility bg-gradient-bf {
+  background-image: var(--gradient-bf);
+}
+@utility shadow-elegant {
+  box-shadow: var(--shadow-elegant);
+}
+@utility shadow-soft {
+  box-shadow: var(--shadow-soft);
+}
+@utility bf-flag-bar {
+  background-image: linear-gradient(
+    to right,
+    var(--bf-red) 0 33.33%,
+    var(--bf-yellow) 33.33% 66.66%,
+    var(--bf-green) 66.66% 100%
+  );
+}
+
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes rotate-border {
+  0% {
+    --border-angle: 0deg;
+  }
+  100% {
+    --border-angle: 360deg;
+  }
+}
+
+.btn-border-wrap {
+  position: relative;
+  display: inline-block;
+  border-radius: 50px;
+}
+
+.btn-border-wrap::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 50px;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--border-angle),
+    var(--bf-red),
+    var(--bf-yellow),
+    var(--bf-green),
+    var(--bf-yellow),
+    var(--bf-red)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: rotate-border 4s linear infinite;
+}
+
+@keyframes spin-right {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin-left {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.animate-spin-right {
+  animation: spin-right var(--spin-duration, 40s) linear infinite;
+}
+
+.animate-spin-left {
+  animation: spin-left var(--spin-duration, 40s) linear infinite;
+}
+
+/* Centered rotation for absolute elements on top of each other */
+.animate-spin-right-centered {
+  animation: spin-right var(--spin-duration, 40s) linear infinite;
+}
+
+.animate-spin-left-centered {
+  animation: spin-left var(--spin-duration, 40s) linear infinite;
+}
+
+/* Orbit border gradient mask */
+.orbit-border {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px dashed var(--color-border);
+  background-image: linear-gradient(
+    180deg,
+    rgba(239, 68, 68, 0.1) 0%,
+    rgba(245, 158, 11, 0.2) 50%,
+    rgba(16, 185, 129, 0.1) 100%
+  );
+  pointer-events: none;
+  box-shadow: inset 0 0 25px rgba(255, 255, 255, 0.02);
+}
+
+/* Ticker loop */
+@keyframes ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-ticker {
+  animation: ticker 35s linear infinite;
+}
+
+.ticker-container {
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.ticker-fade-mask {
+  mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+}
+
+/* Entrance Animations */
+@keyframes fade-down {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-down {
+  animation: fade-down 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-up {
+  animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Avatar Fly-In Animation */
+@keyframes avatar-fly-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4) rotate(-90deg);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    filter: blur(0);
+  }
+}
+
+.avatar-fly-in {
+  animation: avatar-fly-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
