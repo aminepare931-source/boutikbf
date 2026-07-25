@@ -62,6 +62,7 @@ import {
 } from "@/lib/csv-import";
 import { openLabels } from "@/lib/receipt";
 import { Checkbox } from "@/components/ui/checkbox";
+import { BarcodeFormat, MultiFormatWriter } from "@zxing/browser";
 
 export const Route = createFileRoute("/_authenticated/products")({
   head: () => ({ meta: [{ title: "Produits — BoutikBF" }] }),
