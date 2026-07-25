@@ -38,6 +38,12 @@ export function BarcodeScanner({
 
     (async () => {
       try {
+        // First, request camera permission explicitly
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        // Stop the stream immediately, we just needed permission
+        stream.getTracks().forEach(track => track.stop());
+        
+        // Now list devices
         const list = await BrowserMultiFormatReader.listVideoInputDevices();
         if (cancelled) return;
         setDevices(list);
@@ -45,7 +51,14 @@ export function BarcodeScanner({
         const back = list.find((d) => /back|rear|environment/i.test(d.label));
         setDeviceId(back?.deviceId ?? list[0]?.deviceId);
       } catch (e: any) {
-        setError(e?.message ?? "Caméra indisponible");
+        console.error("Camera error:", e);
+        if (e?.name === "NotAllowedError" || e?.name === "PermissionDeniedError") {
+          setError("Permission caméra refusée. Veuillez autoriser l'accès à la caméra dans les paramètres de votre navigateur.");
+        } else if (e?.name === "NotFoundError") {
+          setError("Aucune caméra détectée sur cet appareil.");
+        } else {
+          setError(e?.message ?? "Caméra indisponible");
+        }
       }
     })();
 
