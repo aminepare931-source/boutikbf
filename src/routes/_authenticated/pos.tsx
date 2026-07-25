@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShops, resolveLogoUrl } from "@/lib/shop-store";
@@ -115,8 +115,9 @@ function POSPage() {
       add(match);
       toast.success(`Ajouté : ${match.name}`);
     } else {
-      setQ(c);
-      toast.info(`Code "${c}" — aucun produit trouvé. Recherchez manuellement.`);
+      // Rediriger vers la page produits pour ajouter le nouveau produit
+      navigate({ to: "/products", search: { barcode: c } });
+      toast.info(`Code "${c}" non trouvé. Ajoutez-le comme nouveau produit.`);
     }
   };
 
