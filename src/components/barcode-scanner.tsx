@@ -71,33 +71,46 @@ export function BarcodeScanner({
 
   useEffect(() => {
     if (!open || !deviceId || !videoRef.current) return;
+    
+    // Use MultiFormatReader for better detection (QR, barcodes, etc.)
     const reader = new BrowserMultiFormatReader();
     let stopped = false;
     let lastCode = "";
     let lastAt = 0;
+    let attempts = 0;
+    const maxAttempts = 3; // Try multiple times for better accuracy
 
     reader
       .decodeFromVideoDevice(deviceId, videoRef.current, (result, _err, controls) => {
         if (stopped) return;
         controlsRef.current = controls;
+        
         if (result) {
           const text = result.getText();
           const now = Date.now();
+          
+          // Faster detection - reduce debounce to 800ms
           if (continuous) {
-            // debounce identical rapid reads (~1.2s), keep scanner running
-            if (text === lastCode && now - lastAt < 1200) return;
+            if (text === lastCode && now - lastAt < 800) return;
             lastCode = text;
             lastAt = now;
             onDetected(text);
           } else {
-            controls.stop();
-            stopped = true;
-            onDetected(text);
-            onOpenChange(false);
+            // For single scan, verify the code multiple times for accuracy
+            attempts++;
+            if (attempts >= maxAttempts || text === lastCode) {
+              controls.stop();
+              stopped = true;
+              onDetected(text);
+              onOpenChange(false);
+            } else {
+              lastCode = text;
+            }
           }
         }
       })
       .catch((e) => {
+        console.error("Scanner error:", e);
         setError(e?.message ?? "Impossible de démarrer la caméra");
       });
 
