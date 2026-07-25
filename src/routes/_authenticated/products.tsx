@@ -246,6 +246,47 @@ function ProductsPage() {
     return { prefix, next: max + 1 };
   };
 
+  const generateBarcode = () => {
+    try {
+      const writer = new MultiFormatWriter();
+      const code = form.sku || `PRD-${Date.now().toString(36).toUpperCase()}`;
+      const bitmap = writer.encode(code, BarcodeFormat.CODE_128, 300, 100);
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.getWidth();
+      canvas.height = bitmap.getHeight();
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const imageData = ctx.createImageData(bitmap.getWidth(), bitmap.getHeight());
+      for (let i = 0; i < bitmap.getLength(); i++) {
+        const r = bitmap.get(i);
+        imageData.data[i * 4] = r ? 0 : 255;
+        imageData.data[i * 4 + 1] = r ? 0 : 255;
+        imageData.data[i * 4 + 2] = r ? 0 : 255;
+        imageData.data[i * 4 + 3] = 255;
+      }
+      ctx.putImageData(imageData, 0, 0);
+      const url = canvas.toDataURL("image/png");
+      setForm((f) => ({ ...f, barcode: code }));
+      toast.success(`Code-barres généré : ${code}`);
+      
+      // Ouvrir dans un nouvel onglet pour impression
+      const win = window.open();
+      if (win) {
+        win.document.write(`
+          <html>
+            <head><title>Code-barres - ${code}</title></head>
+            <body style="display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;">
+              <img src="${url}" style="width:300px;height:100px;" />
+              <p style="position:absolute;bottom:20px;font-family:Arial;font-size:14px;">${code}</p>
+            </body>
+          </html>
+        `);
+      }
+    } catch (e: any) {
+      toast.error("Erreur génération code-barres: " + (e?.message ?? "inconnue"));
+    }
+  };
+
   const save = async () => {
     if (!current || !form.name.trim()) return;
     let sku = form.sku.trim();
