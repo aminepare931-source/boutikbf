@@ -62,7 +62,7 @@ import {
 } from "@/lib/csv-import";
 import { openLabels } from "@/lib/receipt";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BarcodeFormat, MultiFormatWriter } from "@zxing/browser";
+import JsBarcode from "jsbarcode";
 
 export const Route = createFileRoute("/_authenticated/products")({
   head: () => ({ meta: [{ title: "Produits — BoutikBF" }] }),
@@ -248,23 +248,18 @@ function ProductsPage() {
 
   const generateBarcode = () => {
     try {
-      const writer = new MultiFormatWriter();
       const code = form.sku || `PRD-${Date.now().toString(36).toUpperCase()}`;
-      const bitmap = writer.encode(code, BarcodeFormat.CODE_128, 300, 100);
       const canvas = document.createElement("canvas");
-      canvas.width = bitmap.getWidth();
-      canvas.height = bitmap.getHeight();
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      const imageData = ctx.createImageData(bitmap.getWidth(), bitmap.getHeight());
-      for (let i = 0; i < bitmap.getLength(); i++) {
-        const r = bitmap.get(i);
-        imageData.data[i * 4] = r ? 0 : 255;
-        imageData.data[i * 4 + 1] = r ? 0 : 255;
-        imageData.data[i * 4 + 2] = r ? 0 : 255;
-        imageData.data[i * 4 + 3] = 255;
-      }
-      ctx.putImageData(imageData, 0, 0);
+      
+      // Utiliser JsBarcode pour générer le code-barres
+      JsBarcode(canvas, code, {
+        format: "CODE128",
+        width: 2,
+        height: 100,
+        displayValue: true,
+        fontSize: 14,
+      });
+      
       const url = canvas.toDataURL("image/png");
       setForm((f) => ({ ...f, barcode: code }));
       toast.success(`Code-barres généré : ${code}`);
