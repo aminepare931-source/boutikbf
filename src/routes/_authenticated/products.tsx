@@ -1175,7 +1175,7 @@ function ProductsPage() {
                 <Input
                   value={form.barcode}
                   onChange={(e) => setForm({ ...form, barcode: e.target.value })}
-                  placeholder="Scannez ou saisissez"
+                  placeholder="Scannez ou générez"
                 />
                 <Button
                   type="button"
@@ -1185,6 +1185,15 @@ function ProductsPage() {
                   title="Scanner"
                 >
                   <ScanLine className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={generateBarcode}
+                  title="Générer un code-barres"
+                >
+                  <Barcode className="h-4 w-4" />
                 </Button>
               </div>
             </div>
