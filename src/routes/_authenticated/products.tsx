@@ -884,6 +884,26 @@ function ProductsPage() {
                     </p>
                   )}
                 </div>
+
+                <div className="mt-4 flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setImportPreview(null);
+                      setStep("preview");
+                    }}
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    onClick={() => setStep("preview")}
+                    disabled={!Object.values(colMapping).includes("name")}
+                    className="bg-gradient-primary"
+                  >
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                    Voir l'aperçu
+                  </Button>
+                </div>
               </div>
             </div>
           ) : importPreview && step === "preview" ? (
