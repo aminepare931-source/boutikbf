@@ -28,6 +28,11 @@ function RemoteScanPage() {
     setError(null);
 
     try {
+      // First, request camera permission explicitly
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // Stop the stream immediately, we just needed permission
+      stream.getTracks().forEach(track => track.stop());
+      
       const reader = new BrowserMultiFormatReader();
       const devices = await BrowserMultiFormatReader.listVideoInputDevices();
       const back = devices.find((d) => /back|rear|environment/i.test(d.label));
@@ -47,7 +52,18 @@ function RemoteScanPage() {
         }
       });
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Erreur caméra");
+      console.error("Camera error:", e);
+      if (e instanceof Error) {
+        if (e.name === "NotAllowedError" || e.name === "PermissionDeniedError") {
+          setError("Permission caméra refusée. Veuillez autoriser l'accès à la caméra dans les paramètres de votre navigateur.");
+        } else if (e.name === "NotFoundError") {
+          setError("Aucune caméra détectée sur cet appareil.");
+        } else {
+          setError(e.message);
+        }
+      } else {
+        setError("Erreur caméra");
+      }
       setScanning(false);
     }
   };
