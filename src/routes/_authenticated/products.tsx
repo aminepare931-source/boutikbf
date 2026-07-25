@@ -105,6 +105,8 @@ const FIELD_OPTIONS = [
 
 function ProductsPage() {
   const { current } = useShops();
+  const navigate = useNavigate();
+  const { barcode: barcodeParam } = useSearch({ from: "/_authenticated/products" });
   const [items, setItems] = useState<Product[]>([]);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
@@ -125,6 +127,17 @@ function ProductsPage() {
     size: "",
     description: "",
   });
+
+  // Détecter le paramètre barcode dans l'URL et ouvrir le formulaire
+  useEffect(() => {
+    if (barcodeParam && !open) {
+      setEditing(null);
+      setForm((f) => ({ ...f, barcode: barcodeParam }));
+      setOpen(true);
+      // Nettoyer l'URL
+      navigate({ to: "/_authenticated/products", search: {} });
+    }
+  }, [barcodeParam, open, navigate]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [importing, setImporting] = useState(false);
   const [importPreview, setImportPreview] = useState<{
