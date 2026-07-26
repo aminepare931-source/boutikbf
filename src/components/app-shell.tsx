@@ -243,13 +243,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Sidebar - Desktop */}
       <aside className="hidden w-66 flex-col border-r border-border/70 bg-card/60 backdrop-blur-xl md:flex shrink-0">
         <div className="flex h-16 items-center gap-3 px-5 border-b border-border/50 bg-card/20">
-          <div className="bg-primary/10 p-1.5 rounded-xl border border-primary/20 shadow-sm">
-            <img
-              src={logo}
-              alt="BoutikBF"
-              className="h-16 w-auto object-contain"
-            />
-          </div>
+          <img
+            src={logo}
+            alt="BoutikBF"
+            className="h-16 w-auto object-contain"
+          />
           <span className="font-display text-xl font-black tracking-wider bg-gradient-to-r from-emerald-600 via-emerald-500 to-amber-500 bg-clip-text text-transparent">
             Boutik<span className="text-[#fcd116] dark:text-[#fcd116]">BF</span>
           </span>
