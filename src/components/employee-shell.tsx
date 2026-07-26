@@ -39,49 +39,49 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import logo from "@/assets/logo.png";
 
-type Role = "cashier" | "manager" | "accountant";
+type Role = "caissier" | "gerant" | "comptable" | "magasinier" | "commercial" | "superviseur";
 
 const NAV_ITEMS = [
   {
     to: "/employee/dashboard",
     icon: LayoutDashboard,
     label: "Tableau de bord",
-    roles: ["cashier", "manager", "accountant"],
+    roles: ["caissier", "gerant", "comptable", "magasinier", "commercial", "superviseur"],
   },
-  { to: "/employee/pos", icon: Receipt, label: "Caisse (POS)", roles: ["cashier", "manager"] },
+  { to: "/employee/pos", icon: Receipt, label: "Caisse (POS)", roles: ["caissier", "gerant", "commercial", "superviseur"] },
   {
     to: "/employee/sales",
     icon: ShoppingCart,
     label: "Ventes",
-    roles: ["cashier", "manager", "accountant"],
+    roles: ["caissier", "gerant", "comptable", "commercial", "superviseur"],
   },
   {
     to: "/employee/products",
     icon: Package,
     label: "Produits",
-    roles: ["cashier", "manager", "accountant"],
+    roles: ["caissier", "gerant", "comptable", "magasinier", "commercial", "superviseur"],
   },
-  { to: "/employee/stock", icon: Warehouse, label: "Stock", roles: ["manager", "accountant"] },
+  { to: "/employee/stock", icon: Warehouse, label: "Stock", roles: ["gerant", "comptable", "magasinier", "superviseur"] },
   {
     to: "/employee/clients",
     icon: Users,
     label: "Clients",
-    roles: ["cashier", "manager", "accountant"],
+    roles: ["caissier", "gerant", "comptable", "commercial", "superviseur"],
   },
-  { to: "/employee/suppliers", icon: Truck, label: "Fournisseurs", roles: ["manager"] },
+  { to: "/employee/suppliers", icon: Truck, label: "Fournisseurs", roles: ["gerant", "magasinier", "superviseur"] },
   {
     to: "/employee/accounting",
     icon: Wallet,
     label: "Argent entre & sort",
-    roles: ["manager", "accountant"],
+    roles: ["gerant", "comptable", "superviseur"],
   },
   {
     to: "/employee/reports",
     icon: BarChart3,
     label: "Mes chiffres",
-    roles: ["manager", "accountant"],
+    roles: ["gerant", "comptable", "superviseur"],
   },
-  { to: "/employee/team", icon: UserCog, label: "Mon équipe", roles: ["manager"] },
+  { to: "/employee/team", icon: UserCog, label: "Mon équipe", roles: ["gerant", "superviseur"] },
 ];
 
 export function EmployeeShell({
@@ -107,15 +107,21 @@ export function EmployeeShell({
   }, []);
 
   const roleLabel: Record<Role, string> = {
-    cashier: "Caissier / Vendeur",
-    manager: "Gérant de boutique",
-    accountant: "Comptable",
+    caissier: "Caissier / Vendeur",
+    gerant: "Gérant de boutique",
+    comptable: "Comptable",
+    magasinier: "Magasinier / Stock",
+    commercial: "Commercial / Vendeur terrain",
+    superviseur: "Superviseur",
   };
 
   const roleBadgeVariant: Record<Role, "default" | "secondary" | "outline"> = {
-    cashier: "outline",
-    manager: "default",
-    accountant: "secondary",
+    caissier: "outline",
+    gerant: "default",
+    comptable: "secondary",
+    magasinier: "outline",
+    commercial: "outline",
+    superviseur: "default",
   };
 
   const handleLogout = () => {
