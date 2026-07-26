@@ -247,7 +247,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <img
               src={logo}
               alt="BoutikBF"
-              className="h-8 w-auto object-contain"
+              className="h-16 w-auto object-contain"
             />
           </div>
           <span className="font-display text-xl font-black tracking-wider bg-gradient-to-r from-emerald-600 via-emerald-500 to-amber-500 bg-clip-text text-transparent">
