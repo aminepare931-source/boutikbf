@@ -45,7 +45,7 @@ export const Route = createFileRoute("/_authenticated/employees")({
   component: EmployeesPage,
 });
 
-type Role = "caissier" | "gerant" | "comptable";
+type Role = "caissier" | "gerant" | "comptable" | "magasinier" | "commercial" | "superviseur";
 type Draft = { name: string; phone: string; role: Role };
 type Employee = Draft & { id: string; pin: string; created_at: string; is_active: boolean };
 
@@ -61,7 +61,30 @@ const ROLES: { value: Role; label: string; desc: string }[] = [
     desc: "Peut tout gérer sauf supprimer la boutique.",
   },
   { value: "comptable", label: "Comptable", desc: "Voit les chiffres et l'argent, ne vend pas." },
+  {
+    value: "magasinier",
+    label: "Magasinier / Stock",
+    desc: "Gère les stocks, réceptions et inventaires.",
+  },
+  {
+    value: "commercial",
+    label: "Commercial / Vendeur terrain",
+    desc: "Peut vendre et gérer les clients, pas la caisse.",
+  },
+  {
+    value: "superviseur",
+    label: "Superviseur",
+    desc: "Supervise les équipes, voit tous les rapports.",
+  },
 ];
+
+// Limites selon le plan
+const PLAN_LIMITS: Record<string, number> = {
+  essentiel: 3,
+  essentiel_paid: 5,
+  pro: 10,
+  "sur-mesure": 999,
+};
 
 function EmployeesPage() {
   const { current } = useShops();
