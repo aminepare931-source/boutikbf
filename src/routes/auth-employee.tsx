@@ -81,10 +81,16 @@ function EmployeeAuthPage() {
       // Rediriger selon le rôle
       setTimeout(() => {
         const role = (employee as any).role;
-        if (role === "manager") {
+        if (role === "gerant" || role === "manager") {
           navigate({ to: "/employee/dashboard" });
-        } else if (role === "accountant") {
+        } else if (role === "comptable" || role === "accountant") {
           navigate({ to: "/employee/accounting" });
+        } else if (role === "superviseur") {
+          navigate({ to: "/employee/dashboard" });
+        } else if (role === "magasinier") {
+          navigate({ to: "/employee/stock" });
+        } else if (role === "commercial") {
+          navigate({ to: "/employee/pos" });
         } else {
           navigate({ to: "/employee/pos" });
         }
