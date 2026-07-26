@@ -16,4 +16,14 @@ export default defineConfig({
       strictPort: true,
     },
   },
+  head: {
+    meta: [
+      { name: "description", content: "BoutikBF - Gestion de boutique" },
+      { name: "theme-color", content: "#ffffff" },
+    ],
+    link: [
+      { rel: "icon", type: "image/png", href: "/logo.png" },
+      { rel: "apple-touch-icon", href: "/logo.png" },
+    ],
+  },
 });
