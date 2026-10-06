@@ -139,7 +139,16 @@ export function autoDetectColumns(rows: Record<string, any>[]): {
   return result;
 }
 
+// Limite de taille des fichiers importés (la bibliothèque xlsx 0.18 est sensible aux fichiers piégés)
+const MAX_IMPORT_BYTES = 8 * 1024 * 1024;
+function assertImportSize(file: File) {
+  if (file.size > MAX_IMPORT_BYTES) {
+    throw new Error("Fichier trop volumineux (8 Mo maximum). Découpez-le en plusieurs fichiers.");
+  }
+}
+
 export async function parseFile(file: File): Promise<ImportRow[]> {
+  assertImportSize(file);
   const buf = await file.arrayBuffer();
   let wb: XLSX.WorkBook;
   try {
@@ -329,6 +338,7 @@ export function generateSku(prefix: string, index: number): string {
 export async function parseFileRaw(
   file: File,
 ): Promise<{ columns: string[]; rows: Record<string, any>[] }> {
+  assertImportSize(file);
   const buf = await file.arrayBuffer();
   let wb: XLSX.WorkBook;
   try {

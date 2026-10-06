@@ -37,3 +37,6 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Fichiers temporaires générés par les outils de build
+app.config.timestamp_*

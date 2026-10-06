@@ -25,6 +25,17 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
     }
 
     headers.set("apikey", supabaseKey);
+
+    // Session employé (connexion par PIN) : le jeton est vérifié côté base de données.
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("boutikbf-employee-session");
+        const token = raw ? (JSON.parse(raw) as { token?: string }).token : undefined;
+        if (token) headers.set("x-employee-token", token);
+      } catch {
+        // session illisible : ignorée
+      }
+    }
     try {
       return await fetch(input, { ...init, headers });
     } catch (err) {

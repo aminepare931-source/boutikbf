@@ -9,47 +9,47 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as RemoteScanRouteImport } from './routes/remote-scan'
-import { Route as EmployeeRouteImport } from './routes/employee'
-import { Route as AuthEmployeeRouteImport } from './routes/auth-employee'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as EmployeeTeamRouteImport } from './routes/employee/team'
-import { Route as EmployeeStockRouteImport } from './routes/employee/stock'
-import { Route as EmployeeSalesRouteImport } from './routes/employee/sales'
-import { Route as EmployeeReportsRouteImport } from './routes/employee/reports'
-import { Route as EmployeeProductsRouteImport } from './routes/employee/products'
-import { Route as EmployeePosRouteImport } from './routes/employee/pos'
-import { Route as EmployeeDashboardRouteImport } from './routes/employee/dashboard'
-import { Route as EmployeeClientsRouteImport } from './routes/employee/clients'
-import { Route as EmployeeAccountingRouteImport } from './routes/employee/accounting'
-import { Route as AuthenticatedSuppliersRouteImport } from './routes/_authenticated/suppliers'
-import { Route as AuthenticatedStockRouteImport } from './routes/_authenticated/stock'
-import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedSalesRouteImport } from './routes/_authenticated/sales'
-import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
-import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
-import { Route as AuthenticatedPosRouteImport } from './routes/_authenticated/pos'
-import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
-import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authenticated/categories'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthEmployeeRouteImport } from './routes/auth-employee'
+import { Route as EmployeeRouteImport } from './routes/employee'
+import { Route as RemoteScanRouteImport } from './routes/remote-scan'
+import { Route as SuperadminRouteImport } from './routes/superadmin'
 import { Route as AuthenticatedAccountingRouteImport } from './routes/_authenticated/accounting'
+import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authenticated/categories'
+import { Route as AuthenticatedClientsRouteImport } from './routes/_authenticated/clients'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
+import { Route as AuthenticatedPosRouteImport } from './routes/_authenticated/pos'
+import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
+import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedSalesRouteImport } from './routes/_authenticated/sales'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedStockRouteImport } from './routes/_authenticated/stock'
+import { Route as AuthenticatedSuppliersRouteImport } from './routes/_authenticated/suppliers'
+import { Route as EmployeeAccountingRouteImport } from './routes/employee/accounting'
+import { Route as EmployeeClientsRouteImport } from './routes/employee/clients'
+import { Route as EmployeeDashboardRouteImport } from './routes/employee/dashboard'
+import { Route as EmployeePosRouteImport } from './routes/employee/pos'
+import { Route as EmployeeProductsRouteImport } from './routes/employee/products'
+import { Route as EmployeeReportsRouteImport } from './routes/employee/reports'
+import { Route as EmployeeSalesRouteImport } from './routes/employee/sales'
+import { Route as EmployeeStockRouteImport } from './routes/employee/stock'
+import { Route as EmployeeSuppliersRouteImport } from './routes/employee/suppliers'
+import { Route as EmployeeTeamRouteImport } from './routes/employee/team'
+import { Route as SuperadminIndexRouteImport } from './routes/superadmin/index'
+import { Route as SuperadminAdminsRouteImport } from './routes/superadmin/admins'
+import { Route as SuperadminShopsRouteImport } from './routes/superadmin/shops'
+import { Route as SuperadminUsersRouteImport } from './routes/superadmin/users'
 
-const RemoteScanRoute = RemoteScanRouteImport.update({
-  id: '/remote-scan',
-  path: '/remote-scan',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EmployeeRoute = EmployeeRouteImport.update({
-  id: '/employee',
-  path: '/employee',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthEmployeeRoute = AuthEmployeeRouteImport.update({
-  id: '/auth-employee',
-  path: '/auth-employee',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -57,108 +57,29 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const AuthEmployeeRoute = AuthEmployeeRouteImport.update({
+  id: '/auth-employee',
+  path: '/auth-employee',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const EmployeeRoute = EmployeeRouteImport.update({
+  id: '/employee',
+  path: '/employee',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EmployeeTeamRoute = EmployeeTeamRouteImport.update({
-  id: '/team',
-  path: '/team',
-  getParentRoute: () => EmployeeRoute,
+const RemoteScanRoute = RemoteScanRouteImport.update({
+  id: '/remote-scan',
+  path: '/remote-scan',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const EmployeeStockRoute = EmployeeStockRouteImport.update({
-  id: '/stock',
-  path: '/stock',
-  getParentRoute: () => EmployeeRoute,
+const SuperadminRoute = SuperadminRouteImport.update({
+  id: '/superadmin',
+  path: '/superadmin',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const EmployeeSalesRoute = EmployeeSalesRouteImport.update({
-  id: '/sales',
-  path: '/sales',
-  getParentRoute: () => EmployeeRoute,
-} as any)
-const EmployeeReportsRoute = EmployeeReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => EmployeeRoute,
-} as any)
-const EmployeeProductsRoute = EmployeeProductsRouteImport.update({
-  id: '/products',
-  path: '/products',
-  getParentRoute: () => EmployeeRoute,
-} as any)
-const EmployeePosRoute = EmployeePosRouteImport.update({
-  id: '/pos',
-  path: '/pos',
-  getParentRoute: () => EmployeeRoute,
-} as any)
-const EmployeeDashboardRoute = EmployeeDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => EmployeeRoute,
-} as any)
-const EmployeeClientsRoute = EmployeeClientsRouteImport.update({
-  id: '/clients',
-  path: '/clients',
-  getParentRoute: () => EmployeeRoute,
-} as any)
-const EmployeeAccountingRoute = EmployeeAccountingRouteImport.update({
+const AuthenticatedAccountingRoute = AuthenticatedAccountingRouteImport.update({
   id: '/accounting',
   path: '/accounting',
-  getParentRoute: () => EmployeeRoute,
-} as any)
-const AuthenticatedSuppliersRoute = AuthenticatedSuppliersRouteImport.update({
-  id: '/suppliers',
-  path: '/suppliers',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedStockRoute = AuthenticatedStockRouteImport.update({
-  id: '/stock',
-  path: '/stock',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedSalesRoute = AuthenticatedSalesRouteImport.update({
-  id: '/sales',
-  path: '/sales',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedProductsRoute = AuthenticatedProductsRouteImport.update({
-  id: '/products',
-  path: '/products',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPosRoute = AuthenticatedPosRouteImport.update({
-  id: '/pos',
-  path: '/pos',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedEmployeesRoute = AuthenticatedEmployeesRouteImport.update({
-  id: '/employees',
-  path: '/employees',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
-  id: '/clients',
-  path: '/clients',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCategoriesRoute = AuthenticatedCategoriesRouteImport.update({
@@ -166,10 +87,125 @@ const AuthenticatedCategoriesRoute = AuthenticatedCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAccountingRoute = AuthenticatedAccountingRouteImport.update({
+const AuthenticatedClientsRoute = AuthenticatedClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEmployeesRoute = AuthenticatedEmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPosRoute = AuthenticatedPosRouteImport.update({
+  id: '/pos',
+  path: '/pos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProductsRoute = AuthenticatedProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSalesRoute = AuthenticatedSalesRouteImport.update({
+  id: '/sales',
+  path: '/sales',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedStockRoute = AuthenticatedStockRouteImport.update({
+  id: '/stock',
+  path: '/stock',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSuppliersRoute = AuthenticatedSuppliersRouteImport.update({
+  id: '/suppliers',
+  path: '/suppliers',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const EmployeeAccountingRoute = EmployeeAccountingRouteImport.update({
   id: '/accounting',
   path: '/accounting',
-  getParentRoute: () => AuthenticatedRouteRoute,
+  getParentRoute: () => EmployeeRoute,
+} as any)
+const EmployeeClientsRoute = EmployeeClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => EmployeeRoute,
+} as any)
+const EmployeeDashboardRoute = EmployeeDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => EmployeeRoute,
+} as any)
+const EmployeePosRoute = EmployeePosRouteImport.update({
+  id: '/pos',
+  path: '/pos',
+  getParentRoute: () => EmployeeRoute,
+} as any)
+const EmployeeProductsRoute = EmployeeProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => EmployeeRoute,
+} as any)
+const EmployeeReportsRoute = EmployeeReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => EmployeeRoute,
+} as any)
+const EmployeeSalesRoute = EmployeeSalesRouteImport.update({
+  id: '/sales',
+  path: '/sales',
+  getParentRoute: () => EmployeeRoute,
+} as any)
+const EmployeeStockRoute = EmployeeStockRouteImport.update({
+  id: '/stock',
+  path: '/stock',
+  getParentRoute: () => EmployeeRoute,
+} as any)
+const EmployeeSuppliersRoute = EmployeeSuppliersRouteImport.update({
+  id: '/suppliers',
+  path: '/suppliers',
+  getParentRoute: () => EmployeeRoute,
+} as any)
+const EmployeeTeamRoute = EmployeeTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => EmployeeRoute,
+} as any)
+const SuperadminIndexRoute = SuperadminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SuperadminRoute,
+} as any)
+const SuperadminAdminsRoute = SuperadminAdminsRouteImport.update({
+  id: '/admins',
+  path: '/admins',
+  getParentRoute: () => SuperadminRoute,
+} as any)
+const SuperadminShopsRoute = SuperadminShopsRouteImport.update({
+  id: '/shops',
+  path: '/shops',
+  getParentRoute: () => SuperadminRoute,
+} as any)
+const SuperadminUsersRoute = SuperadminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => SuperadminRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -178,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/auth-employee': typeof AuthEmployeeRoute
   '/employee': typeof EmployeeRouteWithChildren
   '/remote-scan': typeof RemoteScanRoute
+  '/superadmin': typeof SuperadminRouteWithChildren
   '/accounting': typeof AuthenticatedAccountingRoute
   '/categories': typeof AuthenticatedCategoriesRoute
   '/clients': typeof AuthenticatedClientsRoute
@@ -198,7 +235,12 @@ export interface FileRoutesByFullPath {
   '/employee/reports': typeof EmployeeReportsRoute
   '/employee/sales': typeof EmployeeSalesRoute
   '/employee/stock': typeof EmployeeStockRoute
+  '/employee/suppliers': typeof EmployeeSuppliersRoute
   '/employee/team': typeof EmployeeTeamRoute
+  '/superadmin/admins': typeof SuperadminAdminsRoute
+  '/superadmin/shops': typeof SuperadminShopsRoute
+  '/superadmin/users': typeof SuperadminUsersRoute
+  '/superadmin/': typeof SuperadminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -226,7 +268,12 @@ export interface FileRoutesByTo {
   '/employee/reports': typeof EmployeeReportsRoute
   '/employee/sales': typeof EmployeeSalesRoute
   '/employee/stock': typeof EmployeeStockRoute
+  '/employee/suppliers': typeof EmployeeSuppliersRoute
   '/employee/team': typeof EmployeeTeamRoute
+  '/superadmin/admins': typeof SuperadminAdminsRoute
+  '/superadmin/shops': typeof SuperadminShopsRoute
+  '/superadmin/users': typeof SuperadminUsersRoute
+  '/superadmin': typeof SuperadminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -236,6 +283,7 @@ export interface FileRoutesById {
   '/auth-employee': typeof AuthEmployeeRoute
   '/employee': typeof EmployeeRouteWithChildren
   '/remote-scan': typeof RemoteScanRoute
+  '/superadmin': typeof SuperadminRouteWithChildren
   '/_authenticated/accounting': typeof AuthenticatedAccountingRoute
   '/_authenticated/categories': typeof AuthenticatedCategoriesRoute
   '/_authenticated/clients': typeof AuthenticatedClientsRoute
@@ -256,7 +304,12 @@ export interface FileRoutesById {
   '/employee/reports': typeof EmployeeReportsRoute
   '/employee/sales': typeof EmployeeSalesRoute
   '/employee/stock': typeof EmployeeStockRoute
+  '/employee/suppliers': typeof EmployeeSuppliersRoute
   '/employee/team': typeof EmployeeTeamRoute
+  '/superadmin/admins': typeof SuperadminAdminsRoute
+  '/superadmin/shops': typeof SuperadminShopsRoute
+  '/superadmin/users': typeof SuperadminUsersRoute
+  '/superadmin/': typeof SuperadminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -266,6 +319,7 @@ export interface FileRouteTypes {
     | '/auth-employee'
     | '/employee'
     | '/remote-scan'
+    | '/superadmin'
     | '/accounting'
     | '/categories'
     | '/clients'
@@ -286,7 +340,12 @@ export interface FileRouteTypes {
     | '/employee/reports'
     | '/employee/sales'
     | '/employee/stock'
+    | '/employee/suppliers'
     | '/employee/team'
+    | '/superadmin/admins'
+    | '/superadmin/shops'
+    | '/superadmin/users'
+    | '/superadmin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -314,7 +373,12 @@ export interface FileRouteTypes {
     | '/employee/reports'
     | '/employee/sales'
     | '/employee/stock'
+    | '/employee/suppliers'
     | '/employee/team'
+    | '/superadmin/admins'
+    | '/superadmin/shops'
+    | '/superadmin/users'
+    | '/superadmin'
   id:
     | '__root__'
     | '/'
@@ -323,6 +387,7 @@ export interface FileRouteTypes {
     | '/auth-employee'
     | '/employee'
     | '/remote-scan'
+    | '/superadmin'
     | '/_authenticated/accounting'
     | '/_authenticated/categories'
     | '/_authenticated/clients'
@@ -343,7 +408,12 @@ export interface FileRouteTypes {
     | '/employee/reports'
     | '/employee/sales'
     | '/employee/stock'
+    | '/employee/suppliers'
     | '/employee/team'
+    | '/superadmin/admins'
+    | '/superadmin/shops'
+    | '/superadmin/users'
+    | '/superadmin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -353,36 +423,16 @@ export interface RootRouteChildren {
   AuthEmployeeRoute: typeof AuthEmployeeRoute
   EmployeeRoute: typeof EmployeeRouteWithChildren
   RemoteScanRoute: typeof RemoteScanRoute
+  SuperadminRoute: typeof SuperadminRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/remote-scan': {
-      id: '/remote-scan'
-      path: '/remote-scan'
-      fullPath: '/remote-scan'
-      preLoaderRoute: typeof RemoteScanRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/employee': {
-      id: '/employee'
-      path: '/employee'
-      fullPath: '/employee'
-      preLoaderRoute: typeof EmployeeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth-employee': {
-      id: '/auth-employee'
-      path: '/auth-employee'
-      fullPath: '/auth-employee'
-      preLoaderRoute: typeof AuthEmployeeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -392,144 +442,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/employee/team': {
-      id: '/employee/team'
-      path: '/team'
-      fullPath: '/employee/team'
-      preLoaderRoute: typeof EmployeeTeamRouteImport
-      parentRoute: typeof EmployeeRoute
+    '/auth-employee': {
+      id: '/auth-employee'
+      path: '/auth-employee'
+      fullPath: '/auth-employee'
+      preLoaderRoute: typeof AuthEmployeeRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/employee/stock': {
-      id: '/employee/stock'
-      path: '/stock'
-      fullPath: '/employee/stock'
-      preLoaderRoute: typeof EmployeeStockRouteImport
-      parentRoute: typeof EmployeeRoute
+    '/employee': {
+      id: '/employee'
+      path: '/employee'
+      fullPath: '/employee'
+      preLoaderRoute: typeof EmployeeRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/employee/sales': {
-      id: '/employee/sales'
-      path: '/sales'
-      fullPath: '/employee/sales'
-      preLoaderRoute: typeof EmployeeSalesRouteImport
-      parentRoute: typeof EmployeeRoute
+    '/remote-scan': {
+      id: '/remote-scan'
+      path: '/remote-scan'
+      fullPath: '/remote-scan'
+      preLoaderRoute: typeof RemoteScanRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/employee/reports': {
-      id: '/employee/reports'
-      path: '/reports'
-      fullPath: '/employee/reports'
-      preLoaderRoute: typeof EmployeeReportsRouteImport
-      parentRoute: typeof EmployeeRoute
+    '/superadmin': {
+      id: '/superadmin'
+      path: '/superadmin'
+      fullPath: '/superadmin'
+      preLoaderRoute: typeof SuperadminRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/employee/products': {
-      id: '/employee/products'
-      path: '/products'
-      fullPath: '/employee/products'
-      preLoaderRoute: typeof EmployeeProductsRouteImport
-      parentRoute: typeof EmployeeRoute
-    }
-    '/employee/pos': {
-      id: '/employee/pos'
-      path: '/pos'
-      fullPath: '/employee/pos'
-      preLoaderRoute: typeof EmployeePosRouteImport
-      parentRoute: typeof EmployeeRoute
-    }
-    '/employee/dashboard': {
-      id: '/employee/dashboard'
-      path: '/dashboard'
-      fullPath: '/employee/dashboard'
-      preLoaderRoute: typeof EmployeeDashboardRouteImport
-      parentRoute: typeof EmployeeRoute
-    }
-    '/employee/clients': {
-      id: '/employee/clients'
-      path: '/clients'
-      fullPath: '/employee/clients'
-      preLoaderRoute: typeof EmployeeClientsRouteImport
-      parentRoute: typeof EmployeeRoute
-    }
-    '/employee/accounting': {
-      id: '/employee/accounting'
+    '/_authenticated/accounting': {
+      id: '/_authenticated/accounting'
       path: '/accounting'
-      fullPath: '/employee/accounting'
-      preLoaderRoute: typeof EmployeeAccountingRouteImport
-      parentRoute: typeof EmployeeRoute
-    }
-    '/_authenticated/suppliers': {
-      id: '/_authenticated/suppliers'
-      path: '/suppliers'
-      fullPath: '/suppliers'
-      preLoaderRoute: typeof AuthenticatedSuppliersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/stock': {
-      id: '/_authenticated/stock'
-      path: '/stock'
-      fullPath: '/stock'
-      preLoaderRoute: typeof AuthenticatedStockRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/sales': {
-      id: '/_authenticated/sales'
-      path: '/sales'
-      fullPath: '/sales'
-      preLoaderRoute: typeof AuthenticatedSalesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/reports': {
-      id: '/_authenticated/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof AuthenticatedReportsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/products': {
-      id: '/_authenticated/products'
-      path: '/products'
-      fullPath: '/products'
-      preLoaderRoute: typeof AuthenticatedProductsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/pos': {
-      id: '/_authenticated/pos'
-      path: '/pos'
-      fullPath: '/pos'
-      preLoaderRoute: typeof AuthenticatedPosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/employees': {
-      id: '/_authenticated/employees'
-      path: '/employees'
-      fullPath: '/employees'
-      preLoaderRoute: typeof AuthenticatedEmployeesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/clients': {
-      id: '/_authenticated/clients'
-      path: '/clients'
-      fullPath: '/clients'
-      preLoaderRoute: typeof AuthenticatedClientsRouteImport
+      fullPath: '/accounting'
+      preLoaderRoute: typeof AuthenticatedAccountingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/categories': {
@@ -539,12 +491,173 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCategoriesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/accounting': {
-      id: '/_authenticated/accounting'
-      path: '/accounting'
-      fullPath: '/accounting'
-      preLoaderRoute: typeof AuthenticatedAccountingRouteImport
+    '/_authenticated/clients': {
+      id: '/_authenticated/clients'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof AuthenticatedClientsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/employees': {
+      id: '/_authenticated/employees'
+      path: '/employees'
+      fullPath: '/employees'
+      preLoaderRoute: typeof AuthenticatedEmployeesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pos': {
+      id: '/_authenticated/pos'
+      path: '/pos'
+      fullPath: '/pos'
+      preLoaderRoute: typeof AuthenticatedPosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/products': {
+      id: '/_authenticated/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof AuthenticatedProductsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports': {
+      id: '/_authenticated/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AuthenticatedReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sales': {
+      id: '/_authenticated/sales'
+      path: '/sales'
+      fullPath: '/sales'
+      preLoaderRoute: typeof AuthenticatedSalesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/stock': {
+      id: '/_authenticated/stock'
+      path: '/stock'
+      fullPath: '/stock'
+      preLoaderRoute: typeof AuthenticatedStockRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/suppliers': {
+      id: '/_authenticated/suppliers'
+      path: '/suppliers'
+      fullPath: '/suppliers'
+      preLoaderRoute: typeof AuthenticatedSuppliersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/employee/accounting': {
+      id: '/employee/accounting'
+      path: '/accounting'
+      fullPath: '/employee/accounting'
+      preLoaderRoute: typeof EmployeeAccountingRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
+    '/employee/clients': {
+      id: '/employee/clients'
+      path: '/clients'
+      fullPath: '/employee/clients'
+      preLoaderRoute: typeof EmployeeClientsRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
+    '/employee/dashboard': {
+      id: '/employee/dashboard'
+      path: '/dashboard'
+      fullPath: '/employee/dashboard'
+      preLoaderRoute: typeof EmployeeDashboardRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
+    '/employee/pos': {
+      id: '/employee/pos'
+      path: '/pos'
+      fullPath: '/employee/pos'
+      preLoaderRoute: typeof EmployeePosRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
+    '/employee/products': {
+      id: '/employee/products'
+      path: '/products'
+      fullPath: '/employee/products'
+      preLoaderRoute: typeof EmployeeProductsRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
+    '/employee/reports': {
+      id: '/employee/reports'
+      path: '/reports'
+      fullPath: '/employee/reports'
+      preLoaderRoute: typeof EmployeeReportsRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
+    '/employee/sales': {
+      id: '/employee/sales'
+      path: '/sales'
+      fullPath: '/employee/sales'
+      preLoaderRoute: typeof EmployeeSalesRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
+    '/employee/stock': {
+      id: '/employee/stock'
+      path: '/stock'
+      fullPath: '/employee/stock'
+      preLoaderRoute: typeof EmployeeStockRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
+    '/employee/suppliers': {
+      id: '/employee/suppliers'
+      path: '/suppliers'
+      fullPath: '/employee/suppliers'
+      preLoaderRoute: typeof EmployeeSuppliersRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
+    '/employee/team': {
+      id: '/employee/team'
+      path: '/team'
+      fullPath: '/employee/team'
+      preLoaderRoute: typeof EmployeeTeamRouteImport
+      parentRoute: typeof EmployeeRoute
+    }
+    '/superadmin/': {
+      id: '/superadmin/'
+      path: '/'
+      fullPath: '/superadmin/'
+      preLoaderRoute: typeof SuperadminIndexRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
+    '/superadmin/admins': {
+      id: '/superadmin/admins'
+      path: '/admins'
+      fullPath: '/superadmin/admins'
+      preLoaderRoute: typeof SuperadminAdminsRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
+    '/superadmin/shops': {
+      id: '/superadmin/shops'
+      path: '/shops'
+      fullPath: '/superadmin/shops'
+      preLoaderRoute: typeof SuperadminShopsRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
+    '/superadmin/users': {
+      id: '/superadmin/users'
+      path: '/users'
+      fullPath: '/superadmin/users'
+      preLoaderRoute: typeof SuperadminUsersRouteImport
+      parentRoute: typeof SuperadminRoute
     }
   }
 }
@@ -591,6 +704,7 @@ interface EmployeeRouteChildren {
   EmployeeReportsRoute: typeof EmployeeReportsRoute
   EmployeeSalesRoute: typeof EmployeeSalesRoute
   EmployeeStockRoute: typeof EmployeeStockRoute
+  EmployeeSuppliersRoute: typeof EmployeeSuppliersRoute
   EmployeeTeamRoute: typeof EmployeeTeamRoute
 }
 
@@ -603,11 +717,30 @@ const EmployeeRouteChildren: EmployeeRouteChildren = {
   EmployeeReportsRoute: EmployeeReportsRoute,
   EmployeeSalesRoute: EmployeeSalesRoute,
   EmployeeStockRoute: EmployeeStockRoute,
+  EmployeeSuppliersRoute: EmployeeSuppliersRoute,
   EmployeeTeamRoute: EmployeeTeamRoute,
 }
 
 const EmployeeRouteWithChildren = EmployeeRoute._addFileChildren(
   EmployeeRouteChildren,
+)
+
+interface SuperadminRouteChildren {
+  SuperadminAdminsRoute: typeof SuperadminAdminsRoute
+  SuperadminShopsRoute: typeof SuperadminShopsRoute
+  SuperadminUsersRoute: typeof SuperadminUsersRoute
+  SuperadminIndexRoute: typeof SuperadminIndexRoute
+}
+
+const SuperadminRouteChildren: SuperadminRouteChildren = {
+  SuperadminAdminsRoute: SuperadminAdminsRoute,
+  SuperadminShopsRoute: SuperadminShopsRoute,
+  SuperadminUsersRoute: SuperadminUsersRoute,
+  SuperadminIndexRoute: SuperadminIndexRoute,
+}
+
+const SuperadminRouteWithChildren = SuperadminRoute._addFileChildren(
+  SuperadminRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
@@ -617,17 +750,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthEmployeeRoute: AuthEmployeeRoute,
   EmployeeRoute: EmployeeRouteWithChildren,
   RemoteScanRoute: RemoteScanRoute,
+  SuperadminRoute: SuperadminRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -54,10 +54,7 @@ function EmployeeStock() {
     const product = products.find((p) => p.id === id);
     if (!product) return;
     const newStock = Math.max(0, product.stock + delta);
-    const { error } = await supabase
-      .from("products")
-      .update({ stock: newStock })
-      .eq("id", id);
+    const { error } = await supabase.from("products").update({ stock: newStock }).eq("id", id);
     if (error) toast.error("Erreur mise à jour stock");
     else {
       setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, stock: newStock } : p)));
@@ -89,10 +86,7 @@ function EmployeeStock() {
 
   return (
     <div>
-      <PageHeader
-        title="Stock"
-        description="Gestion des stocks et inventaire"
-      />
+      <PageHeader title="Stock" description="Gestion des stocks et inventaire" />
 
       {/* Stats */}
       <div className="grid gap-4 mb-6 md:grid-cols-4">
@@ -114,7 +108,7 @@ function EmployeeStock() {
           <CardContent className="p-4 text-center">
             <AlertTriangle className="h-5 w-5 mx-auto mb-1 text-amber-600" />
             <div className="text-2xl font-bold text-amber-600">{lowStock}</div>
-            <p className="text-xs text-muted-foreground">Stock bas (<5)</p>
+            <p className="text-xs text-muted-foreground">Stock bas (&lt;5)</p>
           </CardContent>
         </Card>
         <Card className="shadow-soft border-red-500/20">
@@ -147,7 +141,10 @@ function EmployeeStock() {
           ) : (
             <div className="divide-y divide-border">
               {filtered.map((p) => (
-                <div key={p.id} className="flex items-center gap-4 p-4 hover:bg-muted/30 transition">
+                <div
+                  key={p.id}
+                  className="flex items-center gap-4 p-4 hover:bg-muted/30 transition"
+                >
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{p.name}</div>
                     <div className="text-xs text-muted-foreground">
@@ -168,7 +165,9 @@ function EmployeeStock() {
                       -
                     </Button>
                     <div className="text-center min-w-[60px]">
-                      <div className={`text-lg font-bold ${p.stock < 5 ? "text-red-600" : p.stock < 10 ? "text-amber-600" : "text-green-700"}`}>
+                      <div
+                        className={`text-lg font-bold ${p.stock < 5 ? "text-red-600" : p.stock < 10 ? "text-amber-600" : "text-green-700"}`}
+                      >
                         {p.stock}
                       </div>
                       <div className="text-[10px] text-muted-foreground">{p.unit}</div>
@@ -184,10 +183,17 @@ function EmployeeStock() {
                     </Button>
                   </div>
                   {p.stock === 0 && (
-                    <Badge variant="destructive" className="text-[10px]">Rupture</Badge>
+                    <Badge variant="destructive" className="text-[10px]">
+                      Rupture
+                    </Badge>
                   )}
                   {p.stock > 0 && p.stock < 5 && (
-                    <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-600">Stock bas</Badge>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] text-amber-600 border-amber-600"
+                    >
+                      Stock bas
+                    </Badge>
                   )}
                 </div>
               ))}

@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { toast } from "sonner";
 import { KeyRound, User, Lock } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { employeeLogin, getEmployeeSession, type EmployeeRole } from "@/lib/employee-session";
 
 export const Route = createFileRoute("/auth-employee")({
   head: () => ({
@@ -22,79 +22,37 @@ function EmployeeAuthPage() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const goHome = (role: EmployeeRole) => {
+    if (role === "comptable") navigate({ to: "/employee/accounting" });
+    else if (role === "magasinier") navigate({ to: "/employee/stock" });
+    else if (role === "gerant" || role === "superviseur") navigate({ to: "/employee/dashboard" });
+    else navigate({ to: "/employee/pos" });
+  };
+
   useEffect(() => {
-    // Vérifier si l'employé est déjà connecté
-    const employeeSession = localStorage.getItem("boutikbf-employee-session");
-    if (employeeSession) {
-      try {
-        const session = JSON.parse(employeeSession);
-        if (session.pin && session.name) {
-          navigate({ to: "/employee/dashboard" });
-        }
-      } catch {
-        localStorage.removeItem("boutikbf-employee-session");
-      }
-    }
-  }, [navigate]);
+    // Déjà connecté (session valide et non expirée) ?
+    const existing = getEmployeeSession();
+    if (existing) goHome(existing.role);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      // Récupérer l'employé depuis Supabase par PIN
-      const { data: employees, error } = await supabase
-        .from("employees" as any)
-        .select("*")
-        .eq("pin", pin)
-        .eq("is_active", true)
-        .limit(1);
-
-      if (error || !employees || employees.length === 0) {
-        toast.error("Nom ou code PIN incorrect");
-        setLoading(false);
+      const res = await employeeLogin(name, pin.trim());
+      if (!res.ok) {
+        toast.error(
+          res.error === "too_many_attempts"
+            ? "Trop d'essais. Réessayez dans 15 minutes."
+            : res.error === "network"
+              ? "Connexion impossible. Vérifiez votre réseau."
+              : "Nom ou code PIN incorrect",
+        );
         return;
       }
-
-      const employee = employees[0];
-
-      // Vérifier le nom (insensible à la casse)
-      if (employee.name.toLowerCase() !== name.toLowerCase().trim()) {
-        toast.error("Nom ou code PIN incorrect");
-        setLoading(false);
-        return;
-      }
-
-      // Créer la session employé
-      const session = {
-        name: (employee as any).name,
-        role: (employee as any).role,
-        pin: (employee as any).pin,
-        employeeId: employee.id,
-        shopId: (employee as any).shop_id,
-        loginTime: new Date().toISOString(),
-      };
-
-      localStorage.setItem("boutikbf-employee-session", JSON.stringify(session));
-      toast.success(`Bienvenue ${(employee as any).name} !`);
-
-      // Rediriger selon le rôle
-      setTimeout(() => {
-        const role = (employee as any).role;
-        if (role === "gerant" || role === "manager") {
-          navigate({ to: "/employee/dashboard" });
-        } else if (role === "comptable" || role === "accountant") {
-          navigate({ to: "/employee/accounting" });
-        } else if (role === "superviseur") {
-          navigate({ to: "/employee/dashboard" });
-        } else if (role === "magasinier") {
-          navigate({ to: "/employee/stock" });
-        } else if (role === "commercial") {
-          navigate({ to: "/employee/pos" });
-        } else {
-          navigate({ to: "/employee/pos" });
-        }
-      }, 500);
+      toast.success(`Bienvenue ${res.session.name} !`);
+      goHome(res.session.role);
     } catch (error) {
       toast.error("Erreur de connexion");
       console.error("Erreur login employé:", error);
@@ -157,7 +115,9 @@ function EmployeeAuthPage() {
                     value={pin}
                     onChange={(e) => setPin(e.target.value)}
                     className="pl-9 h-11"
-                    maxLength={6}
+                    maxLength={8}
+                    inputMode="numeric"
+                    autoComplete="current-password"
                     required
                   />
                 </div>

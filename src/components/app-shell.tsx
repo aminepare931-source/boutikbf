@@ -112,11 +112,18 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const isTrial = !current?.plan || current?.plan === "essentiel";
   const createdAtDate = current?.created_at ? new Date(current.created_at) : null;
-  const daysPassed = createdAtDate
-    ? Math.floor((new Date().getTime() - createdAtDate.getTime()) / (1000 * 60 * 60 * 24))
-    : 0;
-  const daysRemaining = Math.max(0, 15 - daysPassed);
-  const isExpired = isTrial && daysPassed >= 15;
+  // Fin d'essai : date fixée par le super admin, sinon création + 15 jours
+  const trialEndsAt = current?.trial_ends_at
+    ? new Date(current.trial_ends_at)
+    : createdAtDate
+      ? new Date(createdAtDate.getTime() + 15 * 24 * 60 * 60 * 1000)
+      : null;
+  const daysRemaining = trialEndsAt
+    ? Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 15;
+  const isExpired = isTrial && !!trialEndsAt && trialEndsAt.getTime() <= Date.now();
+  const isSuspended = !!current?.is_suspended;
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedPlanDetails, setSelectedPlanDetails] = useState<{
     id: string;
@@ -150,6 +157,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         email: u?.email,
         name: (u?.user_metadata as unknown as { full_name?: string })?.full_name,
       });
+    });
+  }, []);
+
+  useEffect(() => {
+    (supabase as any).rpc("is_super_admin").then(({ data }: { data: boolean | null }) => {
+      setIsSuperAdmin(data === true);
     });
   }, []);
 
@@ -243,11 +256,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Sidebar - Desktop */}
       <aside className="hidden w-66 flex-col border-r border-border/70 bg-card/60 backdrop-blur-xl md:flex shrink-0">
         <div className="flex h-16 items-center gap-3 px-5 border-b border-border/50 bg-card/20">
-          <img
-            src={logo}
-            alt="BoutikBF"
-            className="h-16 w-auto object-contain"
-          />
+          <img src={logo} alt="BoutikBF" className="h-16 w-auto object-contain" />
           <span className="font-display text-xl font-black tracking-wider bg-gradient-to-r from-emerald-600 via-emerald-500 to-amber-500 bg-clip-text text-transparent">
             Boutik<span className="text-[#fcd116] dark:text-[#fcd116]">BF</span>
           </span>
@@ -427,6 +436,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <ShieldCheck className="h-4 w-4 text-emerald-500" /> Mon Compte
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="my-1" />
+              {isSuperAdmin && (
+                <DropdownMenuItem
+                  onClick={() => navigate({ to: "/superadmin" })}
+                  className="rounded-lg py-2 px-2.5 cursor-pointer text-sm font-bold flex items-center gap-2 text-primary"
+                >
+                  <ShieldCheck className="h-4 w-4" /> Super Admin
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onClick={() => navigate({ to: "/settings" })}
                 className="rounded-lg py-2 px-2.5 cursor-pointer text-sm font-medium flex items-center gap-2"
@@ -784,7 +801,21 @@ export function AppShell({ children }: { children: ReactNode }) {
             transition={{ duration: 0.5 }}
             className="w-full h-full max-w-7xl mx-auto"
           >
-            {isExpired ? (
+            {isSuspended ? (
+              <div className="flex flex-col items-center justify-center min-h-[70vh] max-w-xl mx-auto py-10 px-4 text-center">
+                <div className="h-16 w-16 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl flex items-center justify-center mb-6">
+                  <Lock className="h-8 w-8" />
+                </div>
+                <h1 className="font-display text-2xl font-black tracking-tight text-foreground">
+                  Boutique suspendue
+                </h1>
+                <p className="mt-3 text-sm text-muted-foreground leading-relaxed font-medium">
+                  L&apos;accès à <strong className="text-foreground">{current?.name}</strong> est
+                  temporairement suspendu. Vos données sont conservées. Contactez BoutikBF au{" "}
+                  <strong className="text-foreground">+226 55 30 08 68</strong> pour la réactiver.
+                </p>
+              </div>
+            ) : isExpired ? (
               <div className="flex flex-col items-center justify-center min-h-[70vh] max-w-4xl mx-auto py-10 px-4 text-center">
                 <div className="h-16 w-16 bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl flex items-center justify-center shadow-lg animate-bounce mb-6">
                   <Lock className="h-8 w-8 animate-pulse" />

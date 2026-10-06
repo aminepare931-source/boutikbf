@@ -47,7 +47,7 @@ export const Route = createFileRoute("/_authenticated/employees")({
 
 type Role = "caissier" | "gerant" | "comptable" | "magasinier" | "commercial" | "superviseur";
 type Draft = { name: string; phone: string; role: Role };
-type Employee = Draft & { id: string; pin: string; created_at: string; is_active: boolean };
+type Employee = Draft & { id: string; created_at: string; is_active: boolean };
 
 const ROLES: { value: Role; label: string; desc: string }[] = [
   {
@@ -104,13 +104,14 @@ function EmployeesPage() {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [draft, setDraft] = useState<Draft>({ name: "", phone: "", role: "caissier" });
   const [generatedPin, setGeneratedPin] = useState("");
+  const [newPin, setNewPin] = useState<{ employeeId: string; pin: string } | null>(null);
 
   const loadEmployees = async () => {
     if (!current) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("employees")
-      .select("*")
+      .select("id, shop_id, name, phone, role, is_active, created_at")
       .eq("shop_id", current.id)
       .order("created_at", { ascending: false });
 
@@ -137,7 +138,7 @@ function EmployeesPage() {
         .from("sales")
         .select("id, total, created_at, payment_method")
         .eq("shop_id", current.id)
-        .eq("employee_name", selectedEmployee?.name)
+        .eq("employee_id", employeeId)
         .order("created_at", { ascending: false });
 
       if (salesError) throw salesError;
@@ -163,23 +164,36 @@ function EmployeesPage() {
     setStatsLoading(false);
   };
 
-  const save = async (employee: Employee) => {
-    if (!current) return;
-    const { error } = await supabase.from("employees").insert({
-      shop_id: current.id,
-      name: employee.name,
-      phone: employee.phone,
-      role: employee.role,
-      pin: employee.pin,
+  /** Crée l'employé côté serveur : le PIN est généré et haché là-bas, il n'est montré qu'une fois. */
+  const createEmployee = async (d: Draft): Promise<string | null> => {
+    if (!current) return null;
+    const { data, error } = await (supabase as any).rpc("create_employee", {
+      p_shop_id: current.id,
+      p_name: d.name,
+      p_phone: d.phone,
+      p_role: d.role,
     });
-
-    if (error) {
-      toast.error("Erreur lors de l'ajout");
-      console.error(error);
-    } else {
-      toast.success(`${employee.name} a été ajouté(e) à l'équipe`);
-      loadEmployees();
+    if (error || !data?.pin) {
+      toast.error(error?.message ?? "Erreur lors de l'ajout");
+      return null;
     }
+    toast.success(`${d.name} a été ajouté(e) à l'équipe`);
+    loadEmployees();
+    return data.pin as string;
+  };
+
+  const resetPin = async (emp: Employee) => {
+    if (!confirm(`Générer un nouveau PIN pour ${emp.name} ? L'ancien ne fonctionnera plus.`))
+      return;
+    const { data, error } = await (supabase as any).rpc("reset_employee_pin", {
+      p_employee_id: emp.id,
+    });
+    if (error || !data?.pin) {
+      toast.error(error?.message ?? "Impossible de réinitialiser le PIN");
+      return;
+    }
+    setNewPin({ employeeId: emp.id, pin: data.pin as string });
+    toast.success("Nouveau PIN généré — notez-le maintenant");
   };
 
   const deleteEmployee = async (id: string) => {
@@ -224,26 +238,11 @@ function EmployeesPage() {
     setOpen(true);
   };
 
-  const generatePin = () => Math.floor(1000 + Math.random() * 9000).toString();
-
   const finish = async () => {
     try {
-      const id =
-        typeof crypto !== "undefined" && crypto.randomUUID
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      const pin = generatePin();
+      const pin = await createEmployee(draft);
+      if (!pin) return;
       setGeneratedPin(pin);
-
-      const employee: Employee = {
-        ...draft,
-        id,
-        pin,
-        created_at: new Date().toISOString(),
-        is_active: true,
-      };
-
-      await save(employee);
       setStep(4);
     } catch {
       toast.error("Erreur lors de l'ajout. Veuillez réessayer.");
@@ -480,17 +479,29 @@ function EmployeesPage() {
                       <Shield className="h-5 w-5 text-primary flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <div className="text-xs text-muted-foreground">Code PIN</div>
-                        <div className="font-mono text-lg font-bold tracking-wider">
-                          {selectedEmployee.pin}
-                        </div>
+                        {newPin?.employeeId === selectedEmployee.id ? (
+                          <div className="font-mono text-lg font-bold tracking-wider">
+                            {newPin.pin}
+                          </div>
+                        ) : (
+                          <div className="font-mono text-lg tracking-wider text-muted-foreground">
+                            ••••••
+                          </div>
+                        )}
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copy(selectedEmployee.pin)}
-                      >
-                        <Copy className="h-3 w-3 mr-1" /> Copier
-                      </Button>
+                      {newPin?.employeeId === selectedEmployee.id ? (
+                        <Button variant="outline" size="sm" onClick={() => copy(newPin.pin)}>
+                          <Copy className="h-3 w-3 mr-1" /> Copier
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => resetPin(selectedEmployee)}
+                        >
+                          <RefreshCw className="h-3 w-3 mr-1" /> Nouveau PIN
+                        </Button>
+                      )}
                     </div>
                     <div className="flex items-center gap-3 rounded-lg border border-border p-3 sm:col-span-2">
                       <Mail className="h-5 w-5 text-primary flex-shrink-0" />
@@ -624,7 +635,11 @@ function EmployeesPage() {
                     variant="outline"
                     className="w-full h-11 justify-start"
                     onClick={() => {
-                      const message = `Bonjour ${selectedEmployee.name}, votre code PIN pour BoutikBF est : ${selectedEmployee.pin}. Connectez-vous sur : ${window.location.origin}${getEmployeeLink(selectedEmployee?.role)}`;
+                      const pinPart =
+                        newPin?.employeeId === selectedEmployee.id
+                          ? ` Votre code PIN : ${newPin.pin}.`
+                          : "";
+                      const message = `Bonjour ${selectedEmployee.name}, voici votre accès BoutikBF.${pinPart} Connectez-vous sur : ${window.location.origin}/auth-employee`;
                       copy(message);
                     }}
                   >
@@ -645,8 +660,8 @@ function EmployeesPage() {
               {/* Avertissement */}
               <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
                 <p className="text-xs text-muted-foreground">
-                  ⚠️ Ne partagez pas ce PIN publiquement. L'employé en a besoin pour se connecter à
-                  son espace de travail.
+                  ⚠️ Le PIN est stocké de façon chiffrée : il ne peut plus être relu après sa
+                  création. En cas d'oubli, générez-en un nouveau avec « Nouveau PIN ».
                 </p>
               </div>
             </div>

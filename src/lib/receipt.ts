@@ -61,7 +61,7 @@ export function buildReceiptHtml(d: ReceiptData): string {
     )
     .join("");
 
-  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${title} · ${d.sale.reference}</title>
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${title} · ${escapeHtml(d.sale.reference)}</title>
 <style>
   * { box-sizing:border-box }
   body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; color:#111; margin:0; padding:16px; background:#f5f5f5 }
@@ -89,8 +89,8 @@ export function buildReceiptHtml(d: ReceiptData): string {
   .btn.green { background:#009e49 }
   .btn[disabled] { opacity:.6; cursor:wait }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"><\/script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js" integrity="sha384-qovJwSBbRDPP5cEjCp8S0UP66wrvnjaa60XMOGzTNanrThcrGfXfnZkvgY8N1KT3" crossorigin="anonymous"><\/script>
 </head><body>
 <div class="toolbar noprint">
   <button class="btn" onclick="window.print()">🖨️ Imprimer</button>
@@ -157,7 +157,7 @@ export function buildReceiptHtml(d: ReceiptData): string {
     ${d.sale.discount ? `<tr><td>Remise</td><td style="text-align:right">- ${fmtMoney(d.sale.discount, cur)}</td></tr>` : ""}
     ${d.sale.tax ? `<tr><td>TVA</td><td style="text-align:right">${fmtMoney(d.sale.tax, cur)}</td></tr>` : ""}
     <tr class="grand"><td>TOTAL</td><td style="text-align:right">${fmtMoney(d.sale.total, cur)}</td></tr>
-    <tr><td colspan="2" style="padding-top:6px;color:#555">Paiement : ${payLabel[d.sale.payment_method] ?? d.sale.payment_method}</td></tr>
+    <tr><td colspan="2" style="padding-top:6px;color:#555">Paiement : ${escapeHtml(payLabel[d.sale.payment_method] ?? d.sale.payment_method)}</td></tr>
   </table>
   <div class="barcode">${barcodeSvg(d.sale.reference)}</div>
   <div class="thanks">Merci pour votre achat 🇧🇫<br>Généré par BoutikBF</div>
@@ -171,6 +171,11 @@ export function openReceipt(d: ReceiptData) {
   if (!w) {
     alert("Autorisez les pop-ups pour imprimer le reçu.");
     return;
+  }
+  try {
+    w.opener = null;
+  } catch {
+    // ignoré
   }
   w.document.open();
   w.document.write(html);
@@ -224,6 +229,11 @@ export function openLabels(
 </body></html>`;
   const w = window.open("", "_blank");
   if (!w) return;
+  try {
+    w.opener = null;
+  } catch {
+    // ignoré
+  }
   w.document.open();
   w.document.write(html);
   w.document.close();

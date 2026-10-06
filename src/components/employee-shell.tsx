@@ -1,3 +1,4 @@
+import { employeeLogout } from "@/lib/employee-session";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import {
@@ -48,7 +49,12 @@ const NAV_ITEMS = [
     label: "Tableau de bord",
     roles: ["caissier", "gerant", "comptable", "magasinier", "commercial", "superviseur"],
   },
-  { to: "/employee/pos", icon: Receipt, label: "Caisse (POS)", roles: ["caissier", "gerant", "commercial", "superviseur"] },
+  {
+    to: "/employee/pos",
+    icon: Receipt,
+    label: "Caisse (POS)",
+    roles: ["caissier", "gerant", "commercial", "superviseur"],
+  },
   {
     to: "/employee/sales",
     icon: ShoppingCart,
@@ -61,14 +67,24 @@ const NAV_ITEMS = [
     label: "Produits",
     roles: ["caissier", "gerant", "comptable", "magasinier", "commercial", "superviseur"],
   },
-  { to: "/employee/stock", icon: Warehouse, label: "Stock", roles: ["gerant", "comptable", "magasinier", "superviseur"] },
+  {
+    to: "/employee/stock",
+    icon: Warehouse,
+    label: "Stock",
+    roles: ["gerant", "comptable", "magasinier", "superviseur"],
+  },
   {
     to: "/employee/clients",
     icon: Users,
     label: "Clients",
     roles: ["caissier", "gerant", "comptable", "commercial", "superviseur"],
   },
-  { to: "/employee/suppliers", icon: Truck, label: "Fournisseurs", roles: ["gerant", "magasinier", "superviseur"] },
+  {
+    to: "/employee/suppliers",
+    icon: Truck,
+    label: "Fournisseurs",
+    roles: ["gerant", "magasinier", "superviseur"],
+  },
   {
     to: "/employee/accounting",
     icon: Wallet,
@@ -124,8 +140,8 @@ export function EmployeeShell({
     superviseur: "default",
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("boutikbf-employee-session");
+  const handleLogout = async () => {
+    await employeeLogout();
     toast.success("Déconnexion réussie");
     navigate({ to: "/auth-employee" });
   };

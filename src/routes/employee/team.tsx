@@ -50,8 +50,8 @@ function EmployeeTeam() {
     if (!current?.id) return;
     setLoading(true);
     supabase
-      .from("employees" as any)
-      .select("*")
+      .from("employees")
+      .select("id, shop_id, name, phone, role, is_active, created_at")
       .eq("shop_id", current.id)
       .order("created_at", { ascending: false })
       .then(({ data, error }: any) => {
@@ -79,10 +79,7 @@ function EmployeeTeam() {
 
   return (
     <div>
-      <PageHeader
-        title="Mon équipe"
-        description="Liste des membres de l'équipe"
-      />
+      <PageHeader title="Mon équipe" description="Liste des membres de l'équipe" />
 
       {employees.length === 0 ? (
         <Card className="shadow-soft">
@@ -107,7 +104,10 @@ function EmployeeTeam() {
                     </Badge>
                   </div>
                   {!emp.is_active && (
-                    <Badge variant="outline" className="text-destructive border-destructive text-[10px]">
+                    <Badge
+                      variant="outline"
+                      className="text-destructive border-destructive text-[10px]"
+                    >
                       Inactif
                     </Badge>
                   )}

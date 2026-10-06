@@ -56,9 +56,9 @@ function EmployeeReports() {
       // Produits vendus
       const { data: saleItems } = await supabase
         .from("sale_items")
-        .select("product_name, quantity")
-        .eq("shop_id", current.id)
-        .gte("created_at", sinceStr);
+        .select("name, quantity, sales!inner(shop_id, created_at)")
+        .eq("sales.shop_id", current.id)
+        .gte("sales.created_at", sinceStr);
 
       // Clients
       const { count: customers } = await supabase
@@ -72,8 +72,12 @@ function EmployeeReports() {
         .select("id", { count: "exact", head: true })
         .eq("shop_id", current.id);
 
-      const salesData = (sales ?? []) as { total: number; created_at: string; payment_method: string }[];
-      const itemsData = (saleItems ?? []) as { product_name: string; quantity: number }[];
+      const salesData = (sales ?? []) as {
+        total: number;
+        created_at: string;
+        payment_method: string;
+      }[];
+      const itemsData = (saleItems ?? []) as unknown as { name: string; quantity: number }[];
 
       const totalRevenue = salesData.reduce((a, s) => a + Number(s.total), 0);
       const totalSales = salesData.length;
@@ -81,9 +85,12 @@ function EmployeeReports() {
       // Top produit
       const productCount: Record<string, number> = {};
       itemsData.forEach((item) => {
-        productCount[item.product_name] = (productCount[item.product_name] || 0) + (item.quantity || 1);
+        productCount[item.name] = (productCount[item.name] || 0) + (item.quantity || 1);
       });
-      const topProduct = Object.entries(productCount).sort((a, b) => b[1] - a[1])[0] || { 0: "—", 1: 0 };
+      const topProduct = Object.entries(productCount).sort((a, b) => b[1] - a[1])[0] || {
+        0: "—",
+        1: 0,
+      };
 
       // Méthodes de paiement
       const methods: Record<string, number> = {};
@@ -117,7 +124,10 @@ function EmployeeReports() {
         topProduct: { name: topProduct[0], count: topProduct[1] },
         bestDay,
         paymentMethods: methods,
-        dailySeries: Array.from(byDay.entries()).map(([day, total]) => ({ day: day.slice(5), total })),
+        dailySeries: Array.from(byDay.entries()).map(([day, total]) => ({
+          day: day.slice(5),
+          total,
+        })),
         customers: customers ?? 0,
         products: products ?? 0,
       });
@@ -178,12 +188,7 @@ function EmployeeReports() {
           icon={TrendingUp}
           tone="warning"
         />
-        <StatCard
-          label="Clients"
-          value={String(stats.customers)}
-          icon={Users}
-          tone="primary"
-        />
+        <StatCard label="Clients" value={String(stats.customers)} icon={Users} tone="primary" />
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
@@ -202,7 +207,10 @@ function EmployeeReports() {
                   const max = Math.max(...stats.dailySeries.map((x) => x.total), 1);
                   const h = (s.total / max) * 100;
                   return (
-                    <div key={s.day} className="flex-1 flex flex-col items-center gap-1 group relative">
+                    <div
+                      key={s.day}
+                      className="flex-1 flex flex-col items-center gap-1 group relative"
+                    >
                       <div className="absolute bottom-full mb-1 hidden group-hover:block bg-popover text-popover-foreground text-xs px-2 py-1 rounded shadow whitespace-nowrap z-10">
                         {fmtMoney(s.total, cur)}
                       </div>
@@ -264,9 +272,7 @@ function EmployeeReports() {
             <CardContent>
               {stats.topProduct.name !== "—" ? (
                 <>
-                  <div className="font-bold text-foreground truncate">
-                    {stats.topProduct.name}
-                  </div>
+                  <div className="font-bold text-foreground truncate">{stats.topProduct.name}</div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {stats.topProduct.count} vendu(s)
                   </p>
@@ -297,7 +303,11 @@ function EmployeeReports() {
                   <div key={method} className="rounded-lg border border-border p-4 text-center">
                     <div className="text-2xl font-bold text-foreground">{pct}%</div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {method === "cash" ? "💵 Espèces" : method === "mobile" ? "📱 Mobile Money" : "💳 Carte"}
+                      {method === "cash"
+                        ? "💵 Espèces"
+                        : method === "mobile"
+                          ? "📱 Mobile Money"
+                          : "💳 Carte"}
                     </div>
                     <div className="text-xs text-muted-foreground">{count} transaction(s)</div>
                   </div>

@@ -66,6 +66,12 @@ import JsBarcode from "jsbarcode";
 
 export const Route = createFileRoute("/_authenticated/products")({
   head: () => ({ meta: [{ title: "Produits — BoutikBF" }] }),
+  validateSearch: (search: Record<string, unknown>): { barcode?: string } => ({
+    barcode:
+      typeof search.barcode === "string" || typeof search.barcode === "number"
+        ? String(search.barcode)
+        : undefined,
+  }),
   component: ProductsPage,
 });
 
@@ -136,7 +142,7 @@ function ProductsPage() {
       setForm((f) => ({ ...f, barcode: barcodeParam }));
       setOpen(true);
       // Nettoyer l'URL
-      navigate({ to: "/_authenticated/products", search: {} });
+      navigate({ to: "/products", search: {}, replace: true });
     }
   }, [barcodeParam, open, navigate]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -250,7 +256,7 @@ function ProductsPage() {
     try {
       const code = form.sku || `PRD-${Date.now().toString(36).toUpperCase()}`;
       const canvas = document.createElement("canvas");
-      
+
       // Utiliser JsBarcode pour générer le code-barres
       JsBarcode(canvas, code, {
         format: "CODE128",
@@ -259,20 +265,21 @@ function ProductsPage() {
         displayValue: true,
         fontSize: 14,
       });
-      
+
       const url = canvas.toDataURL("image/png");
       setForm((f) => ({ ...f, barcode: code }));
       toast.success(`Code-barres généré : ${code}`);
-      
+
       // Ouvrir dans un nouvel onglet pour impression
       const win = window.open();
       if (win) {
+        win.opener = null;
         win.document.write(`
           <html>
-            <head><title>Code-barres - ${code}</title></head>
+            <head><title>Code-barres</title></head>
             <body style="display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;">
               <img src="${url}" style="width:300px;height:100px;" />
-              <p style="position:absolute;bottom:20px;font-family:Arial;font-size:14px;">${code}</p>
+              <p style="position:absolute;bottom:20px;font-family:Arial;font-size:14px;">${String(code).replace(/[^0-9A-Za-z-]/g, "")}</p>
             </body>
           </html>
         `);

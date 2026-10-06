@@ -1,3 +1,4 @@
+import { clearShopCaches } from "@/lib/shop-store";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -6,6 +7,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
@@ -34,7 +36,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -129,6 +131,11 @@ function RootComponent() {
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      if (event === "SIGNED_OUT") {
+        // Ne rien laisser des données du compte précédent (boutiques, requêtes en cache)
+        clearShopCaches();
+        queryClient.clear();
+      }
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
     });

@@ -37,8 +37,14 @@ export function EmployeeChat({
   const roleLabel = (role: string) => {
     const labels: Record<string, string> = {
       cashier: "Vendeur",
+      caissier: "Vendeur",
       manager: "Gérant",
+      gerant: "Gérant",
       accountant: "Comptable",
+      comptable: "Comptable",
+      magasinier: "Magasinier",
+      commercial: "Commercial",
+      superviseur: "Superviseur",
     };
     return labels[role] || role;
   };
@@ -46,8 +52,11 @@ export function EmployeeChat({
   const roleColor = (role: string) => {
     const colors: Record<string, string> = {
       cashier: "bg-primary/10 text-primary border-primary/20",
+      caissier: "bg-primary/10 text-primary border-primary/20",
       manager: "bg-success/10 text-success border-success/20",
+      gerant: "bg-success/10 text-success border-success/20",
       accountant: "bg-warning/10 text-warning border-warning/20",
+      comptable: "bg-warning/10 text-warning border-warning/20",
     };
     return colors[role] || "bg-muted text-muted-foreground";
   };
@@ -56,27 +65,10 @@ export function EmployeeChat({
     if (!open) return;
 
     loadMessages();
-
-    const channel = supabase
-      .channel(`employee-chat-${shopId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "employee_messages",
-          filter: `shop_id=eq.${shopId}`,
-        },
-        (payload) => {
-          const newMsg = payload.new as Message;
-          setMessages((prev) => [...prev, newMsg]);
-        },
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    // Rafraîchissement régulier (le temps réel n'est pas disponible avec une session employé par PIN)
+    const timer = window.setInterval(loadMessages, 4000);
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shopId, open]);
 
   useEffect(() => {
@@ -87,7 +79,7 @@ export function EmployeeChat({
 
   const loadMessages = async () => {
     const { data, error } = await supabase
-      .from("employee_messages" as any)
+      .from("employee_messages")
       .select("*")
       .eq("shop_id", shopId)
       .order("created_at", { ascending: true })
@@ -105,7 +97,7 @@ export function EmployeeChat({
 
     setSending(true);
     try {
-      const { error } = await supabase.from("employee_messages" as any).insert({
+      const { error } = await supabase.from("employee_messages").insert({
         shop_id: shopId,
         employee_name: currentEmployeeName,
         employee_role: currentEmployeeRole,
@@ -114,6 +106,7 @@ export function EmployeeChat({
 
       if (error) throw error;
       setNewMessage("");
+      loadMessages();
       inputRef.current?.focus();
     } catch (error) {
       console.error("Erreur envoi message:", error);

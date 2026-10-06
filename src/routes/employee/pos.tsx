@@ -138,13 +138,19 @@ function EmployeePOS() {
       unit_price: i.sale_price,
       total: i.sale_price * i.qty,
     }));
-    await supabase.from("sale_items").insert(items);
-    // Decrement stock
+    const { error: itemsError } = await supabase.from("sale_items").insert(items);
+    if (itemsError) {
+      setProcessing(false);
+      toast.error("Vente non enregistrée : " + itemsError.message);
+      return;
+    }
+    // Décrémenter le stock de façon atomique (sûr même avec plusieurs caisses en même temps)
     for (const i of cart) {
-      await supabase
-        .from("products")
-        .update({ stock: i.stock - i.qty })
-        .eq("id", i.id);
+      const { error: stockError } = await (supabase as any).rpc("adjust_stock", {
+        p_product_id: i.id,
+        p_delta: -i.qty,
+      });
+      if (stockError) toast.error(`Stock de ${i.name} non mis à jour : ${stockError.message}`);
       await supabase.from("stock_movements").insert({
         shop_id: current.id,
         product_id: i.id,

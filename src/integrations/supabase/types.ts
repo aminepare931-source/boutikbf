@@ -263,6 +263,7 @@ export type Database = {
           created_at: string;
           customer_id: string | null;
           discount: number;
+          employee_id: string | null;
           id: string;
           payment_method: string;
           reference: string | null;
@@ -277,6 +278,7 @@ export type Database = {
           created_at?: string;
           customer_id?: string | null;
           discount?: number;
+          employee_id?: string | null;
           id?: string;
           payment_method?: string;
           reference?: string | null;
@@ -291,6 +293,7 @@ export type Database = {
           created_at?: string;
           customer_id?: string | null;
           discount?: number;
+          employee_id?: string | null;
           id?: string;
           payment_method?: string;
           reference?: string | null;
@@ -349,12 +352,101 @@ export type Database = {
           },
         ];
       };
+      employees: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          name: string;
+          phone: string | null;
+          role: string;
+          shop_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          phone?: string | null;
+          role?: string;
+          shop_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          phone?: string | null;
+          role?: string;
+          shop_id?: string;
+        };
+        Relationships: [];
+      };
+      employee_messages: {
+        Row: {
+          created_at: string;
+          employee_name: string;
+          employee_role: string;
+          id: string;
+          message: string;
+          shop_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          employee_name: string;
+          employee_role: string;
+          id?: string;
+          message: string;
+          shop_id: string;
+        };
+        Update: {
+          created_at?: string;
+          employee_name?: string;
+          employee_role?: string;
+          id?: string;
+          message?: string;
+          shop_id?: string;
+        };
+        Relationships: [];
+      };
+      imported_data: {
+        Row: {
+          category_column: string | null;
+          columns: Json;
+          created_at: string;
+          file_name: string;
+          id: string;
+          rows: Json;
+          shop_id: string;
+        };
+        Insert: {
+          category_column?: string | null;
+          columns: Json;
+          created_at?: string;
+          file_name: string;
+          id?: string;
+          rows: Json;
+          shop_id: string;
+        };
+        Update: {
+          category_column?: string | null;
+          columns?: Json;
+          created_at?: string;
+          file_name?: string;
+          id?: string;
+          rows?: Json;
+          shop_id?: string;
+        };
+        Relationships: [];
+      };
       shops: {
         Row: {
           address: string | null;
           country: string | null;
           created_at: string;
           currency: string;
+          is_suspended: boolean;
+          trial_ends_at: string | null;
           email: string | null;
           id: string;
           logo_url: string | null;
@@ -372,6 +464,8 @@ export type Database = {
           country?: string | null;
           created_at?: string;
           currency?: string;
+          is_suspended?: boolean;
+          trial_ends_at?: string | null;
           email?: string | null;
           id?: string;
           logo_url?: string | null;
@@ -389,6 +483,8 @@ export type Database = {
           country?: string | null;
           created_at?: string;
           currency?: string;
+          is_suspended?: boolean;
+          trial_ends_at?: string | null;
           email?: string | null;
           id?: string;
           logo_url?: string | null;

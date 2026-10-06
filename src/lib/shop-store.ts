@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getEmployeeSession } from "@/lib/employee-session";
 
 export type Shop = {
   id: string;
@@ -15,17 +16,58 @@ export type Shop = {
   shop_type?: string | null;
   shop_keywords?: string[] | null;
   plan?: string;
+  trial_ends_at?: string | null;
+  is_suspended?: boolean;
   created_at?: string;
 };
 
 const KEY = "boutikbf-current-shop";
 const SHOPS_CACHE_KEY = "boutikbf-shops-cache";
 
+type ShopsCache = { owner: string; shops: Shop[] };
+
+/** Efface tout ce qui est mis en cache sur l'appareil (à appeler à la déconnexion). */
+export function clearShopCaches() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(KEY);
+    localStorage.removeItem(SHOPS_CACHE_KEY);
+  } catch {
+    // stockage indisponible
+  }
+}
+
+/** Identifiant de la personne connectée, lu sans appel réseau (compte Supabase ou employé). */
+function peekOwner(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("sb-") && k.endsWith("-auth-token")) {
+        const id = JSON.parse(localStorage.getItem(k) ?? "null")?.user?.id;
+        if (id) return `user:${id}`;
+      }
+    }
+  } catch {
+    // ignoré
+  }
+  const emp = getEmployeeSession();
+  return emp ? `emp:${emp.employeeId}` : null;
+}
+
+/** Boutiques en cache — uniquement si elles appartiennent à la personne connectée. */
 function loadCachedShops(): Shop[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(SHOPS_CACHE_KEY);
-    return raw ? (JSON.parse(raw) as Shop[]) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as ShopsCache | Shop[];
+    if (Array.isArray(parsed)) {
+      // ancien format (sans propriétaire) : on le jette pour éviter toute fuite entre comptes
+      localStorage.removeItem(SHOPS_CACHE_KEY);
+      return [];
+    }
+    return parsed.owner && parsed.owner === peekOwner() ? parsed.shops : [];
   } catch {
     return [];
   }
@@ -35,27 +77,57 @@ export function useShops() {
   const [shops, setShops] = useState<Shop[]>(() => loadCachedShops());
   const [currentId, setCurrentId] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem(KEY);
+    const stored = localStorage.getItem(KEY);
+    return stored && loadCachedShops().some((s) => s.id === stored) ? stored : null;
   });
   const [loading, setLoading] = useState(() => shops.length === 0);
+
+  const finish = (list: Shop[], owner: string) => {
+    setShops(list);
+    localStorage.setItem(
+      SHOPS_CACHE_KEY,
+      JSON.stringify({ owner, shops: list } satisfies ShopsCache),
+    );
+    const stored = localStorage.getItem(KEY);
+    const valid = stored && list.some((s) => s.id === stored) ? stored : (list[0]?.id ?? null);
+    setCurrentId(valid);
+    if (valid) localStorage.setItem(KEY, valid);
+    else localStorage.removeItem(KEY);
+    setLoading(false);
+  };
 
   const load = async () => {
     if (typeof window === "undefined") return;
     if (loading) setLoading(true);
 
     const { data: user } = await supabase.auth.getUser();
+
+    // Employé connecté par PIN (pas de compte Supabase) : une seule boutique, la sienne
     if (!user.user) {
-      setLoading(false);
+      const emp = getEmployeeSession();
+      if (!emp) {
+        clearShopCaches();
+        setShops([]);
+        setCurrentId(null);
+        setLoading(false);
+        return;
+      }
+      const { data: shop } = await supabase
+        .from("shops")
+        .select("*")
+        .eq("id", emp.shopId)
+        .maybeSingle();
+      finish(shop ? [shop as Shop] : [], `emp:${emp.employeeId}`);
       return;
     }
 
-    // 1. Fetch shops owned by the current user
+    // 1. Boutiques dont l'utilisateur est propriétaire
     const { data: ownedShops } = await supabase
       .from("shops")
       .select("*")
       .eq("owner_id", user.user.id);
 
-    // 2. Fetch shops where the user is a member (e.g. employee)
+    // 2. Boutiques où l'utilisateur est membre
     const { data: memberships } = await supabase
       .from("shop_members")
       .select("shop_id")
@@ -80,22 +152,11 @@ export function useShops() {
       }
     }
 
-    // Sort by created_at ascending
-    joinedShops.sort((a, b) => {
-      const dateA = a.id ? (a as any).created_at : "";
-      const dateB = b.id ? (b as any).created_at : "";
-      return new Date(dateA || 0).getTime() - new Date(dateB || 0).getTime();
-    });
+    joinedShops.sort(
+      (a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime(),
+    );
 
-    const list = joinedShops;
-    setShops(list);
-    localStorage.setItem(SHOPS_CACHE_KEY, JSON.stringify(list));
-
-    const stored = localStorage.getItem(KEY);
-    const valid = stored && list.some((s) => s.id === stored) ? stored : (list[0]?.id ?? null);
-    setCurrentId(valid);
-    if (valid) localStorage.setItem(KEY, valid);
-    setLoading(false);
+    finish(joinedShops, `user:${user.user.id}`);
   };
 
   useEffect(() => {
