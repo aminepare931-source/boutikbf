@@ -11,9 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthEmployeeRouteImport } from './routes/auth-employee'
+import { Route as ConditionsRouteImport } from './routes/conditions'
+import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as EmployeeRouteImport } from './routes/employee'
+import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as RemoteScanRouteImport } from './routes/remote-scan'
 import { Route as SuperadminRouteImport } from './routes/superadmin'
 import { Route as AuthenticatedAccountingRouteImport } from './routes/_authenticated/accounting'
@@ -52,6 +58,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AProposRoute = AProposRouteImport.update({
+  id: '/a-propos',
+  path: '/a-propos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -62,9 +73,34 @@ const AuthEmployeeRoute = AuthEmployeeRouteImport.update({
   path: '/auth-employee',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConditionsRoute = ConditionsRouteImport.update({
+  id: '/conditions',
+  path: '/conditions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
+  id: '/confidentialite',
+  path: '/confidentialite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EmployeeRoute = EmployeeRouteImport.update({
   id: '/employee',
   path: '/employee',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
+  id: '/mentions-legales',
+  path: '/mentions-legales',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RemoteScanRoute = RemoteScanRouteImport.update({
@@ -210,9 +246,15 @@ const SuperadminUsersRoute = SuperadminUsersRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/auth': typeof AuthRoute
   '/auth-employee': typeof AuthEmployeeRoute
+  '/conditions': typeof ConditionsRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/cookies': typeof CookiesRoute
   '/employee': typeof EmployeeRouteWithChildren
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/remote-scan': typeof RemoteScanRoute
   '/superadmin': typeof SuperadminRouteWithChildren
   '/accounting': typeof AuthenticatedAccountingRoute
@@ -244,9 +286,15 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/a-propos': typeof AProposRoute
   '/auth': typeof AuthRoute
   '/auth-employee': typeof AuthEmployeeRoute
+  '/conditions': typeof ConditionsRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/cookies': typeof CookiesRoute
   '/employee': typeof EmployeeRouteWithChildren
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/remote-scan': typeof RemoteScanRoute
   '/accounting': typeof AuthenticatedAccountingRoute
   '/categories': typeof AuthenticatedCategoriesRoute
@@ -279,9 +327,15 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/a-propos': typeof AProposRoute
   '/auth': typeof AuthRoute
   '/auth-employee': typeof AuthEmployeeRoute
+  '/conditions': typeof ConditionsRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/cookies': typeof CookiesRoute
   '/employee': typeof EmployeeRouteWithChildren
+  '/mentions-legales': typeof MentionsLegalesRoute
   '/remote-scan': typeof RemoteScanRoute
   '/superadmin': typeof SuperadminRouteWithChildren
   '/_authenticated/accounting': typeof AuthenticatedAccountingRoute
@@ -315,9 +369,15 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/a-propos'
     | '/auth'
     | '/auth-employee'
+    | '/conditions'
+    | '/confidentialite'
+    | '/contact'
+    | '/cookies'
     | '/employee'
+    | '/mentions-legales'
     | '/remote-scan'
     | '/superadmin'
     | '/accounting'
@@ -349,9 +409,15 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/a-propos'
     | '/auth'
     | '/auth-employee'
+    | '/conditions'
+    | '/confidentialite'
+    | '/contact'
+    | '/cookies'
     | '/employee'
+    | '/mentions-legales'
     | '/remote-scan'
     | '/accounting'
     | '/categories'
@@ -383,9 +449,15 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/a-propos'
     | '/auth'
     | '/auth-employee'
+    | '/conditions'
+    | '/confidentialite'
+    | '/contact'
+    | '/cookies'
     | '/employee'
+    | '/mentions-legales'
     | '/remote-scan'
     | '/superadmin'
     | '/_authenticated/accounting'
@@ -419,9 +491,15 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AProposRoute: typeof AProposRoute
   AuthRoute: typeof AuthRoute
   AuthEmployeeRoute: typeof AuthEmployeeRoute
+  ConditionsRoute: typeof ConditionsRoute
+  ConfidentialiteRoute: typeof ConfidentialiteRoute
+  ContactRoute: typeof ContactRoute
+  CookiesRoute: typeof CookiesRoute
   EmployeeRoute: typeof EmployeeRouteWithChildren
+  MentionsLegalesRoute: typeof MentionsLegalesRoute
   RemoteScanRoute: typeof RemoteScanRoute
   SuperadminRoute: typeof SuperadminRouteWithChildren
 }
@@ -442,6 +520,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/a-propos': {
+      id: '/a-propos'
+      path: '/a-propos'
+      fullPath: '/a-propos'
+      preLoaderRoute: typeof AProposRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -456,11 +541,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthEmployeeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/conditions': {
+      id: '/conditions'
+      path: '/conditions'
+      fullPath: '/conditions'
+      preLoaderRoute: typeof ConditionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confidentialite': {
+      id: '/confidentialite'
+      path: '/confidentialite'
+      fullPath: '/confidentialite'
+      preLoaderRoute: typeof ConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/employee': {
       id: '/employee'
       path: '/employee'
       fullPath: '/employee'
       preLoaderRoute: typeof EmployeeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mentions-legales': {
+      id: '/mentions-legales'
+      path: '/mentions-legales'
+      fullPath: '/mentions-legales'
+      preLoaderRoute: typeof MentionsLegalesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/remote-scan': {
@@ -746,12 +866,28 @@ const SuperadminRouteWithChildren = SuperadminRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AProposRoute: AProposRoute,
   AuthRoute: AuthRoute,
   AuthEmployeeRoute: AuthEmployeeRoute,
+  ConditionsRoute: ConditionsRoute,
+  ConfidentialiteRoute: ConfidentialiteRoute,
+  ContactRoute: ContactRoute,
+  CookiesRoute: CookiesRoute,
   EmployeeRoute: EmployeeRouteWithChildren,
+  MentionsLegalesRoute: MentionsLegalesRoute,
   RemoteScanRoute: RemoteScanRoute,
   SuperadminRoute: SuperadminRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -28,6 +28,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import logo from "@/assets/logo.png";
+import { CookieNotice } from "@/components/legal/cookie-notice";
 import heroShop from "@/assets/hero-shop.jpg";
 
 export const Route = createFileRoute("/auth")({
@@ -841,6 +842,17 @@ function AuthPage() {
                           "Créer mon compte"
                         )}
                       </Button>
+                      <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
+                        En créant un compte, vous acceptez nos{" "}
+                        <Link to="/conditions" className="font-semibold underline">
+                          conditions d&apos;utilisation
+                        </Link>{" "}
+                        et notre{" "}
+                        <Link to="/confidentialite" className="font-semibold underline">
+                          politique de confidentialité
+                        </Link>
+                        .
+                      </p>
                     </form>
                   </TabsContent>
                 </Tabs>
@@ -924,6 +936,7 @@ function AuthPage() {
           )}
         </DialogContent>
       </Dialog>
+      <CookieNotice />
     </div>
   );
 }

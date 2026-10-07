@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { translations, type Language } from "@/lib/translations";
+import { LegalLinks } from "@/components/legal/legal-layout";
+import { CookieNotice } from "@/components/legal/cookie-notice";
 import {
   ShoppingCart,
   Package,
@@ -1826,6 +1828,11 @@ export default function Landing() {
               </a>
             </div>
           </div>
+          <LegalLinks
+            className={`mt-8 justify-center text-xs font-semibold ${
+              isDark ? "text-neutral-500" : "text-neutral-500"
+            }`}
+          />
           <div
             className={`mt-8 text-center text-xs font-bold border-t pt-8 ${
               isDark
@@ -1837,6 +1844,7 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+      <CookieNotice />
     </div>
   );
 }
