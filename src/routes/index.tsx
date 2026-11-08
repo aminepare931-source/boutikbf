@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, useEffect, useRef } from "react";
-import { motion } from "motion/react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { translations, type Language } from "@/lib/translations";
 import { LegalLinks } from "@/components/legal/legal-layout";
@@ -73,35 +72,6 @@ export default function Landing() {
 
   // Theme state (system-saved)
   const [theme, setTheme] = useState<"dark" | "light">("dark");
-
-  // Mouse position for interactive mesh/grid background with RAF throttle
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const mouseRef = useRef({ x: 0, y: 0 });
-  const rafRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseRef.current = {
-        x: e.clientX / window.innerWidth - 0.5,
-        y: e.clientY / window.innerHeight - 0.5,
-      };
-
-      if (!rafRef.current) {
-        rafRef.current = requestAnimationFrame(() => {
-          setMousePos(mouseRef.current);
-          rafRef.current = null;
-        });
-      }
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
-    };
-  }, []);
 
   // Interactive POS Simulator states
   const [cart, setCart] = useState<{ [key: string]: number }>({});
@@ -187,80 +157,26 @@ export default function Landing() {
       {/* Flag ribbon representation (Burkina Faso red/gold/green theme banner) */}
       <div className="h-1 bg-gradient-to-r from-[#ef2b2d] via-[#fcd116] to-[#009e49] w-full fixed top-0 left-0 z-50 shadow" />
 
-      {/* Dynamic ambient backgrounds & decorative glowing elements */}
-      {/* Interactive spotlight layer with motion */}
-      <motion.div
-        className="absolute inset-0 pointer-events-none z-0"
-        animate={{
-          background: isDark
-            ? `radial-gradient(850px circle at calc(50% + ${mousePos.x * 380}px) calc(50% + ${mousePos.y * 380}px), rgba(16, 185, 129, 0.08), rgba(239, 43, 45, 0.03) 35%, rgba(252, 209, 22, 0.02) 70%, transparent 100%)`
-            : `radial-gradient(850px circle at calc(50% + ${mousePos.x * 380}px) calc(50% + ${mousePos.y * 380}px), rgba(16, 185, 129, 0.05), rgba(239, 43, 45, 0.02) 35%, rgba(252, 209, 22, 0.01) 70%, transparent 100%)`,
-        }}
-        transition={{ type: "spring", stiffness: 120, damping: 30, mass: 0.1 }}
-      />
-
-      {/* Interactive Main Grid Lines */}
-      <motion.div
-        className={`absolute inset-0 bg-[size:50px_50px] pointer-events-none z-0 transition-opacity duration-500 ${
-          isDark
-            ? "opacity-15 bg-[linear-gradient(to_right,#10b98108_1px,transparent_1px),linear-gradient(to_bottom,#10b98108_1px,transparent_1px)]"
-            : "opacity-45 bg-[linear-gradient(to_right,#e2e8f0a0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0a0_1px,transparent_1px)]"
+      {/* Ambient background: static, elegant, low-cost (no per-frame JS) */}
+      <div
+        className={`absolute inset-0 pointer-events-none z-0 ${
+          isDark ? "opacity-40" : "opacity-70"
         }`}
-        animate={{
-          x: mousePos.x * 16,
-          y: mousePos.y * 16,
+        style={{
+          background: isDark
+            ? "radial-gradient(900px circle at 20% 0%, rgba(16,185,129,0.07), transparent 55%), radial-gradient(700px circle at 85% 25%, rgba(252,209,22,0.05), transparent 55%), radial-gradient(600px circle at 30% 90%, rgba(239,43,45,0.05), transparent 55%)"
+            : "radial-gradient(900px circle at 20% 0%, rgba(16,185,129,0.06), transparent 55%), radial-gradient(700px circle at 85% 25%, rgba(252,209,22,0.08), transparent 55%), radial-gradient(600px circle at 30% 90%, rgba(239,43,45,0.04), transparent 55%)",
         }}
-        transition={{ type: "spring", stiffness: 75, damping: 20, mass: 0.6 }}
       />
-
-      {/* Interactive Accent Dot Mesh */}
-      <motion.div
-        className="absolute inset-0 bg-[size:20px_20px] pointer-events-none z-0 transition-opacity duration-500 opacity-20"
+      <div
+        className={`absolute inset-0 bg-[size:50px_50px] pointer-events-none z-0 ${
+          isDark ? "opacity-10" : "opacity-100"
+        }`}
         style={{
           backgroundImage: isDark
-            ? "radial-gradient(#ffffff0a 1px, transparent 1px)"
-            : "radial-gradient(#0f172a08 1px, transparent 1px)",
+            ? "linear-gradient(to right, #ffffff0d 1px, transparent 1px), linear-gradient(to bottom, #ffffff0d 1px, transparent 1px)"
+            : "linear-gradient(to right, #e2e8f0a0 1px, transparent 1px), linear-gradient(to bottom, #e2e8f0a0 1px, transparent 1px)",
         }}
-        animate={{
-          x: mousePos.x * -10,
-          y: mousePos.y * -10,
-        }}
-        transition={{ type: "spring", stiffness: 60, damping: 22, mass: 0.8 }}
-      />
-
-      {/* Warm and local ambient color glow circles (Burkina Faso red/gold/green theme) */}
-      <motion.div
-        className="absolute top-[5%] left-[-15%] w-[70vw] h-[70vw] rounded-full blur-[140px] pointer-events-none z-0"
-        animate={{
-          x: mousePos.x * -40,
-          y: mousePos.y * -40,
-          scale: 1 + Math.abs(mousePos.x) * 0.08,
-          backgroundColor: isDark ? "rgba(16, 185, 129, 0.11)" : "rgba(16, 185, 129, 0.13)",
-        }}
-        transition={{ type: "spring", stiffness: 50, damping: 18, mass: 1 }}
-      />
-      <motion.div
-        className="absolute top-[35%] right-[-15%] w-[60vw] h-[60vw] rounded-full blur-[140px] pointer-events-none z-0"
-        animate={{
-          x: mousePos.x * 50,
-          y: mousePos.y * 50,
-          scale: 1 + Math.abs(mousePos.y) * 0.08,
-          backgroundColor: isDark ? "rgba(252, 209, 22, 0.07)" : "rgba(252, 209, 22, 0.11)",
-        }}
-        style={{
-          // Fallback if yellow/gold name differs
-          backgroundColor: isDark ? "rgba(252, 209, 22, 0.07)" : "rgba(252, 209, 22, 0.11)",
-        }}
-        transition={{ type: "spring", stiffness: 45, damping: 16, mass: 1.2 }}
-      />
-      <motion.div
-        className="absolute bottom-[10%] left-[-5%] w-[55vw] h-[55vw] rounded-full blur-[140px] pointer-events-none z-0"
-        animate={{
-          x: mousePos.x * -25,
-          y: mousePos.y * 35,
-          backgroundColor: isDark ? "rgba(239, 43, 45, 0.07)" : "rgba(239, 43, 45, 0.07)",
-        }}
-        transition={{ type: "spring", stiffness: 55, damping: 20, mass: 0.9 }}
       />
 
       {/* Header / Navbar */}
