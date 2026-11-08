@@ -4,6 +4,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Prevent horizontal overflow WITHOUT creating a scroll container.
+   (overflow-x: hidden on a container would turn overflow-y into auto,
+   producing a nested/double scrollbar) */
+html,
+body {
+  overflow-x: clip;
+}
+
 /* BoutikBF Design System — premium, minimal, warm accent */
 
 @theme inline {

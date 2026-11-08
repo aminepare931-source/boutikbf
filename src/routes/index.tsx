@@ -31,8 +31,10 @@ import {
   Lock,
   ArrowUpRight,
   Tablet,
+  Menu,
   Sun,
   Moon,
+  X,
 } from "lucide-react";
 
 // Asset imports
@@ -65,6 +67,9 @@ const PRODUCTS_CATALOG: Product[] = [
 export default function Landing() {
   // Localization state
   const [lang, setLang] = useState<Language>("fr");
+
+  // Mobile navigation menu
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Theme state (system-saved)
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -175,7 +180,7 @@ export default function Landing() {
 
   return (
     <div
-      className={`min-h-screen relative overflow-x-hidden transition-colors duration-500 font-sans ${
+      className={`min-h-screen relative transition-colors duration-500 font-sans ${
         isDark ? "bg-neutral-950 text-neutral-100" : "bg-neutral-50 text-neutral-900"
       }`}
     >
@@ -339,6 +344,21 @@ export default function Landing() {
             </a>
           </nav>
 
+          {/* Mobile menu toggle */}
+          <button
+            type="button"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-expanded={menuOpen}
+            aria-label="Menu"
+            className={`md:hidden rounded-xl h-9 w-9 flex items-center justify-center border transition-colors ${
+              isDark
+                ? "border-neutral-800 text-neutral-300 hover:bg-neutral-900"
+                : "border-neutral-200 text-neutral-700 hover:bg-neutral-100"
+            }`}
+          >
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+
           {/* Right section widgets: Language switcher, Theme toggle & Authentication Links */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Interactive Language Dropdown */}
@@ -383,27 +403,57 @@ export default function Landing() {
             </Button>
 
             {/* Login Button */}
-            <Link to="/auth">
-              <Button
-                variant="ghost"
-                className={`text-xs font-bold uppercase tracking-wider px-3.5 h-8.5 rounded-xl transition-colors ${
-                  isDark
-                    ? "text-neutral-300 hover:text-neutral-50 hover:bg-neutral-900"
-                    : "text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100"
-                }`}
-              >
-                {t.login}
-              </Button>
-            </Link>
+            <Button
+              asChild
+              variant="ghost"
+              className={`text-xs font-bold uppercase tracking-wider px-3.5 h-8.5 rounded-xl transition-colors ${
+                isDark
+                  ? "text-neutral-300 hover:text-neutral-50 hover:bg-neutral-900"
+                  : "text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100"
+              }`}
+            >
+              <Link to="/auth">{t.login}</Link>
+            </Button>
 
             {/* Free Trial CTA */}
-            <Link to="/auth" className="hidden sm:inline-block">
-              <Button className="text-xs font-extrabold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 text-white px-4 h-8.5 rounded-xl shadow-md transition-all duration-300">
-                {t.freeTrial}
-              </Button>
-            </Link>
+            <Button
+              asChild
+              className="hidden sm:inline-flex text-xs font-extrabold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 text-white px-4 h-8.5 rounded-xl shadow-md transition-all duration-300"
+            >
+              <Link to="/auth">{t.freeTrial}</Link>
+            </Button>
           </div>
         </div>
+
+        {/* Mobile navigation panel */}
+        {menuOpen && (
+          <nav
+            className={`md:hidden border-t px-4 py-3 flex flex-col divide-y ${
+              isDark ? "border-neutral-800/80 divide-neutral-800/60" : "border-neutral-200 divide-neutral-100"
+            }`}
+          >
+            {[
+              { href: "#features", label: t.navFeatures },
+              { href: "#products", label: t.navSoftware },
+              { href: "#simulator", label: t.navDemo },
+              { href: "#pricing", label: t.navPricing },
+              { href: "#faq", label: t.navFaq },
+            ].map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                onClick={() => setMenuOpen(false)}
+                className={`py-3 text-xs font-bold uppercase tracking-wider transition-colors ${
+                  isDark
+                    ? "text-neutral-300 hover:text-emerald-400"
+                    : "text-neutral-600 hover:text-emerald-600"
+                }`}
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+        )}
       </header>
 
       {/* Hero Section */}
@@ -447,25 +497,27 @@ export default function Landing() {
               </p>
 
               <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
-                <Link to="/auth" className="w-full sm:w-auto">
-                  <Button className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8 py-6 rounded-xl shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 flex items-center justify-center gap-2 text-sm">
+                <Button
+                  asChild
+                  className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8 py-6 rounded-xl shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 flex items-center justify-center gap-2 text-sm"
+                >
+                  <Link to="/auth">
                     <span>{t.btnTryFree}</span>
                     <ArrowRight className="h-4.5 w-4.5" />
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
 
-                <a href="#simulator" className="w-full sm:w-auto">
-                  <Button
-                    variant="outline"
-                    className={`w-full sm:w-auto px-8 py-6 text-sm font-bold rounded-xl border transition-colors ${
-                      isDark
-                        ? "border-neutral-800 text-neutral-200 hover:bg-neutral-900 hover:text-white"
-                        : "border-neutral-300 text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
-                    }`}
-                  >
-                    {t.btnTestSim}
-                  </Button>
-                </a>
+                <Button
+                  asChild
+                  variant="outline"
+                  className={`w-full sm:w-auto px-8 py-6 text-sm font-bold rounded-xl border transition-colors ${
+                    isDark
+                      ? "border-neutral-800 text-neutral-200 hover:bg-neutral-900 hover:text-white"
+                      : "border-neutral-300 text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
+                  }`}
+                >
+                  <a href="#simulator">{t.btnTestSim}</a>
+                </Button>
               </div>
 
               {/* Trust Indicators */}
@@ -1450,18 +1502,17 @@ export default function Landing() {
                 </ul>
               </div>
 
-              <Link to="/auth" className="mt-8">
-                <Button
-                  variant="outline"
-                  className={`w-full py-5 font-bold rounded-xl transition-all ${
-                    isDark
-                      ? "bg-neutral-950 border-neutral-800 text-neutral-200 hover:bg-neutral-800 hover:text-white"
-                      : "bg-white border-neutral-300 text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 shadow-sm"
-                  }`}
-                >
-                  Démarrer
-                </Button>
-              </Link>
+              <Button
+                asChild
+                variant="outline"
+                className={`mt-8 w-full py-5 font-bold rounded-xl transition-all ${
+                  isDark
+                    ? "bg-neutral-950 border-neutral-800 text-neutral-200 hover:bg-neutral-800 hover:text-white"
+                    : "bg-white border-neutral-300 text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 shadow-sm"
+                }`}
+              >
+                <Link to="/auth">Démarrer</Link>
+              </Button>
             </div>
 
             {/* Plan 2 */}
@@ -1524,11 +1575,12 @@ export default function Landing() {
                 </ul>
               </div>
 
-              <Link to="/auth" className="mt-8">
-                <Button className="w-full py-5 font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-600/10">
-                  Souscrire Pro
-                </Button>
-              </Link>
+              <Button
+                asChild
+                className="mt-8 w-full py-5 font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-600/10"
+              >
+                <Link to="/auth">Souscrire Pro</Link>
+              </Button>
             </div>
 
             {/* Plan 3 */}
@@ -1584,18 +1636,17 @@ export default function Landing() {
                 </ul>
               </div>
 
-              <Link to="/auth" className="mt-8">
-                <Button
-                  variant="outline"
-                  className={`w-full py-5 font-bold rounded-xl transition-all ${
-                    isDark
-                      ? "bg-neutral-950 border-neutral-800 text-neutral-200 hover:bg-neutral-800 hover:text-white"
-                      : "bg-white border-neutral-300 text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 shadow-sm"
-                  }`}
-                >
-                  Nous contacter
-                </Button>
-              </Link>
+              <Button
+                asChild
+                variant="outline"
+                className={`mt-8 w-full py-5 font-bold rounded-xl transition-all ${
+                  isDark
+                    ? "bg-neutral-950 border-neutral-800 text-neutral-200 hover:bg-neutral-800 hover:text-white"
+                    : "bg-white border-neutral-300 text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 shadow-sm"
+                }`}
+              >
+                <Link to="/auth">Nous contacter</Link>
+              </Button>
             </div>
           </div>
         </div>
