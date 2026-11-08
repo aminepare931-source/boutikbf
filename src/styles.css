@@ -12,11 +12,6 @@ body {
   overflow-x: clip;
 }
 
-/* Smooth anchor navigation + offset under sticky header */
-section[id] {
-  scroll-margin-top: 80px;
-}
-
 /* BoutikBF Design System — premium, minimal, warm accent */
 
 @theme inline {

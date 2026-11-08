@@ -9,27 +9,31 @@ import {
   Package,
   Users,
   BarChart3,
-  CreditCard,
+  Wallet,
   Shield,
-  ShieldCheck,
+  Zap,
+  Globe,
   ArrowRight,
   Check,
   Star,
   Plus,
   Minus,
   Smartphone,
-  CheckCircle2,
-  Play,
+  CheckCircle,
+  HelpCircle,
+  TrendingUp,
+  Receipt,
+  Building2,
+  SmartphoneCharging,
+  MessageSquare,
+  Sparkles,
+  Lock,
+  ArrowUpRight,
+  Tablet,
+  Menu,
   Sun,
   Moon,
-  Menu,
   X,
-  ChevronDown,
-  Store,
-  WifiOff,
-  Rocket,
-  Crown,
-  Globe,
 } from "lucide-react";
 
 // Asset imports
@@ -37,6 +41,7 @@ import heroShop from "@/assets/hero-shop.jpg";
 import featurePos from "@/assets/feature-pos.jpg";
 import featureAnalytics from "@/assets/feature-analytics.jpg";
 import featureMobile from "@/assets/feature-mobile.jpg";
+import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -44,26 +49,19 @@ export const Route = createFileRoute("/")({
 
 interface Product {
   id: string;
-  emoji: string;
   name: string;
   price: number;
+  category: string;
 }
 
 const PRODUCTS_CATALOG: Product[] = [
-  { id: "1", emoji: "🍚", name: "Riz Bagré 5 kg", price: 3500 },
-  { id: "2", emoji: "🧴", name: "Huile 1 L", price: 1200 },
-  { id: "3", emoji: "🧱", name: "Ciment Dangote", price: 5000 },
-  { id: "4", emoji: "🧼", name: "Savon", price: 200 },
-  { id: "5", emoji: "🍬", name: "Sucre 1 kg", price: 850 },
-  { id: "6", emoji: "🥛", name: "Lait en poudre", price: 2500 },
+  { id: "1", name: "Riz Bagré (5kg)", price: 3500, category: "Alimentation" },
+  { id: "2", name: "Huile SN CITEC (1L)", price: 1200, category: "Alimentation" },
+  { id: "3", name: "Ciment Dangote CPJ45 (Sac)", price: 5500, category: "Quincaillerie" },
+  { id: "4", name: "Fer de 10 (U)", price: 3200, category: "Quincaillerie" },
+  { id: "5", name: "Savon Kobi (Lot de 4)", price: 1000, category: "Entretien" },
+  { id: "6", name: "Sucre SOSUCO (1kg)", price: 850, category: "Alimentation" },
 ];
-
-const PAYMENTS = [
-  { id: "orange", label: "Orange Money", className: "bg-orange-500 text-white" },
-  { id: "moov", label: "Moov Money", className: "bg-blue-600 text-white" },
-  { id: "wave", label: "Wave", className: "bg-sky-100 text-sky-700" },
-  { id: "cash", label: "Espèces", className: "bg-neutral-100 text-neutral-700" },
-] as const;
 
 export default function Landing() {
   // Localization state
@@ -74,9 +72,6 @@ export default function Landing() {
 
   // Theme state (system-saved)
   const [theme, setTheme] = useState<"dark" | "light">("dark");
-
-  // FAQ accordion
-  const [faqOpen, setFaqOpen] = useState<number | null>(null);
 
   // Interactive POS Simulator states
   const [cart, setCart] = useState<{ [key: string]: number }>({});
@@ -100,13 +95,26 @@ export default function Landing() {
   const isDark = theme === "dark";
   const t = translations[lang];
 
+  // Helper selectors for language flags
+  const getFlagLabel = (l: Language) => {
+    switch (l) {
+      case "fr":
+        return "FR";
+      case "en":
+        return "EN";
+      case "mo":
+        return "MO";
+      case "di":
+        return "DI";
+    }
+  };
+
   // Simulator Cart management
   const handleAddToCart = (product: Product) => {
     setCart((prev) => ({
       ...prev,
       [product.id]: (prev[product.id] || 0) + 1,
     }));
-    setPosSuccess(false);
   };
 
   const handleRemoveOne = (productId: string) => {
@@ -125,7 +133,6 @@ export default function Landing() {
   const handleClearCart = () => {
     setCart({});
     setPosSuccess(false);
-    setPosReceiptNo("");
   };
 
   const getCartTotal = () => {
@@ -141,116 +148,151 @@ export default function Landing() {
     setPosSuccess(true);
   };
 
-  // Receipt data: demo ticket when no sale validated, live ticket otherwise
-  const receiptItems =
-    posSuccess
-      ? Object.entries(cart)
-          .map(([id, qty]) => {
-            const p = PRODUCTS_CATALOG.find((item) => item.id === id);
-            return p ? { name: p.name, price: p.price, qty } : null;
-          })
-          .filter((i): i is { name: string; price: number; qty: number } => i !== null)
-      : [
-          { name: "Riz Bagré 5 kg", price: 3500, qty: 1 },
-          { name: "Huile 1 L", price: 1200, qty: 1 },
-        ];
-  const receiptTotal = receiptItems.reduce((sum, i) => sum + i.price * i.qty, 0);
-  const receiptNo = posSuccess ? posReceiptNo : "TX-000124";
-  const receiptDate = posSuccess
-    ? new Date().toLocaleDateString("fr-FR") + " " + new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
-    : "07/10/2025 16:30";
-
-  const featureCards = [
-    { icon: ShoppingCart, color: "emerald", title: t.posTitle, desc: t.posDesc },
-    { icon: Package, color: "amber", title: t.stockTitle, desc: t.stockDesc },
-    { icon: CreditCard, color: "blue", title: t.mobileMoneyTitle, desc: t.mobileMoneyDesc },
-    { icon: Users, color: "purple", title: t.crmTitle, desc: t.crmDesc },
-    { icon: BarChart3, color: "orange", title: t.accountingTitle, desc: t.accountingDesc },
-    { icon: Shield, color: "red", title: t.securityTitle, desc: t.securityDesc },
-  ] as const;
-
-  const featureColorMap: Record<string, string> = {
-    emerald: "bg-emerald-500/10 text-emerald-400",
-    amber: "bg-amber-500/10 text-amber-400",
-    blue: "bg-blue-500/10 text-blue-400",
-    purple: "bg-purple-500/10 text-purple-400",
-    orange: "bg-orange-500/10 text-orange-400",
-    red: "bg-red-500/10 text-red-400",
-  };
-
-  const solutionCards = [
-    { img: featurePos, title: t.showcase1Title, desc: t.showcase1Desc },
-    { img: featureMobile, title: t.showcase2Title, desc: t.showcase2Desc },
-    { img: featureAnalytics, title: t.showcase3Title, desc: t.showcase3Desc },
-  ];
-
   return (
     <div
       className={`min-h-screen relative transition-colors duration-500 font-sans ${
         isDark ? "bg-neutral-950 text-neutral-100" : "bg-neutral-50 text-neutral-900"
       }`}
     >
-      {/* Burkina Faso flag ribbon */}
-      <div className="h-1 bg-gradient-to-r from-[#ef2b2d] via-[#fcd116] to-[#009e49] w-full" />
+      {/* Flag ribbon representation (Burkina Faso red/gold/green theme banner) */}
+      <div className="h-1 bg-gradient-to-r from-[#ef2b2d] via-[#fcd116] to-[#009e49] w-full fixed top-0 left-0 z-50 shadow" />
 
-      {/* Header */}
+      {/* Ambient background: static, elegant, low-cost (no per-frame JS) */}
+      <div
+        className={`absolute inset-0 pointer-events-none z-0 ${
+          isDark ? "opacity-40" : "opacity-70"
+        }`}
+        style={{
+          background: isDark
+            ? "radial-gradient(900px circle at 20% 0%, rgba(16,185,129,0.07), transparent 55%), radial-gradient(700px circle at 85% 25%, rgba(252,209,22,0.05), transparent 55%), radial-gradient(600px circle at 30% 90%, rgba(239,43,45,0.05), transparent 55%)"
+            : "radial-gradient(900px circle at 20% 0%, rgba(16,185,129,0.06), transparent 55%), radial-gradient(700px circle at 85% 25%, rgba(252,209,22,0.08), transparent 55%), radial-gradient(600px circle at 30% 90%, rgba(239,43,45,0.04), transparent 55%)",
+        }}
+      />
+      <div
+        className={`absolute inset-0 bg-[size:50px_50px] pointer-events-none z-0 ${
+          isDark ? "opacity-10" : "opacity-100"
+        }`}
+        style={{
+          backgroundImage: isDark
+            ? "linear-gradient(to right, #ffffff0d 1px, transparent 1px), linear-gradient(to bottom, #ffffff0d 1px, transparent 1px)"
+            : "linear-gradient(to right, #e2e8f0a0 1px, transparent 1px), linear-gradient(to bottom, #e2e8f0a0 1px, transparent 1px)",
+        }}
+      />
+
+      {/* Header / Navbar */}
       <header
-        className={`sticky top-0 z-40 backdrop-blur border-b transition-colors ${
+        className={`sticky top-2.5 z-40 border backdrop-blur-lg mx-4 my-3 rounded-2xl max-w-7xl lg:mx-auto transition-all duration-300 shadow-md ${
           isDark
-            ? "bg-neutral-950/90 border-neutral-900"
-            : "bg-white/90 border-neutral-200"
+            ? "border-neutral-800/80 bg-neutral-950/80 shadow-black/40"
+            : "border-neutral-200 bg-white/80 shadow-neutral-200/30"
         }`}
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+        <div className="mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 shrink-0">
-            <span className="h-9 w-9 rounded-xl bg-gradient-to-b from-emerald-400 to-emerald-600 flex items-center justify-center shadow-md shadow-emerald-500/20">
-              <Store className="h-5 w-5 text-white" />
-            </span>
-            <span className="text-xl font-extrabold tracking-tight text-white">
-              Boutik<span className="text-emerald-400">BF</span>
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <img
+              src={logo}
+              alt="BoutikBF Logo"
+              className="h-8.5 w-auto object-contain group-hover:scale-105 transition-transform"
+            />
+            <span
+              className={`font-display text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r bg-clip-text text-transparent ${
+                isDark
+                  ? "from-neutral-50 via-neutral-100 to-neutral-400"
+                  : "from-neutral-900 via-neutral-800 to-neutral-600"
+              }`}
+            >
+              Boutik<span className="text-emerald-500">BF</span>
             </span>
           </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-7 text-sm font-medium">
-            <a href="#features" className="flex items-center gap-1 text-neutral-300 hover:text-emerald-400 transition-colors">
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-6 text-xs font-bold uppercase tracking-wider">
+            <a
+              href="#features"
+              className={`transition-colors ${
+                isDark
+                  ? "text-neutral-400 hover:text-emerald-400"
+                  : "text-neutral-600 hover:text-emerald-600"
+              }`}
+            >
               {t.navFeatures}
-              <ChevronDown className="h-3.5 w-3.5 text-neutral-500" />
             </a>
-            <a href="#software" className="flex items-center gap-1 text-neutral-300 hover:text-emerald-400 transition-colors">
+            <a
+              href="#products"
+              className={`transition-colors ${
+                isDark
+                  ? "text-neutral-400 hover:text-emerald-400"
+                  : "text-neutral-600 hover:text-emerald-600"
+              }`}
+            >
               {t.navSoftware}
-              <ChevronDown className="h-3.5 w-3.5 text-neutral-500" />
             </a>
-            <a href="#simulator" className="text-neutral-300 hover:text-emerald-400 transition-colors">
+            <a
+              href="#simulator"
+              className={`transition-colors ${
+                isDark
+                  ? "text-neutral-400 hover:text-emerald-400"
+                  : "text-neutral-600 hover:text-emerald-600"
+              }`}
+            >
               {t.navDemo}
             </a>
-            <a href="#pricing" className="text-neutral-300 hover:text-emerald-400 transition-colors">
+            <a
+              href="#pricing"
+              className={`transition-colors ${
+                isDark
+                  ? "text-neutral-400 hover:text-emerald-400"
+                  : "text-neutral-600 hover:text-emerald-600"
+              }`}
+            >
               {t.navPricing}
             </a>
-            <a href="#faq" className="text-neutral-300 hover:text-emerald-400 transition-colors">
+            <a
+              href="#faq"
+              className={`transition-colors ${
+                isDark
+                  ? "text-neutral-400 hover:text-emerald-400"
+                  : "text-neutral-600 hover:text-emerald-600"
+              }`}
+            >
               {t.navFaq}
             </a>
           </nav>
 
-          {/* Right widgets */}
+          {/* Mobile menu toggle */}
+          <button
+            type="button"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-expanded={menuOpen}
+            aria-label="Menu"
+            className={`md:hidden rounded-xl h-9 w-9 flex items-center justify-center border transition-colors ${
+              isDark
+                ? "border-neutral-800 text-neutral-300 hover:bg-neutral-900"
+                : "border-neutral-200 text-neutral-700 hover:bg-neutral-100"
+            }`}
+          >
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+
+          {/* Right section widgets: Language switcher, Theme toggle & Authentication Links */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Language selector */}
-            <div className="relative hidden sm:block">
-              <Globe className="h-3.5 w-3.5 text-emerald-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            {/* Interactive Language Dropdown */}
+            <div className="relative inline-block">
               <select
                 value={lang}
                 onChange={(e) => setLang(e.target.value as Language)}
-                aria-label="Langue"
-                className={`appearance-none cursor-pointer rounded-full border py-1.5 pl-8 pr-7 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500/50 ${
+                className={`text-[11px] font-black tracking-wider rounded-xl py-1.5 pl-2.5 pr-6 border appearance-none cursor-pointer focus:outline-none focus:ring-1 transition-all ${
                   isDark
-                    ? "bg-neutral-900 border-neutral-800 text-neutral-200"
-                    : "bg-white border-neutral-200 text-neutral-800"
+                    ? "bg-neutral-900 border-neutral-800 text-neutral-300 focus:ring-emerald-500/50"
+                    : "bg-white border-neutral-200 text-neutral-700 focus:ring-emerald-500/50 shadow-sm"
                 }`}
                 style={{
-                  backgroundImage: `url("data:image/svg+xml;utf8,<svg fill='none' stroke='gray' stroke-width='2' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><path stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'></path></svg>")`,
-                  backgroundPosition: "right 7px center",
-                  backgroundSize: "9px",
+                  backgroundImage: `url("data:image/svg+xml;utf8,<svg fill='none' stroke='${
+                    isDark ? "currentColor" : "%234b5563"
+                  }' stroke-width='2' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><path stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'></path></svg>")`,
+                  backgroundPosition: "right 8px center",
+                  backgroundSize: "10px",
                   backgroundRepeat: "no-repeat",
                 }}
               >
@@ -261,89 +303,54 @@ export default function Landing() {
               </select>
             </div>
 
-            {/* Theme segmented switch */}
-            <div
-              className={`hidden sm:flex items-center rounded-full border p-1 ${
-                isDark ? "bg-neutral-900 border-neutral-800" : "bg-neutral-100 border-neutral-200"
+            {/* Theme Switcher Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              className={`rounded-xl h-8.5 w-8.5 transition-all ${
+                isDark
+                  ? "text-neutral-400 hover:text-amber-400 hover:bg-neutral-900"
+                  : "text-neutral-500 hover:text-blue-600 hover:bg-neutral-100"
               }`}
+              title={isDark ? "Mode Jour" : "Mode Nuit"}
             >
-              <button
-                type="button"
-                onClick={() => setTheme("light")}
-                aria-label="Mode jour"
-                className={`h-7 w-7 rounded-full flex items-center justify-center transition-colors ${
-                  !isDark
-                    ? "bg-emerald-500 text-white"
-                    : isDark
-                      ? "text-neutral-500 hover:text-neutral-300"
-                      : "text-neutral-400"
-                }`}
-              >
-                <Sun className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setTheme("dark")}
-                aria-label="Mode nuit"
-                className={`h-7 w-7 rounded-full flex items-center justify-center transition-colors ${
-                  isDark
-                    ? "bg-emerald-500 text-white"
-                    : "text-neutral-400 hover:text-neutral-600"
-                }`}
-              >
-                <Moon className="h-4 w-4" />
-              </button>
-            </div>
+              {isDark ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
+            </Button>
 
-            {/* Login */}
+            {/* Login Button */}
             <Button
               asChild
-              className={`hidden md:inline-flex rounded-full text-sm font-semibold px-5 h-9 ${
+              variant="ghost"
+              className={`text-xs font-bold uppercase tracking-wider px-3.5 h-8.5 rounded-xl transition-colors ${
                 isDark
-                  ? "bg-white text-neutral-900 hover:bg-neutral-200"
-                  : "bg-neutral-900 text-white hover:bg-neutral-800"
+                  ? "text-neutral-300 hover:text-neutral-50 hover:bg-neutral-900"
+                  : "text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100"
               }`}
             >
               <Link to="/auth">{t.login}</Link>
             </Button>
 
-            {/* Free trial CTA */}
+            {/* Free Trial CTA */}
             <Button
               asChild
-              className="hidden sm:inline-flex rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold px-5 h-9"
+              className="hidden sm:inline-flex text-xs font-extrabold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 text-white px-4 h-8.5 rounded-xl shadow-md transition-all duration-300"
             >
               <Link to="/auth">{t.freeTrial}</Link>
             </Button>
-
-            {/* Mobile menu toggle */}
-            <button
-              type="button"
-              onClick={() => setMenuOpen((o) => !o)}
-              aria-expanded={menuOpen}
-              aria-label="Menu"
-              className={`lg:hidden rounded-full h-9 w-9 flex items-center justify-center border transition-colors ${
-                isDark
-                  ? "border-neutral-800 text-neutral-300 hover:bg-neutral-900"
-                  : "border-neutral-200 text-neutral-700 hover:bg-neutral-100"
-              }`}
-            >
-              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
           </div>
         </div>
 
         {/* Mobile navigation panel */}
         {menuOpen && (
           <nav
-            className={`lg:hidden border-t px-4 py-3 flex flex-col divide-y ${
-              isDark
-                ? "border-neutral-900 divide-neutral-900"
-                : "border-neutral-200 divide-neutral-100"
+            className={`md:hidden border-t px-4 py-3 flex flex-col divide-y ${
+              isDark ? "border-neutral-800/80 divide-neutral-800/60" : "border-neutral-200 divide-neutral-100"
             }`}
           >
             {[
               { href: "#features", label: t.navFeatures },
-              { href: "#software", label: t.navSoftware },
+              { href: "#products", label: t.navSoftware },
               { href: "#simulator", label: t.navDemo },
               { href: "#pricing", label: t.navPricing },
               { href: "#faq", label: t.navFaq },
@@ -352,770 +359,1458 @@ export default function Landing() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setMenuOpen(false)}
-                className={`py-3 text-sm font-medium transition-colors ${
+                className={`py-3 text-xs font-bold uppercase tracking-wider transition-colors ${
                   isDark
                     ? "text-neutral-300 hover:text-emerald-400"
-                    : "text-neutral-700 hover:text-emerald-600"
+                    : "text-neutral-600 hover:text-emerald-600"
                 }`}
               >
                 {item.label}
               </a>
             ))}
-            <div className="pt-3 flex gap-2">
-              <Button
-                asChild
-                className={`flex-1 rounded-full text-sm font-semibold h-10 ${
-                  isDark
-                    ? "bg-white text-neutral-900 hover:bg-neutral-200"
-                    : "bg-neutral-900 text-white hover:bg-neutral-800"
-                }`}
-              >
-                <Link to="/auth" onClick={() => setMenuOpen(false)}>
-                  {t.login}
-                </Link>
-              </Button>
-              <Button
-                asChild
-                className="flex-1 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold h-10"
-              >
-                <Link to="/auth" onClick={() => setMenuOpen(false)}>
-                  {t.freeTrial}
-                </Link>
-              </Button>
-            </div>
           </nav>
         )}
       </header>
 
-      {/* Hero */}
-      <section className="relative py-14 md:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="grid gap-12 lg:grid-cols-2 items-center">
-            {/* Left */}
-            <div className="space-y-6 text-left">
-              <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1 text-xs font-bold uppercase tracking-wide text-emerald-400">
-                {t.badge}
-              </span>
+      {/* Hero Section */}
+      <section
+        className={`relative pt-10 pb-20 md:py-32 border-b transition-colors duration-300 ${
+          isDark ? "border-neutral-900" : "border-neutral-200"
+        }`}
+      >
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="grid gap-12 lg:grid-cols-12 items-center">
+            {/* Left Column: Brand description & action plans */}
+            <div className="lg:col-span-7 space-y-6 text-left">
+              <div
+                className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold transition-colors ${
+                  isDark
+                    ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-400"
+                    : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
+                }`}
+              >
+                <Sparkles className="h-3.5 w-3.5 animate-pulse text-emerald-500" />
+                <span>{t.badge}</span>
+              </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-[3.4rem] font-extrabold tracking-tight leading-[1.08] text-white">
+              <h1
+                className={`font-display text-4xl sm:text-5xl md:text-6xl font-black tracking-tight leading-[1.05] transition-colors ${
+                  isDark ? "text-neutral-50" : "text-neutral-900"
+                }`}
+              >
                 {t.heroTitlePre}
-                <span className="text-emerald-400">{t.heroTitleHighlight}</span>
+                <span className="bg-gradient-to-r from-emerald-400 via-emerald-500 to-amber-400 bg-clip-text text-transparent">
+                  {t.heroTitleHighlight}
+                </span>
               </h1>
 
-              <p className="text-sm sm:text-base leading-relaxed max-w-md text-neutral-400">
+              <p
+                className={`text-base sm:text-lg leading-relaxed max-w-2xl transition-colors ${
+                  isDark ? "text-neutral-400" : "text-neutral-600"
+                }`}
+              >
                 {t.heroDesc}
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
                 <Button
                   asChild
-                  className="w-full sm:w-auto rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold px-6 h-11 flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8 py-6 rounded-xl shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 flex items-center justify-center gap-2 text-sm"
                 >
                   <Link to="/auth">
-                    {t.btnTryFree}
-                    <ArrowRight className="h-4 w-4" />
+                    <span>{t.btnTryFree}</span>
+                    <ArrowRight className="h-4.5 w-4.5" />
                   </Link>
                 </Button>
+
                 <Button
                   asChild
-                  className={`w-full sm:w-auto rounded-full text-sm font-semibold px-6 h-11 flex items-center justify-center gap-2 ${
+                  variant="outline"
+                  className={`w-full sm:w-auto px-8 py-6 text-sm font-bold rounded-xl border transition-colors ${
                     isDark
-                      ? "bg-white text-neutral-900 hover:bg-neutral-200"
-                      : "bg-neutral-900 text-white hover:bg-neutral-800"
+                      ? "border-neutral-800 text-neutral-200 hover:bg-neutral-900 hover:text-white"
+                      : "border-neutral-300 text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900"
                   }`}
                 >
-                  <a href="#simulator">
-                    <Play className="h-4 w-4 fill-current" />
-                    {t.btnTestSim}
-                  </a>
+                  <a href="#simulator">{t.btnTestSim}</a>
                 </Button>
               </div>
 
-              {/* Trust indicators */}
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-3 pt-6">
-                {[
-                  { icon: Store, label: `500+ ${t.activeBoutiques}` },
-                  { icon: WifiOff, label: t.worksOffline },
-                  { icon: ShieldCheck, label: t.compliant },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2.5">
-                    <span className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                      <item.icon className="h-4 w-4" />
-                    </span>
-                    <span className="text-sm font-medium text-neutral-300">{item.label}</span>
-                    {i < 2 && <span className="hidden sm:block h-6 w-px bg-neutral-800 ml-3" />}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right: POS terminal visual */}
-            <div className="relative w-full">
-              {/* Burkina badge */}
-              <div className="absolute -top-4 right-3 z-20 bg-white text-neutral-900 rounded-2xl shadow-lg px-3.5 py-2 flex items-center gap-2">
-                <span className="text-lg leading-none">🇧🇫</span>
-                <span className="text-[10px] font-bold leading-tight">
-                  Conçu pour
-                  <br />
-                  le Burkina Faso
-                </span>
-              </div>
-
-              <div className="relative aspect-[4/3] rounded-3xl overflow-hidden border border-neutral-800">
-                {/* Blurred shop photo backdrop */}
-                <img
-                  src={heroShop}
-                  alt="Boutique moderne au Burkina Faso"
-                  className="absolute inset-0 h-full w-full object-cover blur-[3px] brightness-[0.35] scale-110"
-                />
-
-                {/* POS terminal mockup */}
-                <div className="absolute inset-0 flex items-center justify-center p-6 sm:p-10">
-                  <div className="w-full max-w-md">
-                    {/* Screen */}
-                    <div className="rounded-2xl border border-neutral-700 bg-neutral-950 p-2 shadow-2xl">
-                      <div className="rounded-xl overflow-hidden bg-neutral-900">
-                        {/* Screen top bar */}
-                        <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-800">
-                          <div className="flex items-center gap-1.5">
-                            <span className="h-3.5 w-3.5 rounded bg-emerald-500 flex items-center justify-center">
-                              <Store className="h-2 w-2 text-white" />
-                            </span>
-                            <span className="text-[10px] font-bold text-white">BoutikBF</span>
-                          </div>
-                          <span className="text-[10px] text-neutral-500 font-mono">Ticket #7</span>
-                        </div>
-
-                        {/* Product tiles */}
-                        <div className="grid grid-cols-4 gap-1.5 p-2.5">
-                          {["🍚", "🧴", "🧱", "🧼", "🥛", "🍬", "🛒", "📻"].map((e, i) => (
-                            <div
-                              key={i}
-                              className="aspect-square rounded-md bg-neutral-800 flex items-center justify-center text-lg"
-                            >
-                              {e}
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Screen footer */}
-                        <div className="flex items-center justify-between px-3 py-2.5 border-t border-neutral-800">
-                          <span className="text-xs font-bold text-white">Total : 7 500 F</span>
-                          <span className="rounded-md bg-emerald-500 px-3 py-1 text-[10px] font-bold text-white">
-                            Payer
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Terminal stand */}
-                    <div className="mx-auto h-4 w-16 bg-neutral-800 rounded-b-lg" />
-                    <div className="mx-auto h-1.5 w-28 bg-neutral-700 rounded-full" />
-                  </div>
-                </div>
-
-                {/* Receipt paper */}
-                <div className="absolute right-6 bottom-8 sm:right-10 w-32 rotate-3 rounded-lg bg-white p-3 shadow-2xl font-mono text-[9px] text-neutral-800">
-                  <div className="text-center font-bold text-[10px]">BoutikBF</div>
-                  <div className="text-center text-[8px]">Ticket de vente</div>
-                  <div className="my-1.5 border-t border-dashed border-neutral-300" />
-                  <div>Riz Bagré 5g 3 500 F</div>
-                  <div>Huile 1 L 1 200 F</div>
-                  <div>Sucre 1 kg 850 F</div>
-                  <div>Savon 200 F</div>
-                  <div className="my-1.5 border-t border-dashed border-neutral-300" />
-                  <div className="flex justify-between font-bold">
-                    <span>Total</span>
-                    <span>5 750 F</span>
-                  </div>
-                  <div className="mt-1.5 text-center">Merci !</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Feature cards row */}
-      <section id="features" className="py-10 md:py-14">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {featureCards.map((card) => (
+              {/* Trust Indicators */}
               <div
-                key={card.title}
-                className={`rounded-2xl border p-5 text-center transition-colors ${
-                  isDark
-                    ? "bg-neutral-900 border-neutral-800/80"
-                    : "bg-white border-neutral-200 shadow-sm"
+                className={`grid grid-cols-3 gap-4 sm:gap-6 pt-8 mt-8 border-t transition-colors ${
+                  isDark ? "border-neutral-900" : "border-neutral-200"
                 }`}
               >
-                <span
-                  className={`mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${featureColorMap[card.color]}`}
-                >
-                  <card.icon className="h-5 w-5" />
-                </span>
-                <h3 className="text-sm font-semibold text-white leading-snug">{card.title}</h3>
-                <p className="mt-1 text-xs text-neutral-500">{card.desc}</p>
+                <div>
+                  <div
+                    className={`text-2xl font-black ${isDark ? "text-neutral-100" : "text-neutral-900"}`}
+                  >
+                    500+
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-neutral-500 font-bold uppercase tracking-wider mt-1">
+                    {t.activeBoutiques}
+                  </p>
+                </div>
+                <div>
+                  <div
+                    className={`text-2xl font-black ${isDark ? "text-neutral-100" : "text-neutral-900"}`}
+                  >
+                    HORS-LIGNE
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-neutral-500 font-bold uppercase tracking-wider mt-1">
+                    {t.worksOffline}
+                  </p>
+                </div>
+                <div>
+                  <div
+                    className={`text-2xl font-black ${isDark ? "text-neutral-100" : "text-neutral-900"}`}
+                  >
+                    SYSCOHADA
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-neutral-500 font-bold uppercase tracking-wider mt-1">
+                    {t.compliant}
+                  </p>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Solution section */}
-      <section id="software" className="py-16 md:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="grid gap-10 lg:grid-cols-12 items-center">
-            {/* Left text */}
-            <div className="lg:col-span-4 space-y-6 text-left">
-              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-emerald-400">
-                <span className="h-0.5 w-6 bg-emerald-500 rounded-full" />
-                Une solution complète
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-snug text-white">
-                Tout ce dont vous avez besoin pour{" "}
-                <span className="text-emerald-400">bien gérer</span> votre commerce
-              </h2>
-              <ul className="space-y-3">
-                {[
-                  "Gestion de caisse et ventes",
-                  "Suivi du stock et des produits",
-                  "Rapports et analyses",
-                ].map((item) => (
-                  <li key={item} className="flex items-center gap-2.5 text-sm text-neutral-300">
-                    <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Button
-                asChild
-                className="rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold px-6 h-11 mt-2"
-              >
-                <Link to="/auth">
-                  Découvrir toutes les fonctionnalités
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
             </div>
 
-            {/* Right: photo cards */}
-            <div className="lg:col-span-8">
-              <div className="grid gap-4 sm:grid-cols-3">
-                {solutionCards.map((card) => (
+            {/* Right Column: Premium Photography Frame Layout */}
+            <div className="lg:col-span-5 relative w-full flex justify-center items-center">
+              {/* Backglow shadow effect */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 to-amber-500/10 rounded-3xl blur-2xl transform rotate-2 pointer-events-none scale-105" />
+
+              {/* High-quality hardware display block wrapping the real storefront photo */}
+              <div
+                className={`relative border p-3.5 shadow-2xl rounded-3xl max-w-full overflow-hidden transition-colors duration-300 ${
+                  isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-neutral-200"
+                }`}
+              >
+                {/* Header browser-like bar */}
+                <div
+                  className={`flex gap-1.5 pb-2.5 px-1 border-b ${
+                    isDark ? "border-neutral-800" : "border-neutral-100"
+                  }`}
+                >
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                  <span className="ml-auto text-[9px] font-mono font-bold text-neutral-500 tracking-wider">
+                    BOUTIKBF-LIVE-SYSTEM
+                  </span>
+                </div>
+
+                {/* Picture element */}
+                <div className="relative rounded-2xl overflow-hidden aspect-[4/3] group">
+                  <img
+                    src={heroShop}
+                    alt="Boutique moderne au Burkina Faso gérée avec BoutikBF"
+                    className="w-full h-full object-cover brightness-95 group-hover:scale-105 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/20 to-transparent" />
+
+                  {/* Floating caption overlay */}
                   <div
-                    key={card.title}
-                    className={`rounded-2xl overflow-hidden border ${
+                    className={`absolute bottom-3 left-3 right-3 backdrop-blur-md border p-3 rounded-xl flex items-center justify-between shadow-lg transition-all ${
                       isDark
-                        ? "bg-neutral-900 border-neutral-800"
-                        : "bg-white border-neutral-200 shadow-sm"
+                        ? "bg-neutral-950/80 border-neutral-800"
+                        : "bg-white/90 border-neutral-200"
                     }`}
                   >
-                    <img
-                      src={card.img}
-                      alt={card.title}
-                      className="h-44 w-full object-cover"
-                      loading="lazy"
-                    />
-                    <div className="p-4">
-                      <h4 className="text-sm font-semibold text-white">{card.title}</h4>
-                      <p className="mt-1.5 text-xs text-neutral-500">{card.desc}</p>
+                    <div>
+                      <div className="text-[9px] uppercase font-bold tracking-widest text-emerald-500">
+                        SYSTEM STATUS: ACTIVE
+                      </div>
+                      <div
+                        className={`text-xs font-bold mt-0.5 ${isDark ? "text-white" : "text-neutral-900"}`}
+                      >
+                        Alimentation Ouaga 2000
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[9px] font-bold text-emerald-500 tracking-wider font-mono">
+                        LIVE
+                      </span>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                {/* Floating widgets */}
+                <div
+                  className={`absolute top-8 -left-6 border p-3 rounded-2xl shadow-xl flex items-center gap-2.5 hover:translate-y-[-2px] transition-all max-w-[190px] ${
+                    isDark
+                      ? "bg-neutral-950 border-neutral-800 text-white"
+                      : "bg-white border-neutral-200 text-neutral-900"
+                  }`}
+                >
+                  <div className="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xs shrink-0">
+                    OM
+                  </div>
+                  <div>
+                    <div className="text-[8px] uppercase font-extrabold text-neutral-500">
+                      Orange Money
+                    </div>
+                    <div className="text-xs font-black">+45 000 F</div>
+                  </div>
+                </div>
+
+                <div
+                  className={`absolute -bottom-3 -right-3 border p-3 rounded-2xl shadow-xl flex items-center gap-2.5 hover:translate-y-[-2px] transition-all ${
+                    isDark
+                      ? "bg-neutral-950 border-neutral-800 text-white"
+                      : "bg-white border-neutral-200 text-neutral-900"
+                  }`}
+                >
+                  <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="text-[8px] uppercase font-extrabold text-neutral-500">
+                      Marge Mensuelle
+                    </div>
+                    <div className="text-xs font-black text-emerald-500">+28.4%</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Simulator */}
-      <section id="simulator" className="py-10 md:py-16">
-        <div className="mx-auto max-w-[88rem] px-4 sm:px-6">
-          <div
-            className={`rounded-3xl border p-6 md:p-8 ${
-              isDark
-                ? "bg-neutral-900/50 border-neutral-800"
-                : "bg-white border-neutral-200 shadow-sm"
-            }`}
-          >
-            <div className="grid gap-6 xl:grid-cols-12 items-start">
-              {/* Text panel */}
-              <div className="xl:col-span-3 space-y-4">
-                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-emerald-400">
-                  <span className="h-0.5 w-6 bg-emerald-500 rounded-full" />
-                  Simulateur de caisse
+      {/* Corporate Features Bento Grid */}
+      <section
+        id="features"
+        className={`py-24 border-b relative ${
+          isDark ? "border-neutral-900 bg-neutral-950" : "border-neutral-200 bg-white"
+        }`}
+      >
+        <div
+          className={`absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-neutral-800 to-transparent ${
+            isDark ? "via-neutral-800" : "via-neutral-200"
+          }`}
+        />
+
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <h2
+              className={`font-display text-3xl sm:text-5xl font-black tracking-tight leading-tight transition-colors ${
+                isDark ? "text-white" : "text-neutral-900"
+              }`}
+            >
+              {t.featuresTitle}
+            </h2>
+            <p
+              className={`mt-4 text-sm sm:text-base max-w-xl mx-auto leading-relaxed transition-colors ${
+                isDark ? "text-neutral-400" : "text-neutral-600"
+              }`}
+            >
+              {t.featuresSub}
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Feature 1 */}
+            <div
+              className={`border rounded-3xl p-8 transition-all duration-300 shadow-lg group hover:-translate-y-1 ${
+                isDark
+                  ? "border-neutral-800/80 bg-neutral-900/40 hover:bg-neutral-900/70 hover:border-neutral-700/60"
+                  : "border-neutral-200 bg-stone-50 hover:bg-stone-100/50 hover:border-neutral-300 hover:shadow-xl"
+              }`}
+            >
+              <div className="h-11 w-11 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <ShoppingCart className="h-5.5 w-5.5" />
+              </div>
+              <h3
+                className={`text-lg font-bold tracking-wide ${isDark ? "text-white" : "text-neutral-900"}`}
+              >
+                {t.posTitle}
+              </h3>
+              <p
+                className={`mt-3 text-sm leading-relaxed ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+              >
+                {t.posDesc}
+              </p>
+              <div
+                className={`mt-6 pt-4 border-t flex items-center justify-between text-xs font-bold ${
+                  isDark
+                    ? "border-neutral-800/80 text-neutral-500"
+                    : "border-neutral-200 text-neutral-400"
+                }`}
+              >
+                <span>{t.posFooter}</span>
+                <span className="text-emerald-500 uppercase tracking-widest text-[9px]">POS</span>
+              </div>
+            </div>
+
+            {/* Feature 2 */}
+            <div
+              className={`border rounded-3xl p-8 transition-all duration-300 shadow-lg group hover:-translate-y-1 ${
+                isDark
+                  ? "border-neutral-800/80 bg-neutral-900/40 hover:bg-neutral-900/70 hover:border-neutral-700/60"
+                  : "border-neutral-200 bg-stone-50 hover:bg-stone-100/50 hover:border-neutral-300 hover:shadow-xl"
+              }`}
+            >
+              <div className="h-11 w-11 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Package className="h-5.5 w-5.5" />
+              </div>
+              <h3
+                className={`text-lg font-bold tracking-wide ${isDark ? "text-white" : "text-neutral-900"}`}
+              >
+                {t.stockTitle}
+              </h3>
+              <p
+                className={`mt-3 text-sm leading-relaxed ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+              >
+                {t.stockDesc}
+              </p>
+              <div
+                className={`mt-6 pt-4 border-t flex items-center justify-between text-xs font-bold ${
+                  isDark
+                    ? "border-neutral-800/80 text-neutral-500"
+                    : "border-neutral-200 text-neutral-400"
+                }`}
+              >
+                <span>{t.stockFooter}</span>
+                <span className="text-amber-500 uppercase tracking-widest text-[9px]">STOCKS</span>
+              </div>
+            </div>
+
+            {/* Feature 3 */}
+            <div
+              className={`border rounded-3xl p-8 transition-all duration-300 shadow-lg group hover:-translate-y-1 ${
+                isDark
+                  ? "border-neutral-800/80 bg-neutral-900/40 hover:bg-neutral-900/70 hover:border-neutral-700/60"
+                  : "border-neutral-200 bg-stone-50 hover:bg-stone-100/50 hover:border-neutral-300 hover:shadow-xl"
+              }`}
+            >
+              <div className="h-11 w-11 rounded-2xl bg-red-500/10 text-[#ef2b2d] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <SmartphoneCharging className="h-5.5 w-5.5" />
+              </div>
+              <h3
+                className={`text-lg font-bold tracking-wide ${isDark ? "text-white" : "text-neutral-900"}`}
+              >
+                {t.mobileMoneyTitle}
+              </h3>
+              <p
+                className={`mt-3 text-sm leading-relaxed ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+              >
+                {t.mobileMoneyDesc}
+              </p>
+              <div
+                className={`mt-6 pt-4 border-t flex items-center justify-between text-xs font-bold ${
+                  isDark
+                    ? "border-neutral-800/80 text-neutral-500"
+                    : "border-neutral-200 text-neutral-400"
+                }`}
+              >
+                <span>{t.mobileMoneyFooter}</span>
+                <span className="text-[#ef2b2d] uppercase tracking-widest text-[9px]">PAY</span>
+              </div>
+            </div>
+
+            {/* Feature 4 */}
+            <div
+              className={`border rounded-3xl p-8 transition-all duration-300 shadow-lg group hover:-translate-y-1 ${
+                isDark
+                  ? "border-neutral-800/80 bg-neutral-900/40 hover:bg-neutral-900/70 hover:border-neutral-700/60"
+                  : "border-neutral-200 bg-stone-50 hover:bg-stone-100/50 hover:border-neutral-300 hover:shadow-xl"
+              }`}
+            >
+              <div className="h-11 w-11 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Users className="h-5.5 w-5.5" />
+              </div>
+              <h3
+                className={`text-lg font-bold tracking-wide ${isDark ? "text-white" : "text-neutral-900"}`}
+              >
+                {t.crmTitle}
+              </h3>
+              <p
+                className={`mt-3 text-sm leading-relaxed ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+              >
+                {t.crmDesc}
+              </p>
+              <div
+                className={`mt-6 pt-4 border-t flex items-center justify-between text-xs font-bold ${
+                  isDark
+                    ? "border-neutral-800/80 text-neutral-500"
+                    : "border-neutral-200 text-neutral-400"
+                }`}
+              >
+                <span>{t.crmFooter}</span>
+                <span className="text-blue-500 uppercase tracking-widest text-[9px]">CRM</span>
+              </div>
+            </div>
+
+            {/* Feature 5 */}
+            <div
+              className={`border rounded-3xl p-8 transition-all duration-300 shadow-lg group hover:-translate-y-1 ${
+                isDark
+                  ? "border-neutral-800/80 bg-neutral-900/40 hover:bg-neutral-900/70 hover:border-neutral-700/60"
+                  : "border-neutral-200 bg-stone-50 hover:bg-stone-100/50 hover:border-neutral-300 hover:shadow-xl"
+              }`}
+            >
+              <div className="h-11 w-11 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Wallet className="h-5.5 w-5.5" />
+              </div>
+              <h3
+                className={`text-lg font-bold tracking-wide ${isDark ? "text-white" : "text-neutral-900"}`}
+              >
+                {t.accountingTitle}
+              </h3>
+              <p
+                className={`mt-3 text-sm leading-relaxed ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+              >
+                {t.accountingDesc}
+              </p>
+              <div
+                className={`mt-6 pt-4 border-t flex items-center justify-between text-xs font-bold ${
+                  isDark
+                    ? "border-neutral-800/80 text-neutral-500"
+                    : "border-neutral-200 text-neutral-400"
+                }`}
+              >
+                <span>{t.accountingFooter}</span>
+                <span className="text-purple-500 uppercase tracking-widest text-[9px]">COMPTA</span>
+              </div>
+            </div>
+
+            {/* Feature 6 */}
+            <div
+              className={`border rounded-3xl p-8 transition-all duration-300 shadow-lg group hover:-translate-y-1 ${
+                isDark
+                  ? "border-neutral-800/80 bg-neutral-900/40 hover:bg-neutral-900/70 hover:border-neutral-700/60"
+                  : "border-neutral-200 bg-stone-50 hover:bg-stone-100/50 hover:border-neutral-300 hover:shadow-xl"
+              }`}
+            >
+              <div className="h-11 w-11 rounded-2xl bg-neutral-500/10 text-neutral-500 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Shield className="h-5.5 w-5.5" />
+              </div>
+              <h3
+                className={`text-lg font-bold tracking-wide ${isDark ? "text-white" : "text-neutral-900"}`}
+              >
+                {t.securityTitle}
+              </h3>
+              <p
+                className={`mt-3 text-sm leading-relaxed ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+              >
+                {t.securityDesc}
+              </p>
+              <div
+                className={`mt-6 pt-4 border-t flex items-center justify-between text-xs font-bold ${
+                  isDark
+                    ? "border-neutral-800/80 text-neutral-500"
+                    : "border-neutral-200 text-neutral-400"
+                }`}
+              >
+                <span>{t.securityFooter}</span>
+                <span className="text-neutral-400 uppercase tracking-widest text-[9px]">
+                  SECURITY
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Product Showcase Sections (THE SOFTWARE IN ACTION WITH REAL PHOTOS) */}
+      <section
+        id="products"
+        className={`py-24 border-b relative ${
+          isDark ? "bg-neutral-900/10 border-neutral-900" : "bg-neutral-50/50 border-neutral-200"
+        }`}
+      >
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <h2
+              className={`font-display text-3xl sm:text-5xl font-black ${isDark ? "text-white" : "text-neutral-900"}`}
+            >
+              {t.showcaseTitle}
+            </h2>
+            <p
+              className={`mt-4 text-sm sm:text-base ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+            >
+              {t.showcaseSub}
+            </p>
+          </div>
+
+          <div className="space-y-32">
+            {/* Showcase 1: POS & Selling */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+              <div className="lg:col-span-6 space-y-6 text-left">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-bold uppercase tracking-wider">
+                  {t.showcase1Tag}
                 </div>
-                <h2 className="text-3xl font-extrabold tracking-tight text-white">
-                  {t.simulatorTitle}
-                </h2>
-                <p className="text-sm text-neutral-400">{t.simulatorSub}</p>
+                <h3
+                  className={`text-2xl sm:text-4xl font-extrabold tracking-tight ${isDark ? "text-white" : "text-neutral-900"}`}
+                >
+                  {t.showcase1Title}
+                </h3>
+                <p
+                  className={`text-sm leading-relaxed ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+                >
+                  {t.showcase1Desc}
+                </p>
+
+                <ul className="space-y-3 pt-2 text-xs font-semibold">
+                  <li className="flex items-center gap-2.5">
+                    <Check className="h-4.5 w-4.5 text-emerald-500 shrink-0" />
+                    <span>{t.showcase1F1}</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="h-4.5 w-4.5 text-emerald-500 shrink-0" />
+                    <span>{t.showcase1F2}</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="h-4.5 w-4.5 text-emerald-500 shrink-0" />
+                    <span>{t.showcase1F3}</span>
+                  </li>
+                </ul>
               </div>
 
-              {/* Catalog */}
-              <div className="xl:col-span-4">
-                <div className="grid grid-cols-2 gap-3">
+              <div className="lg:col-span-6">
+                <div
+                  className={`border p-3 rounded-2xl shadow-xl overflow-hidden transition-colors duration-300 ${
+                    isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-neutral-200"
+                  }`}
+                >
+                  <img
+                    src={featurePos}
+                    alt="Interface de caisse rapide tactile BoutikBF"
+                    className="w-full h-auto rounded-xl object-cover aspect-[4/3] brightness-95"
+                  />
+                  <div className="p-3 text-left border-t border-neutral-800/10 mt-3">
+                    <span className="text-[10px] font-mono uppercase font-black text-neutral-500 tracking-wider">
+                      Module Caisse Tactile — Version iPad/Tablette
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Showcase 2: Inventory & Mobile App */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+              <div className="lg:col-span-6 lg:order-2 space-y-6 text-left">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-bold uppercase tracking-wider">
+                  {t.showcase2Tag}
+                </div>
+                <h3
+                  className={`text-2xl sm:text-4xl font-extrabold tracking-tight ${isDark ? "text-white" : "text-neutral-900"}`}
+                >
+                  {t.showcase2Title}
+                </h3>
+                <p
+                  className={`text-sm leading-relaxed ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+                >
+                  {t.showcase2Desc}
+                </p>
+
+                <ul className="space-y-3 pt-2 text-xs font-semibold">
+                  <li className="flex items-center gap-2.5">
+                    <Check className="h-4.5 w-4.5 text-amber-500 shrink-0" />
+                    <span>{t.showcase2F1}</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="h-4.5 w-4.5 text-amber-500 shrink-0" />
+                    <span>{t.showcase2F2}</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="h-4.5 w-4.5 text-amber-500 shrink-0" />
+                    <span>{t.showcase2F3}</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="lg:col-span-6 lg:order-1">
+                <div
+                  className={`border p-3 rounded-2xl shadow-xl overflow-hidden transition-colors duration-300 ${
+                    isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-neutral-200"
+                  }`}
+                >
+                  <img
+                    src={featureMobile}
+                    alt="Application smartphone pour inventaire de stock BoutikBF"
+                    className="w-full h-auto rounded-xl object-cover aspect-[4/3] brightness-95"
+                  />
+                  <div className="p-3 text-left border-t border-neutral-800/10 mt-3">
+                    <span className="text-[10px] font-mono uppercase font-black text-neutral-500 tracking-wider">
+                      Module Mobile — Code-barres par caméra mobile
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Showcase 3: Reports & Analytics */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+              <div className="lg:col-span-6 space-y-6 text-left">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-500 text-xs font-bold uppercase tracking-wider">
+                  {t.showcase3Tag}
+                </div>
+                <h3
+                  className={`text-2xl sm:text-4xl font-extrabold tracking-tight ${isDark ? "text-white" : "text-neutral-900"}`}
+                >
+                  {t.showcase3Title}
+                </h3>
+                <p
+                  className={`text-sm leading-relaxed ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+                >
+                  {t.showcase3Desc}
+                </p>
+
+                <ul className="space-y-3 pt-2 text-xs font-semibold">
+                  <li className="flex items-center gap-2.5">
+                    <Check className="h-4.5 w-4.5 text-purple-500 shrink-0" />
+                    <span>{t.showcase3F1}</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="h-4.5 w-4.5 text-purple-500 shrink-0" />
+                    <span>{t.showcase3F2}</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="h-4.5 w-4.5 text-purple-500 shrink-0" />
+                    <span>{t.showcase3F3}</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="lg:col-span-6">
+                <div
+                  className={`border p-3 rounded-2xl shadow-xl overflow-hidden transition-colors duration-300 ${
+                    isDark ? "bg-neutral-900 border-neutral-800" : "bg-white border-neutral-200"
+                  }`}
+                >
+                  <img
+                    src={featureAnalytics}
+                    alt="Tableau de bord financier comptable BoutikBF"
+                    className="w-full h-auto rounded-xl object-cover aspect-[4/3] brightness-95"
+                  />
+                  <div className="p-3 text-left border-t border-neutral-800/10 mt-3">
+                    <span className="text-[10px] font-mono uppercase font-black text-neutral-500 tracking-wider">
+                      Module Rapports — Graphique chiffre d'affaires & profits
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Interactive Sandbox POS Simulator */}
+      <section
+        id="simulator"
+        className={`py-24 border-b relative ${
+          isDark ? "bg-neutral-950 border-neutral-900" : "bg-neutral-50 border-neutral-200"
+        }`}
+      >
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-bold uppercase tracking-widest mb-4">
+              SANDBOX SIMULATOR
+            </div>
+            <h2
+              className={`font-display text-3xl sm:text-5xl font-black ${isDark ? "text-white" : "text-neutral-900"}`}
+            >
+              {t.simulatorTitle}
+            </h2>
+            <p
+              className={`mt-3 text-sm sm:text-base ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+            >
+              {t.simulatorSub}
+            </p>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-12 max-w-6xl mx-auto items-start">
+            {/* Catalog list */}
+            <div className="lg:col-span-7">
+              <div
+                className={`border rounded-2xl overflow-hidden transition-colors duration-300 ${
+                  isDark
+                    ? "bg-neutral-900/50 border-neutral-800/80"
+                    : "bg-white border-neutral-200 shadow-lg"
+                }`}
+              >
+                <div
+                  className={`px-6 py-4 border-b flex justify-between items-center ${
+                    isDark ? "border-neutral-800/80" : "border-neutral-100"
+                  }`}
+                >
+                  <span
+                    className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-neutral-400" : "text-neutral-500"}`}
+                  >
+                    {t.simulatorCatalog}
+                  </span>
+                  <span className="text-[9px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                    6 ARTICLES
+                  </span>
+                </div>
+
+                <div className="p-4 sm:p-6 grid gap-4 sm:grid-cols-2">
                   {PRODUCTS_CATALOG.map((item) => {
-                    const qty = cart[item.id] || 0;
+                    const quantity = cart[item.id] || 0;
                     return (
-                      <button
+                      <div
                         key={item.id}
-                        type="button"
                         onClick={() => handleAddToCart(item)}
-                        className="relative rounded-xl bg-white p-3 text-center shadow-sm ring-emerald-500 hover:ring-2 transition-all cursor-pointer"
+                        className={`border rounded-xl p-4 cursor-pointer text-left transition-all duration-300 flex items-center justify-between ${
+                          isDark
+                            ? "border-neutral-800 bg-neutral-900/20 hover:bg-neutral-900 hover:border-neutral-700/80"
+                            : "border-neutral-200 bg-neutral-50/50 hover:bg-neutral-100/50 shadow-sm"
+                        }`}
                       >
-                        {qty > 0 && (
-                          <span className="absolute top-1.5 right-1.5 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                            +{qty}
+                        <div>
+                          <span
+                            className={`text-[9px] uppercase font-bold tracking-widest ${
+                              item.category === "Alimentation"
+                                ? "text-emerald-500"
+                                : item.category === "Quincaillerie"
+                                  ? "text-amber-500"
+                                  : "text-purple-500"
+                            }`}
+                          >
+                            {item.category}
                           </span>
+                          <h4
+                            className={`text-sm font-bold mt-1 ${isDark ? "text-neutral-100" : "text-neutral-900"}`}
+                          >
+                            {item.name}
+                          </h4>
+                          <span
+                            className={`text-xs font-mono font-bold mt-1 block ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+                          >
+                            {item.price.toLocaleString("fr-FR")} F CFA
+                          </span>
+                        </div>
+
+                        {quantity > 0 ? (
+                          <div className="h-8.5 w-8.5 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
+                            +{quantity}
+                          </div>
+                        ) : (
+                          <div
+                            className={`h-8.5 w-8.5 rounded-lg flex items-center justify-center transition-colors ${
+                              isDark
+                                ? "bg-neutral-950 text-neutral-400 hover:text-white"
+                                : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200"
+                            }`}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </div>
                         )}
-                        <div className="text-3xl">{item.emoji}</div>
-                        <h4 className="mt-1 text-xs font-bold text-neutral-900">{item.name}</h4>
-                        <span className="mt-0.5 block font-mono text-xs text-neutral-500">
-                          {item.price.toLocaleString("fr-FR")} F
-                        </span>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
               </div>
+            </div>
 
-              {/* Cart */}
-              <div className="xl:col-span-3">
-                <div
-                  className={`rounded-2xl border p-4 ${
-                    isDark
-                      ? "bg-neutral-950/80 border-neutral-800"
-                      : "bg-neutral-100 border-neutral-200"
-                  }`}
-                >
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-neutral-300">
-                      {t.simulatorCart} ({Object.values(cart).reduce((a, b) => a + b, 0)}{" "}
-                      articles)
-                    </span>
-                    {Object.keys(cart).length > 0 && (
-                      <button
-                        type="button"
-                        onClick={handleClearCart}
-                        className="text-[10px] font-bold text-red-400 hover:underline"
-                      >
-                        Tout vider
-                      </button>
-                    )}
-                  </div>
+            {/* Cart and payment receipt */}
+            <div className="lg:col-span-5">
+              <div
+                className={`border rounded-2xl p-6 text-left transition-colors duration-300 ${
+                  isDark
+                    ? "bg-neutral-900 border-neutral-800"
+                    : "bg-white border-neutral-200 shadow-xl"
+                }`}
+              >
+                <div className="flex justify-between items-center mb-6">
+                  <h3
+                    className={`text-sm font-bold uppercase tracking-wider ${isDark ? "text-neutral-200" : "text-neutral-700"}`}
+                  >
+                    {t.simulatorCart}
+                  </h3>
+                  {Object.keys(cart).length > 0 && (
+                    <button
+                      onClick={handleClearCart}
+                      className="text-[10px] font-bold text-red-500 hover:underline"
+                    >
+                      Vider
+                    </button>
+                  )}
+                </div>
 
-                  {Object.keys(cart).length === 0 ? (
-                    <p className="py-8 text-center text-xs text-neutral-500">
+                {/* Empty Cart */}
+                {Object.keys(cart).length === 0 ? (
+                  <div className="py-12 text-center">
+                    <ShoppingCart className="h-10 w-10 text-neutral-500 mx-auto mb-4 stroke-1" />
+                    <p
+                      className={`text-xs leading-relaxed max-w-xs mx-auto ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                    >
                       {t.simulatorEmptyCart}
                     </p>
-                  ) : (
-                    <div className="mt-3 space-y-2">
+                  </div>
+                ) : !posSuccess ? (
+                  /* Active Basket view */
+                  <div className="space-y-6">
+                    <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
                       {Object.entries(cart).map(([id, qty]) => {
                         const item = PRODUCTS_CATALOG.find((p) => p.id === id);
                         if (!item) return null;
                         return (
                           <div
                             key={id}
-                            className="flex items-center justify-between rounded-lg bg-white p-2"
+                            className={`flex items-center justify-between p-3 rounded-xl border ${
+                              isDark
+                                ? "bg-neutral-950/60 border-neutral-800"
+                                : "bg-neutral-50 border-neutral-100"
+                            }`}
                           >
                             <div className="text-left">
-                              <h4 className="text-[11px] font-bold text-neutral-900">
+                              <h4
+                                className={`text-xs font-bold ${isDark ? "text-white" : "text-neutral-900"}`}
+                              >
                                 {item.name}
                               </h4>
-                              <span className="font-mono text-[10px] text-neutral-500">
-                                {item.price.toLocaleString("fr-FR")} F
+                              <span className="text-[10px] text-neutral-500 font-semibold font-mono">
+                                {qty} x {item.price} F CFA
                               </span>
                             </div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-2">
                               <button
-                                type="button"
                                 onClick={() => handleRemoveOne(id)}
-                                aria-label="Retirer"
-                                className="h-5 w-5 rounded bg-neutral-200 flex items-center justify-center text-neutral-900 hover:bg-neutral-300 transition-colors"
+                                className={`h-6.5 w-6.5 rounded-md flex items-center justify-center transition-all ${
+                                  isDark
+                                    ? "bg-neutral-900 text-neutral-400 hover:text-white"
+                                    : "bg-neutral-200/60 text-neutral-600 hover:bg-neutral-200"
+                                }`}
                               >
-                                <Minus className="h-2.5 w-2.5" />
+                                <Minus className="h-3 w-3" />
                               </button>
-                              <span className="min-w-[14px] text-center text-[11px] font-bold text-neutral-900">
+                              <span className="text-xs font-black min-w-[15px] text-center">
                                 {qty}
                               </span>
                               <button
-                                type="button"
                                 onClick={() => handleAddToCart(item)}
-                                aria-label="Ajouter"
-                                className="h-5 w-5 rounded bg-neutral-200 flex items-center justify-center text-neutral-900 hover:bg-neutral-300 transition-colors"
+                                className={`h-6.5 w-6.5 rounded-md flex items-center justify-center transition-all ${
+                                  isDark
+                                    ? "bg-neutral-900 text-neutral-400 hover:text-white"
+                                    : "bg-neutral-200/60 text-neutral-600 hover:bg-neutral-200"
+                                }`}
                               >
-                                <Plus className="h-2.5 w-2.5" />
+                                <Plus className="h-3 w-3" />
                               </button>
                             </div>
                           </div>
                         );
                       })}
                     </div>
-                  )}
 
-                  <div className="mt-4 flex items-center justify-between border-t border-neutral-800 pt-3">
-                    <span className="text-xs font-semibold text-neutral-400">{t.simulatorTotal} :</span>
-                    <span className="text-lg font-extrabold text-white">
-                      {getCartTotal().toLocaleString("fr-FR")} F
-                    </span>
-                  </div>
-
-                  <div className="mt-3 space-y-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-                      Paiement :
-                    </span>
-                    <div className="grid grid-cols-2 gap-2">
-                      {PAYMENTS.map((m) => (
-                        <button
-                          key={m.id}
-                          type="button"
-                          onClick={() => setPaymentMethod(m.id)}
-                          className={`rounded-lg px-2.5 py-2 text-[10px] font-bold transition-all ${m.className} ${
-                            paymentMethod === m.id
-                              ? "ring-2 ring-emerald-400 ring-offset-1 ring-offset-transparent"
-                              : "opacity-80 hover:opacity-100"
-                          }`}
-                        >
-                          {m.label}
-                        </button>
-                      ))}
-                    </div>
-                    <Button
-                      onClick={handleValidateSale}
-                      className="w-full rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-sm font-semibold h-10"
+                    {/* Pricing total */}
+                    <div
+                      className={`border-t pt-4 ${isDark ? "border-neutral-800" : "border-neutral-100"}`}
                     >
-                      {t.simulatorPayBtn}
-                      <ArrowRight className="h-4 w-4" />
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
+                          {t.simulatorTotal}
+                        </span>
+                        <span
+                          className={`text-xl font-black font-mono ${isDark ? "text-emerald-400" : "text-emerald-700"}`}
+                        >
+                          {getCartTotal().toLocaleString("fr-FR")} F CFA
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Payment choices */}
+                    <div className="space-y-3">
+                      <span className="text-[9px] uppercase font-extrabold text-neutral-500 tracking-wider">
+                        Moyen de règlement
+                      </span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { id: "orange", label: "Orange Money" },
+                          { id: "moov", label: "Moov Money" },
+                          { id: "wave", label: "Wave" },
+                          { id: "cash", label: "Espèces" },
+                        ].map((m) => (
+                          <button
+                            key={m.id}
+                            onClick={() =>
+                              setPaymentMethod(m.id as "orange" | "moov" | "wave" | "cash")
+                            }
+                            className={`border px-3 py-2.5 rounded-xl text-xs font-bold uppercase transition-all ${
+                              paymentMethod === m.id
+                                ? "border-emerald-500 bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500"
+                                : isDark
+                                  ? "border-neutral-800 bg-neutral-950/60 text-neutral-400 hover:border-neutral-700"
+                                  : "border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100 shadow-sm"
+                            }`}
+                          >
+                            {m.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      <Button
+                        onClick={handleValidateSale}
+                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-5 rounded-xl text-xs uppercase tracking-wider shadow-lg shadow-emerald-600/10"
+                      >
+                        {t.simulatorPayBtn}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Print Receipt Success state */
+                  <div className="space-y-6">
+                    <div className="text-center space-y-2">
+                      <div className="h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto border border-emerald-500/20">
+                        <CheckCircle className="h-6 w-6" />
+                      </div>
+                      <h4
+                        className={`text-base font-black ${isDark ? "text-white" : "text-neutral-900"}`}
+                      >
+                        {t.simulatorReceiptTitle}
+                      </h4>
+                      <p className={`text-xs ${isDark ? "text-neutral-400" : "text-neutral-500"}`}>
+                        {t.simulatorReceiptDesc}
+                      </p>
+                    </div>
+
+                    {/* Paper thermal receipt style render */}
+                    <div className="bg-white text-neutral-900 border border-neutral-300 p-5 rounded-xl shadow-md font-mono text-[10px] space-y-3.5 relative overflow-hidden">
+                      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-emerald-500 to-amber-500" />
+
+                      <div className="text-center font-bold border-b border-dashed border-neutral-300 pb-3">
+                        <div className="text-xs uppercase font-black">BOUTIKBF POS</div>
+                        <div>BOUTIQUE PILOTE - OUAGA</div>
+                        <div className="font-normal mt-1">TEL: +226 25 30 00 00</div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between">
+                          <span>Reçu N°:</span>
+                          <span className="font-bold">{posReceiptNo}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Date:</span>
+                          <span>{new Date().toLocaleDateString("fr-FR")}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Règlement:</span>
+                          <span className="font-bold uppercase">{paymentMethod}</span>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-b border-dashed border-neutral-300 py-2.5 my-2 space-y-1.5">
+                        {Object.entries(cart).map(([id, qty]) => {
+                          const item = PRODUCTS_CATALOG.find((p) => p.id === id);
+                          if (!item) return null;
+                          return (
+                            <div key={id} className="flex justify-between">
+                              <span>
+                                {item.name} (x{qty})
+                              </span>
+                              <span>{(item.price * qty).toLocaleString("fr-FR")} F CFA</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex justify-between text-xs font-black pt-1">
+                        <span>NET A PAYER:</span>
+                        <span>{getCartTotal().toLocaleString("fr-FR")} F CFA</span>
+                      </div>
+
+                      <div className="text-center text-[9px] text-neutral-500 font-sans border-t border-dashed border-neutral-300 pt-3">
+                        Merci de votre visite à bientôt !<br />
+                        BoutikBF — Logiciel de caisse professionnel
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={handleClearCart}
+                      className={`w-full font-bold py-4 rounded-xl text-xs uppercase tracking-wider ${
+                        isDark
+                          ? "bg-neutral-800 hover:bg-neutral-700 text-white"
+                          : "bg-neutral-100 hover:bg-neutral-200 text-neutral-800"
+                      }`}
+                    >
+                      {t.simulatorReceiptNewSale}
                     </Button>
                   </div>
-                </div>
-              </div>
-
-              {/* Receipt */}
-              <div className="xl:col-span-2">
-                {posSuccess && (
-                  <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold text-emerald-400">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    {t.simulatorReceiptTitle}
-                  </p>
                 )}
-                <div
-                  className={`rounded-xl bg-white p-4 font-mono text-[10px] text-neutral-800 shadow-xl ${
-                    posSuccess ? "" : "rotate-1 opacity-95"
-                  }`}
-                >
-                  <div className="text-center">
-                    <div className="text-xs font-bold">BoutikBF</div>
-                    <div className="text-[9px] text-neutral-500">Ticket de vente</div>
-                  </div>
-                  <div className="my-2 border-t border-dashed border-neutral-300" />
-                  <div className="flex justify-between">
-                    <span>N°</span>
-                    <span className="font-bold">{receiptNo}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Date</span>
-                    <span>{receiptDate}</span>
-                  </div>
-                  <div className="my-2 border-t border-dashed border-neutral-300" />
-                  {receiptItems.map((item, i) => (
-                    <div key={i} className="flex justify-between gap-2 py-0.5">
-                      <span className="truncate">
-                        {item.name} ×{item.qty}
-                      </span>
-                      <span>{(item.price * item.qty).toLocaleString("fr-FR")} F</span>
-                    </div>
-                  ))}
-                  <div className="mt-2 border-t border-dashed border-neutral-300 pt-2">
-                    <div className="flex justify-between text-xs font-bold">
-                      <span>Total :</span>
-                      <span>{receiptTotal.toLocaleString("fr-FR")} F</span>
-                    </div>
-                  </div>
-                  <div className="mt-2 text-center text-[9px] text-neutral-500">Merci !</div>
-                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-16 md:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="grid gap-5 lg:grid-cols-12 items-stretch">
-            {/* Text */}
-            <div className="lg:col-span-3 space-y-4">
-              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-emerald-400">
-                <span className="h-0.5 w-6 bg-emerald-500 rounded-full" />
-                Nos tarifs
-              </div>
-              <h2 className="text-3xl font-extrabold tracking-tight leading-snug text-white">
-                {t.pricingTitle}
-              </h2>
-              <p className="text-sm text-neutral-400">{t.pricingSub}</p>
-            </div>
-
-            {/* Starter */}
-            <div
-              className={`lg:col-span-2 rounded-3xl border p-5 flex flex-col ${
-                isDark
-                  ? "bg-neutral-900/60 border-neutral-800"
-                  : "bg-white border-neutral-200 shadow-sm"
+      {/* Pricing Plans */}
+      <section
+        id="pricing"
+        className={`py-24 border-b relative ${
+          isDark ? "bg-neutral-900/10 border-neutral-900" : "bg-white border-neutral-200"
+        }`}
+      >
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <h2
+              className={`font-display text-3xl sm:text-5xl font-black tracking-tight leading-tight transition-colors ${
+                isDark ? "text-white" : "text-neutral-900"
               }`}
             >
-              <div className="flex items-center gap-2">
-                <Rocket className="h-5 w-5 text-blue-400" />
-                <span className="text-sm font-bold text-white">{t.plan1Name}</span>
-              </div>
-              <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-2xl font-extrabold text-white">{t.plan1Price}</span>
-                <span className="text-[10px] font-semibold text-neutral-500">{t.plan1Period}</span>
-              </div>
-              <ul className="mt-4 space-y-2 text-xs text-neutral-300">
-                {[t.plan1F1, t.plan1F2, t.plan1F3].map((f) => (
-                  <li key={f} className="flex items-center gap-2">
-                    <Check className="h-4 w-4 shrink-0 text-emerald-400" />
-                    {f}
+              {t.pricingTitle}
+            </h2>
+            <p
+              className={`mt-4 text-sm sm:text-base ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+            >
+              {t.pricingSub}
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-3 max-w-5xl mx-auto items-stretch">
+            {/* Plan 1 */}
+            <div
+              className={`border rounded-3xl p-8 flex flex-col justify-between transition-all duration-300 shadow-md hover:-translate-y-1 ${
+                isDark
+                  ? "border-neutral-800/80 bg-neutral-900/30 hover:border-neutral-700/60"
+                  : "border-neutral-200 bg-stone-50 hover:border-neutral-300 hover:shadow-xl"
+              }`}
+            >
+              <div>
+                <div
+                  className={`text-xs font-black uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                >
+                  {t.plan1Name}
+                </div>
+                <div className="mt-4 flex items-baseline">
+                  <span
+                    className={`text-4xl font-black tracking-tight ${isDark ? "text-white" : "text-neutral-900"}`}
+                  >
+                    {t.plan1Price}
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold tracking-wider uppercase ml-2 ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                  >
+                    {t.plan1Period}
+                  </span>
+                </div>
+                <p
+                  className={`mt-4 text-xs sm:text-sm leading-relaxed ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+                >
+                  {t.plan1Desc}
+                </p>
+
+                <ul
+                  className={`mt-6 space-y-3 border-t pt-6 text-xs font-bold ${
+                    isDark
+                      ? "border-neutral-800/60 text-neutral-400"
+                      : "border-neutral-200 text-neutral-600"
+                  }`}
+                >
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>{t.plan1F1}</span>
                   </li>
-                ))}
-              </ul>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>{t.plan1F2}</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>{t.plan1F3}</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>{t.plan1F4}</span>
+                  </li>
+                </ul>
+              </div>
+
               <Button
                 asChild
                 variant="outline"
-                className={`mt-auto w-full rounded-full text-xs font-semibold h-9 border ${
+                className={`mt-8 w-full py-5 font-bold rounded-xl transition-all ${
                   isDark
-                    ? "border-neutral-700 bg-transparent text-white hover:bg-neutral-800"
-                    : "border-neutral-300 bg-transparent text-neutral-900 hover:bg-neutral-100"
+                    ? "bg-neutral-950 border-neutral-800 text-neutral-200 hover:bg-neutral-800 hover:text-white"
+                    : "bg-white border-neutral-300 text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 shadow-sm"
                 }`}
               >
-                <Link to="/auth">Choisir ce plan</Link>
+                <Link to="/auth">Démarrer</Link>
               </Button>
             </div>
 
-            {/* Pro (highlighted) */}
-            <div className="relative lg:col-span-2 rounded-3xl border-2 border-emerald-500 bg-neutral-900/60 dark:bg-neutral-900/60 p-5 flex flex-col shadow-lg shadow-emerald-500/10"
-              style={isDark ? undefined : { backgroundColor: "rgba(16,185,129,0.03)" }}
+            {/* Plan 2 */}
+            <div
+              className={`border-2 rounded-3xl p-8 flex flex-col justify-between transition-all duration-300 relative hover:-translate-y-1 ${
+                isDark
+                  ? "border-emerald-500 bg-neutral-900 shadow-xl shadow-emerald-950/25"
+                  : "border-emerald-500 bg-white shadow-xl shadow-emerald-500/10"
+              }`}
             >
-              <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[9px] font-black px-4.5 py-1 rounded-full uppercase tracking-widest shadow-md">
                 Recommandé
-              </span>
-              <div className="flex items-center gap-2 mt-1">
-                <Star className="h-5 w-5 text-amber-400 fill-current" />
-                <span className="text-sm font-bold text-white">{t.plan2Name}</span>
               </div>
-              <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-2xl font-extrabold text-white">{t.plan2Price}</span>
-                <span className="text-[10px] font-semibold text-neutral-500">{t.plan2Period}</span>
-              </div>
-              <ul className="mt-4 space-y-2 text-xs text-neutral-200">
-                {[t.plan2F1, t.plan2F2, t.plan2F3].map((f) => (
-                  <li key={f} className="flex items-center gap-2">
-                    <Check className="h-4 w-4 shrink-0 text-emerald-400" />
-                    {f}
+
+              <div>
+                <div className="text-xs font-black text-emerald-500 uppercase tracking-widest mt-1.5">
+                  {t.plan2Name}
+                </div>
+                <div className="mt-4 flex items-baseline">
+                  <span
+                    className={`text-4xl font-black tracking-tight ${isDark ? "text-white" : "text-neutral-900"}`}
+                  >
+                    {t.plan2Price}
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold tracking-wider uppercase ml-2 ${isDark ? "text-neutral-400" : "text-neutral-500"}`}
+                  >
+                    {t.plan2Period}
+                  </span>
+                </div>
+                <p
+                  className={`mt-4 text-xs sm:text-sm leading-relaxed ${isDark ? "text-neutral-300" : "text-neutral-600"}`}
+                >
+                  {t.plan2Desc}
+                </p>
+
+                <ul
+                  className={`mt-6 space-y-3 border-t pt-6 text-xs font-bold ${
+                    isDark
+                      ? "border-neutral-800/60 text-neutral-200"
+                      : "border-neutral-200 text-neutral-700"
+                  }`}
+                >
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>{t.plan2F1}</span>
                   </li>
-                ))}
-              </ul>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>{t.plan2F2}</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>{t.plan2F3}</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>{t.plan2F4}</span>
+                  </li>
+                </ul>
+              </div>
+
               <Button
                 asChild
-                className="mt-auto w-full rounded-full bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-semibold h-9"
+                className="mt-8 w-full py-5 font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-600/10"
               >
-                <Link to="/auth">Choisir ce plan</Link>
+                <Link to="/auth">Souscrire Pro</Link>
               </Button>
             </div>
 
-            {/* Entreprise */}
+            {/* Plan 3 */}
             <div
-              className={`lg:col-span-2 rounded-3xl border p-5 flex flex-col ${
+              className={`border rounded-3xl p-8 flex flex-col justify-between transition-all duration-300 shadow-md hover:-translate-y-1 ${
                 isDark
-                  ? "bg-neutral-900/60 border-neutral-800"
-                  : "bg-white border-neutral-200 shadow-sm"
+                  ? "border-neutral-800/80 bg-neutral-900/30 hover:border-neutral-700/60"
+                  : "border-neutral-200 bg-stone-50 hover:border-neutral-300 hover:shadow-xl"
               }`}
             >
-              <div className="flex items-center gap-2">
-                <Crown className="h-5 w-5 text-amber-400" />
-                <span className="text-sm font-bold text-white">{t.plan3Name}</span>
-              </div>
-              <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-2xl font-extrabold text-white">{t.plan3Price}</span>
-                <span className="text-[10px] font-semibold text-neutral-500">{t.plan3Period}</span>
-              </div>
-              <ul className="mt-4 space-y-2 text-xs text-neutral-300">
-                {[t.plan3F1, t.plan3F2, t.plan3F3].map((f) => (
-                  <li key={f} className="flex items-center gap-2">
-                    <Check className="h-4 w-4 shrink-0 text-emerald-400" />
-                    {f}
+              <div>
+                <div
+                  className={`text-xs font-black uppercase tracking-widest ${isDark ? "text-neutral-500" : "text-neutral-400"}`}
+                >
+                  {t.plan3Name}
+                </div>
+                <div className="mt-4 flex items-baseline">
+                  <span
+                    className={`text-4xl font-black tracking-tight ${isDark ? "text-white" : "text-neutral-900"}`}
+                  >
+                    {t.plan3Price}
+                  </span>
+                </div>
+                <p
+                  className={`mt-4 text-xs sm:text-sm leading-relaxed ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+                >
+                  {t.plan3Desc}
+                </p>
+
+                <ul
+                  className={`mt-6 space-y-3 border-t pt-6 text-xs font-bold ${
+                    isDark
+                      ? "border-neutral-800/60 text-neutral-400"
+                      : "border-neutral-200 text-neutral-600"
+                  }`}
+                >
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>{t.plan3F1}</span>
                   </li>
-                ))}
-              </ul>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>{t.plan3F2}</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>{t.plan3F3}</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                    <span>{t.plan3F4}</span>
+                  </li>
+                </ul>
+              </div>
+
               <Button
                 asChild
                 variant="outline"
-                className={`mt-auto w-full rounded-full text-xs font-semibold h-9 border ${
+                className={`mt-8 w-full py-5 font-bold rounded-xl transition-all ${
                   isDark
-                    ? "border-neutral-700 bg-transparent text-white hover:bg-neutral-800"
-                    : "border-neutral-300 bg-transparent text-neutral-900 hover:bg-neutral-100"
+                    ? "bg-neutral-950 border-neutral-800 text-neutral-200 hover:bg-neutral-800 hover:text-white"
+                    : "bg-white border-neutral-300 text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900 shadow-sm"
                 }`}
               >
-                <Link to="/auth">Choisir ce plan</Link>
+                <Link to="/auth">Nous contacter</Link>
               </Button>
-            </div>
-
-            {/* Merchant photo */}
-            <div className="lg:col-span-3 rounded-3xl overflow-hidden relative min-h-[220px]">
-              <img
-                src={featureMobile}
-                alt="Commerçant heureux utilisant BoutikBF"
-                className="absolute inset-0 h-full w-full object-cover"
-                loading="lazy"
-              />
             </div>
           </div>
         </div>
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials" className="py-16 md:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="grid gap-8 lg:grid-cols-12">
-            <div className="lg:col-span-3 space-y-4">
-              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-emerald-400">
-                <span className="h-0.5 w-6 bg-emerald-500 rounded-full" />
-                Témoignages
+      <section
+        id="testimonials"
+        className={`py-24 border-b relative ${
+          isDark ? "border-neutral-900 bg-neutral-950" : "border-neutral-200 bg-white"
+        }`}
+      >
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <h2
+              className={`font-display text-3xl sm:text-5xl font-black tracking-tight ${isDark ? "text-white" : "text-neutral-900"}`}
+            >
+              {t.testimonialTitle}
+            </h2>
+            <p
+              className={`mt-4 text-sm sm:text-base ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+            >
+              {t.testimonialSub}
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
+            {/* Testimonial 1 */}
+            <div
+              className={`border rounded-2xl p-6 text-left flex flex-col justify-between shadow-md ${
+                isDark ? "border-neutral-800 bg-neutral-900/20" : "bg-stone-50 border-neutral-200"
+              }`}
+            >
+              <p
+                className={`text-sm leading-relaxed italic ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+              >
+                &ldquo;{t.test1Quote}&rdquo;
+              </p>
+              <div
+                className={`mt-6 pt-4 border-t flex items-center gap-3 ${isDark ? "border-neutral-800/80" : "border-neutral-200"}`}
+              >
+                <div className="h-9 w-9 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-500/20">
+                  MS
+                </div>
+                <div>
+                  <div
+                    className={`text-xs font-bold ${isDark ? "text-white" : "text-neutral-900"}`}
+                  >
+                    {t.test1Author}
+                  </div>
+                  <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider mt-0.5">
+                    {t.test1Role}
+                  </div>
+                </div>
               </div>
-              <h2 className="text-3xl font-extrabold tracking-tight text-white">
-                {t.testimonialTitle}
-              </h2>
             </div>
 
-            <div className="lg:col-span-9">
-              <div className="grid gap-4 sm:grid-cols-3">
-                {[
-                  { q: t.test1Quote, a: t.test1Author, r: t.test1Role, init: "AT", color: "bg-emerald-500/10 text-emerald-400" },
-                  { q: t.test2Quote, a: t.test2Author, r: t.test2Role, init: "MS", color: "bg-blue-500/10 text-blue-400" },
-                  { q: t.test3Quote, a: t.test3Author, r: t.test3Role, init: "MK", color: "bg-purple-500/10 text-purple-400" },
-                ].map((item) => (
+            {/* Testimonial 2 */}
+            <div
+              className={`border rounded-2xl p-6 text-left flex flex-col justify-between shadow-md ${
+                isDark ? "border-neutral-800 bg-neutral-900/20" : "bg-stone-50 border-neutral-200"
+              }`}
+            >
+              <p
+                className={`text-sm leading-relaxed italic ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+              >
+                &ldquo;{t.test2Quote}&rdquo;
+              </p>
+              <div
+                className={`mt-6 pt-4 border-t flex items-center gap-3 ${isDark ? "border-neutral-800/80" : "border-neutral-200"}`}
+              >
+                <div className="h-9 w-9 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xs shrink-0 border border-amber-500/20">
+                  IK
+                </div>
+                <div>
                   <div
-                    key={item.a}
-                    className={`rounded-2xl border p-5 flex flex-col ${
-                      isDark
-                        ? "bg-neutral-900/60 border-neutral-800"
-                        : "bg-white border-neutral-200 shadow-sm"
-                    }`}
+                    className={`text-xs font-bold ${isDark ? "text-white" : "text-neutral-900"}`}
                   >
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold border border-neutral-800 ${item.color}`}
-                      >
-                        {item.init}
-                      </span>
-                      <div>
-                        <div className="text-xs font-bold text-white">{item.a}</div>
-                        <div className="text-[10px] text-neutral-500 uppercase tracking-wide">
-                          {item.r}
-                        </div>
-                      </div>
-                    </div>
-                    <p className="mt-4 flex-1 text-sm leading-relaxed text-neutral-300">
-                      « {item.q} »
-                    </p>
-                    <div className="mt-4 flex gap-0.5">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} className="h-4 w-4 text-amber-400 fill-current" />
-                      ))}
-                    </div>
+                    {t.test2Author}
                   </div>
-                ))}
+                  <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider mt-0.5">
+                    {t.test2Role}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 3 */}
+            <div
+              className={`border rounded-2xl p-6 text-left flex flex-col justify-between shadow-md ${
+                isDark ? "border-neutral-800 bg-neutral-900/20" : "bg-stone-50 border-neutral-200"
+              }`}
+            >
+              <p
+                className={`text-sm leading-relaxed italic ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+              >
+                &ldquo;{t.test3Quote}&rdquo;
+              </p>
+              <div
+                className={`mt-6 pt-4 border-t flex items-center gap-3 ${isDark ? "border-neutral-800/80" : "border-neutral-200"}`}
+              >
+                <div className="h-9 w-9 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center font-bold text-xs shrink-0 border border-purple-500/20">
+                  FO
+                </div>
+                <div>
+                  <div
+                    className={`text-xs font-bold ${isDark ? "text-white" : "text-neutral-900"}`}
+                  >
+                    {t.test3Author}
+                  </div>
+                  <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider mt-0.5">
+                    {t.test3Role}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section id="faq" className="pb-16 md:pb-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="grid gap-8 lg:grid-cols-12">
-            {/* Accordion */}
-            <div className="lg:col-span-8 space-y-3">
-              {[1, 2, 3].map((n) => {
-                const isOpen = faqOpen === n;
-                return (
-                  <div key={n}>
-                    <button
-                      type="button"
-                      onClick={() => setFaqOpen(isOpen ? null : n)}
-                      aria-expanded={isOpen}
-                      className={`w-full flex items-center justify-between rounded-2xl border px-5 py-4 text-left text-sm font-semibold text-white transition-colors ${
-                        isDark
-                          ? "bg-neutral-900/60 border-neutral-800 hover:border-neutral-700"
-                          : "bg-white border-neutral-200 hover:border-neutral-300"
-                      }`}
-                    >
-                      {n === 1 ? t.faqQ1 : n === 2 ? t.faqQ2 : t.faqQ3}
-                      <Plus
-                        className={`h-4 w-4 shrink-0 text-neutral-400 transition-transform ${
-                          isOpen ? "rotate-45" : ""
-                        }`}
-                      />
-                    </button>
-                    {isOpen && (
-                      <div
-                        className={`rounded-b-2xl border border-t-0 px-5 pb-4 -mt-1 pt-4 text-xs sm:text-sm leading-relaxed text-neutral-400 ${
-                          isDark
-                            ? "bg-neutral-950/70 border-neutral-800"
-                            : "bg-neutral-50 border-neutral-200"
-                        }`}
-                      >
-                        {n === 1 ? t.faqA1 : n === 2 ? t.faqA2 : t.faqA3}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+      {/* FAQ Accordion */}
+      <section
+        id="faq"
+        className={`py-24 border-b relative ${
+          isDark ? "border-neutral-900 bg-neutral-950" : "border-neutral-200 bg-stone-50"
+        }`}
+      >
+        <div className="mx-auto max-w-4xl px-6">
+          <div className="text-center mb-16">
+            <h2
+              className={`font-display text-3xl font-black transition-colors ${isDark ? "text-white" : "text-neutral-900"}`}
+            >
+              {t.faqTitleSection}
+            </h2>
+            <p className={`mt-4 text-sm ${isDark ? "text-neutral-400" : "text-neutral-600"}`}>
+              {t.faqSubSection}
+            </p>
+          </div>
+
+          <div className="space-y-4 max-w-3xl mx-auto">
+            {/* FAQ 1 */}
+            <div
+              className={`border rounded-2xl p-6 text-left transition-colors duration-300 ${
+                isDark
+                  ? "border-neutral-800 bg-neutral-900/20"
+                  : "bg-white border-neutral-200 shadow-md"
+              }`}
+            >
+              <h3
+                className={`font-bold text-sm sm:text-base flex items-center gap-2.5 ${isDark ? "text-white" : "text-neutral-900"}`}
+              >
+                <HelpCircle className="h-4.5 w-4.5 text-emerald-500 shrink-0" />
+                {t.faqQ1}
+              </h3>
+              <p
+                className={`mt-3 text-xs sm:text-sm leading-relaxed pl-7 ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+              >
+                {t.faqA1}
+              </p>
             </div>
 
-            {/* Heading */}
-            <div className="lg:col-span-4 space-y-3 lg:text-left">
-              <h2 className="text-3xl font-extrabold tracking-tight text-white">
-                {t.faqTitleSection}
-              </h2>
-              <p className="text-sm text-neutral-400">{t.faqSubSection}</p>
+            {/* FAQ 2 */}
+            <div
+              className={`border rounded-2xl p-6 text-left transition-colors duration-300 ${
+                isDark
+                  ? "border-neutral-800 bg-neutral-900/20"
+                  : "bg-white border-neutral-200 shadow-md"
+              }`}
+            >
+              <h3
+                className={`font-bold text-sm sm:text-base flex items-center gap-2.5 ${isDark ? "text-white" : "text-neutral-900"}`}
+              >
+                <HelpCircle className="h-4.5 w-4.5 text-emerald-500 shrink-0" />
+                {t.faqQ2}
+              </h3>
+              <p
+                className={`mt-3 text-xs sm:text-sm leading-relaxed pl-7 ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+              >
+                {t.faqA2}
+              </p>
+            </div>
+
+            {/* FAQ 3 */}
+            <div
+              className={`border rounded-2xl p-6 text-left transition-colors duration-300 ${
+                isDark
+                  ? "border-neutral-800 bg-neutral-900/20"
+                  : "bg-white border-neutral-200 shadow-md"
+              }`}
+            >
+              <h3
+                className={`font-bold text-sm sm:text-base flex items-center gap-2.5 ${isDark ? "text-white" : "text-neutral-900"}`}
+              >
+                <HelpCircle className="h-4.5 w-4.5 text-emerald-500 shrink-0" />
+                {t.faqQ3}
+              </h3>
+              <p
+                className={`mt-3 text-xs sm:text-sm leading-relaxed pl-7 ${isDark ? "text-neutral-400" : "text-neutral-600"}`}
+              >
+                {t.faqA3}
+              </p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className={`border-t ${isDark ? "border-neutral-900" : "border-neutral-200"}`}>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
-            {/* Logo + slogan */}
-            <div className="flex items-center gap-2.5">
-              <span className="h-7 w-7 rounded-lg bg-gradient-to-b from-emerald-400 to-emerald-600 flex items-center justify-center">
-                <Store className="h-4 w-4 text-white" />
-              </span>
-              <span className="text-sm font-extrabold text-white">
-                Boutik<span className="text-emerald-400">BF</span>
-              </span>
-              <span className="text-neutral-500 ml-2">{t.footerSlogan}</span>
-            </div>
-
-            {/* Legal links */}
-            <LegalLinks className={`justify-center text-xs ${isDark ? "text-neutral-500" : "text-neutral-400"}`} />
-
-            {/* Copyright + flag */}
-            <div className="flex items-center gap-2 text-neutral-500">
+      <footer
+        className={`border-t py-16 relative transition-colors duration-300 ${
+          isDark ? "border-neutral-900 bg-neutral-950" : "border-neutral-200 bg-white"
+        }`}
+      >
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-xs font-bold text-neutral-500">
+            <div className="flex items-center gap-2 text-left">
+              <Building2 className="h-4.5 w-4.5 text-emerald-500 shrink-0" />
               <span>
-                © {new Date().getFullYear()} BoutikBF. {t.footerCopyright}
+                © {new Date().getFullYear()} {t.footerCopyright}
               </span>
-              <span className="text-sm">🇧🇫</span>
             </div>
+            <div className="flex gap-6 uppercase tracking-wider">
+              <Link to="/auth" className="hover:text-emerald-500 transition-colors">
+                {t.login}
+              </Link>
+              <a href="#features" className="hover:text-emerald-500 transition-colors">
+                {t.navFeatures}
+              </a>
+              <a href="#pricing" className="hover:text-emerald-500 transition-colors">
+                {t.navPricing}
+              </a>
+            </div>
+          </div>
+          <LegalLinks
+            className={`mt-8 justify-center text-xs font-semibold ${
+              isDark ? "text-neutral-500" : "text-neutral-500"
+            }`}
+          />
+          <div
+            className={`mt-8 text-center text-xs font-bold border-t pt-8 ${
+              isDark
+                ? "text-neutral-600 border-neutral-900/80"
+                : "text-neutral-400 border-neutral-100"
+            }`}
+          >
+            {t.footerSlogan}
           </div>
         </div>
       </footer>
-
       <CookieNotice />
     </div>
   );
