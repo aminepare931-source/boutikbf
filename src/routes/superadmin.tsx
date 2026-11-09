@@ -2,7 +2,7 @@ import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/
 import { LayoutDashboard, Store, Users, ShieldCheck, ArrowLeft, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/logo-trim.png";
 
 export const Route = createFileRoute("/superadmin")({
   ssr: false,
@@ -35,7 +35,7 @@ function SuperAdminLayout() {
     <div className="min-h-screen bg-secondary/10">
       <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
-          <img src={logo} alt="BoutikBF" className="h-8 w-auto" />
+          <img src={logo} alt="BoutikBF" className="h-11 w-auto" />
           <span className="rounded-md bg-destructive/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-widest text-destructive">
             Super Admin
           </span>

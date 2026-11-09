@@ -59,3 +59,77 @@ export function trialEnd(shop: Pick<AdminShop, "trial_ends_at" | "created_at">):
 export function trialDaysLeft(shop: Pick<AdminShop, "trial_ends_at" | "created_at">): number {
   return Math.ceil((trialEnd(shop).getTime() - Date.now()) / 86400000);
 }
+
+/* ---------- Tableau de bord : performance du SaaS ---------- */
+
+/** Tarifs mensuels (F CFA) servant à estimer le revenu. « Sur mesure » est sur devis : non compté. */
+export const PLAN_PRICES: Record<string, number> = {
+  essentiel_paid: 5000,
+  pro: 10000,
+};
+
+export type DashboardDay = {
+  day: string;
+  users: number;
+  shops: number;
+  sales: number;
+  volume: number;
+};
+
+export type DashboardShopRow = {
+  id: string;
+  name: string;
+  plan?: string;
+  phone?: string | null;
+  owner_email?: string | null;
+  trial_end?: string;
+  sales_all: number;
+  sales_p?: number;
+  volume_p?: number;
+  last_sale: string | null;
+};
+
+export type AdminDashboard = {
+  days: number;
+  series: DashboardDay[];
+  totals: {
+    shops: number;
+    users: number;
+    products: number;
+    sales_all: number;
+    volume_all: number;
+    shops_p: number;
+    shops_prev: number;
+    users_p: number;
+    users_prev: number;
+    sales_p: number;
+    sales_prev: number;
+    volume_p: number;
+    volume_prev: number;
+    shops_before: number;
+    users_before: number;
+  };
+  plans: {
+    essentiel: number;
+    essentiel_paid: number;
+    pro: number;
+    sur_mesure: number;
+    trials_active: number;
+    trials_ending_7d: number;
+    trials_expired: number;
+    suspended: number;
+  };
+  activity: { active_7d: number; active_30d: number; dormant: number; never_sold: number };
+  conversions: { now: number; prev: number };
+  top_shops: DashboardShopRow[];
+  at_risk: DashboardShopRow[];
+  hot_trials: DashboardShopRow[];
+};
+
+/** Lien WhatsApp (numéros burkinabè à 8 chiffres : indicatif 226 ajouté). */
+export function whatsappLink(phone: string | null | undefined, message: string): string | null {
+  const digits = (phone ?? "").replace(/\D/g, "");
+  if (digits.length < 8) return null;
+  const full = digits.length === 8 ? `226${digits}` : digits;
+  return `https://wa.me/${full}?text=${encodeURIComponent(message)}`;
+}
