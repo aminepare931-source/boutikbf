@@ -431,3 +431,19 @@ body {
 .avatar-fly-in {
   animation: avatar-fly-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Simulateur de caisse (accueil) — mouvements qui répondent à une action */
+@keyframes bk-print {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes bk-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.bk-print { animation: bk-print 0.9s steps(18, end) both; }
+.bk-pop { animation: bk-pop 0.45s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .bk-print, .bk-pop { animation: none; }
+}

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { CookieNotice } from "@/components/legal/cookie-notice";
+import { PosSimulator } from "@/components/landing/pos-simulator";
 import {
   ArrowLeft,
   ArrowRight,
@@ -55,7 +56,8 @@ const btnOutline =
   "inline-flex items-center justify-center gap-2 rounded-full border-2 border-bk/70 bg-white px-6 py-3 text-[15px] font-semibold text-bk transition hover:bg-bk-mint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bk";
 const pill =
   "inline-flex items-center gap-2 rounded-full bg-bk-mint px-4 py-1.5 text-sm font-semibold text-bk";
-const h2 = "font-jakarta text-3xl font-extrabold leading-tight tracking-tight text-bk-ink sm:text-4xl";
+const h2 =
+  "font-jakarta text-3xl font-extrabold leading-tight tracking-tight text-bk-ink sm:text-4xl";
 
 function Logo({ light = false }: { light?: boolean }) {
   return (
@@ -84,7 +86,9 @@ function Logo({ light = false }: { light?: boolean }) {
         >
           Boutik<span className={light ? "text-white" : "text-bk"}>BF</span>
         </span>
-        <span className={`mt-1 block text-[11px] font-medium ${light ? "text-white/70" : "text-bk-ink/70"}`}>
+        <span
+          className={`mt-1 block text-[11px] font-medium ${light ? "text-white/70" : "text-bk-ink/70"}`}
+        >
           Gérez. Vendez. Grandissez.
         </span>
       </span>
@@ -132,6 +136,7 @@ const FEATURE_LINKS = [
   { label: "Gestion de stock", href: "#fonctionnalites" },
   { label: "Rapports détaillés", href: "#fonctionnalites" },
   { label: "Paiements Mobile Money", href: "#mobile-money" },
+  { label: "Essayer la caisse", href: "#simulateur" },
 ];
 
 function NavMenu({
@@ -188,7 +193,10 @@ function Header() {
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Navigation principale">
-          <a href="#top" className="rounded-full bg-bk-mint px-4 py-2 text-[15px] font-semibold text-bk">
+          <a
+            href="#top"
+            className="rounded-full bg-bk-mint px-4 py-2 text-[15px] font-semibold text-bk"
+          >
             Accueil
           </a>
           <NavMenu label="Fonctionnalités" items={FEATURE_LINKS} />
@@ -242,7 +250,10 @@ function Header() {
 
       {open && (
         <div className="mt-2 rounded-3xl bg-white p-4 shadow-xl lg:hidden">
-          <nav className="flex flex-col gap-1 text-base font-medium text-bk-ink" onClick={() => setOpen(false)}>
+          <nav
+            className="flex flex-col gap-1 text-base font-medium text-bk-ink"
+            onClick={() => setOpen(false)}
+          >
             <a href="#top" className="rounded-xl bg-bk-mint px-4 py-3 text-bk">
               Accueil
             </a>
@@ -290,7 +301,10 @@ function Hero() {
     { icon: Headphones, title: "Assistance locale", text: "réactive et bienveillante" },
   ];
   return (
-    <section id="top" className="relative -mt-[68px] overflow-hidden bg-gradient-to-b from-white via-white to-bk-mint/40 pt-[68px]">
+    <section
+      id="top"
+      className="relative -mt-[68px] overflow-hidden bg-gradient-to-b from-white via-white to-bk-mint/40 pt-[68px]"
+    >
       <div className="mx-auto grid max-w-[1400px] items-center gap-6 px-5 pb-8 pt-12 sm:px-8 lg:grid-cols-[1.02fr_1fr] lg:pt-16">
         <div className="relative z-10">
           <span className="inline-flex items-center gap-2.5 rounded-2xl bg-bk-mint px-4 py-2 text-sm font-semibold text-bk-ink">
@@ -311,20 +325,30 @@ function Hero() {
                 className="absolute -bottom-3 left-[18%] h-3 w-[62%]"
                 aria-hidden="true"
               >
-                <path d="M2 10c60-9 160-10 296-3" fill="none" stroke="#0b7a42" strokeWidth="4" strokeLinecap="round" />
+                <path
+                  d="M2 10c60-9 160-10 296-3"
+                  fill="none"
+                  stroke="#0b7a42"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                />
               </svg>
             </span>
           </h1>
           <p className="mt-9 max-w-xl text-lg leading-relaxed text-bk-ink/80">
-            BoutikBF est un logiciel de gestion de commerce simple et puissant pour gérer votre boutique, suivre vos
-            ventes, contrôler votre stock et développer votre activité au Burkina Faso.
+            BoutikBF est un logiciel de gestion de commerce simple et puissant pour gérer votre
+            boutique, suivre vos ventes, contrôler votre stock et développer votre activité au
+            Burkina Faso.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link to="/auth" className={`${btnPrimary} px-8 py-4 text-base`}>
               Essayer BoutikBF gratuitement
               <ArrowRight className="h-5 w-5" />
             </Link>
-            <a href="#logiciel" className="group inline-flex items-center gap-3 font-semibold text-bk-ink">
+            <a
+              href="#simulateur"
+              className="group inline-flex items-center gap-3 font-semibold text-bk-ink"
+            >
               <span className="grid h-14 w-14 place-items-center rounded-full border border-bk/15 bg-white shadow-md transition group-hover:bg-bk-mint">
                 <Play className="h-5 w-5 fill-bk-ink" />
               </span>
@@ -361,8 +385,15 @@ function Hero() {
       <div className="mx-auto max-w-[1400px] px-5 pb-10 sm:px-8">
         <div className="grid gap-5 rounded-[2rem] bg-white px-6 py-5 shadow-[0_10px_40px_rgba(10,59,37,0.10)] sm:grid-cols-2 lg:grid-cols-4 lg:gap-0 lg:px-10">
           {trust.map((t) => (
-            <div key={t.title} className="flex items-center gap-4 lg:border-r lg:border-bk-ink/15 lg:px-6 lg:first:pl-0">
-              {t.icon ? <t.icon className="h-10 w-10 shrink-0 text-bk" strokeWidth={1.5} /> : <BurkinaFlag className="h-8 w-12 shrink-0" />}
+            <div
+              key={t.title}
+              className="flex items-center gap-4 lg:border-r lg:border-bk-ink/15 lg:px-6 lg:first:pl-0"
+            >
+              {t.icon ? (
+                <t.icon className="h-10 w-10 shrink-0 text-bk" strokeWidth={1.5} />
+              ) : (
+                <BurkinaFlag className="h-8 w-12 shrink-0" />
+              )}
               <p className="text-sm leading-snug text-bk-ink/75">
                 <strong className="block text-[15px] font-bold text-bk-ink">{t.title}</strong>
                 {t.text}
@@ -372,7 +403,12 @@ function Hero() {
           <div className="flex flex-col items-center justify-center gap-1 lg:pl-6">
             <span className="flex gap-0.5 text-[#f5b301]">
               {Array.from({ length: 5 }).map((_, i) => (
-                <svg key={i} viewBox="0 0 20 20" className="h-6 w-6 fill-current" aria-hidden="true">
+                <svg
+                  key={i}
+                  viewBox="0 0 20 20"
+                  className="h-6 w-6 fill-current"
+                  aria-hidden="true"
+                >
                   <path d="M10 1.5l2.6 5.6 6.1.7-4.5 4.2 1.2 6L10 15l-5.4 3 1.2-6L1.3 7.8l6.1-.7z" />
                 </svg>
               ))}
@@ -411,15 +447,48 @@ function PhotoTiles() {
 
 function Features() {
   const items = [
-    { icon: ShoppingCart, tint: "bg-emerald-100 text-bk", title: "Caisse intelligente", text: "Encaissez vos clients rapidement avec une interface simple et moderne." },
-    { icon: Boxes, tint: "bg-orange-100 text-orange-500", title: "Gestion de stock", text: "Suivez vos stocks en temps réel et évitez les ruptures." },
-    { icon: LineChart, tint: "bg-violet-100 text-violet-600", title: "Rapports détaillés", text: "Analysez vos ventes et prenez de meilleures décisions." },
-    { icon: Users, tint: "bg-sky-100 text-sky-600", title: "Gestion des clients", text: "Connaissez mieux vos clients et fidélisez-les." },
-    { icon: UserCog, tint: "bg-emerald-100 text-bk", title: "Gestion des employés", text: "Attribuez des rôles et suivez leurs activités." },
-    { icon: Wallet, tint: "bg-amber-100 text-amber-600", title: "Paiements Mobile Money", text: "Acceptez les paiements Orange Money, Moov et Wave." },
+    {
+      icon: ShoppingCart,
+      tint: "bg-emerald-100 text-bk",
+      title: "Caisse intelligente",
+      text: "Encaissez vos clients rapidement avec une interface simple et moderne.",
+    },
+    {
+      icon: Boxes,
+      tint: "bg-orange-100 text-orange-500",
+      title: "Gestion de stock",
+      text: "Suivez vos stocks en temps réel et évitez les ruptures.",
+    },
+    {
+      icon: LineChart,
+      tint: "bg-violet-100 text-violet-600",
+      title: "Rapports détaillés",
+      text: "Analysez vos ventes et prenez de meilleures décisions.",
+    },
+    {
+      icon: Users,
+      tint: "bg-sky-100 text-sky-600",
+      title: "Gestion des clients",
+      text: "Connaissez mieux vos clients et fidélisez-les.",
+    },
+    {
+      icon: UserCog,
+      tint: "bg-emerald-100 text-bk",
+      title: "Gestion des employés",
+      text: "Attribuez des rôles et suivez leurs activités.",
+    },
+    {
+      icon: Wallet,
+      tint: "bg-amber-100 text-amber-600",
+      title: "Paiements Mobile Money",
+      text: "Acceptez les paiements Orange Money, Moov et Wave.",
+    },
   ];
   return (
-    <section id="fonctionnalites" className="mx-auto grid max-w-[1400px] items-center gap-10 px-5 pb-20 sm:px-8 lg:grid-cols-[1.15fr_0.85fr]">
+    <section
+      id="fonctionnalites"
+      className="mx-auto grid max-w-[1400px] items-center gap-10 px-5 pb-20 sm:px-8 lg:grid-cols-[1.15fr_0.85fr]"
+    >
       <div>
         <div className="text-center lg:text-left">
           <span className={pill}>Nos fonctionnalités</span>
@@ -428,13 +497,16 @@ function Features() {
             <br className="hidden sm:block" /> une gestion sans stress
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-bk-ink/75 lg:mx-0">
-            Gérez votre commerce plus efficacement avec des outils conçus pour répondre aux besoins des commerçants
-            africains.
+            Gérez votre commerce plus efficacement avec des outils conçus pour répondre aux besoins
+            des commerçants africains.
           </p>
         </div>
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {items.map((f) => (
-            <li key={f.title} className="rounded-2xl border border-bk-ink/5 bg-white p-5 shadow-[0_8px_28px_rgba(10,59,37,0.07)]">
+            <li
+              key={f.title}
+              className="rounded-2xl border border-bk-ink/5 bg-white p-5 shadow-[0_8px_28px_rgba(10,59,37,0.07)]"
+            >
               <span className={`grid h-11 w-11 place-items-center rounded-xl ${f.tint}`}>
                 <f.icon className="h-5 w-5" />
               </span>
@@ -469,11 +541,15 @@ function Pilotez() {
             <span className={pill}>Une gestion plus intelligente</span>
             <h2 className={`${h2} mt-4`}>Pilotez votre commerce où que vous soyez</h2>
             <p className="mt-4 text-bk-ink/75">
-              Accédez à votre boutique depuis votre ordinateur, tablette ou smartphone et gardez le contrôle partout,
-              tout le temps.
+              Accédez à votre boutique depuis votre ordinateur, tablette ou smartphone et gardez le
+              contrôle partout, tout le temps.
             </p>
             <ul className="mt-5 space-y-2.5 text-[15px] font-medium text-bk-ink">
-              {["Interface simple et intuitive", "Accessible sur tous vos appareils", "Support technique réactif"].map((t) => (
+              {[
+                "Interface simple et intuitive",
+                "Accessible sur tous vos appareils",
+                "Support technique réactif",
+              ].map((t) => (
                 <li key={t} className="flex items-center gap-2.5">
                   <span className="grid h-5 w-5 place-items-center rounded-full bg-bk text-white">
                     <Check className="h-3 w-3" strokeWidth={3} />
@@ -501,16 +577,23 @@ function Pilotez() {
 
 function MobileMoney() {
   return (
-    <section id="mobile-money" className="mx-auto grid max-w-[1400px] items-center gap-10 px-5 pb-20 sm:px-8 lg:grid-cols-[0.8fr_1.2fr]">
+    <section
+      id="mobile-money"
+      className="mx-auto grid max-w-[1400px] items-center gap-10 px-5 pb-20 sm:px-8 lg:grid-cols-[0.8fr_1.2fr]"
+    >
       <div>
         <span className={pill}>Paiements Mobile Money</span>
         <h2 className={`${h2} mt-5`}>Encaissez par Orange Money et Moov en un instant</h2>
         <p className="mt-4 max-w-md text-bk-ink/75">
-          Vos clients scannent le QR code au comptoir, le paiement est reçu et votre ticket s'imprime. Chaque vente
-          est enregistrée automatiquement.
+          Vos clients scannent le QR code au comptoir, le paiement est reçu et votre ticket
+          s'imprime. Chaque vente est enregistrée automatiquement.
         </p>
         <ul className="mt-6 space-y-2.5 text-[15px] font-medium text-bk-ink">
-          {["Paiement reçu en temps réel", "Ventes du jour toujours à jour", "Ticket de caisse imprimé"].map((t) => (
+          {[
+            "Paiement reçu en temps réel",
+            "Ventes du jour toujours à jour",
+            "Ticket de caisse imprimé",
+          ].map((t) => (
             <li key={t} className="flex items-center gap-2.5">
               <span className="grid h-5 w-5 place-items-center rounded-full bg-bk text-white">
                 <Check className="h-3 w-3" strokeWidth={3} />
@@ -547,7 +630,8 @@ function Confiance() {
           </span>
           <h2 className={`${h2} mt-5 !text-3xl`}>Une confiance qui se mesure</h2>
           <p className="mt-3 text-sm leading-relaxed text-bk-ink/75">
-            Des milliers de commerçants au Burkina Faso nous font déjà confiance pour la gestion de leur activité.
+            Des milliers de commerçants au Burkina Faso nous font déjà confiance pour la gestion de
+            leur activité.
           </p>
           <a href="#avis" className={`${btnPrimary} mt-5 !px-4 !py-2 text-sm`}>
             Voir plus de témoignages
@@ -557,7 +641,10 @@ function Confiance() {
 
         <dl className="grid grid-cols-1 divide-bk-ink/10 rounded-3xl bg-white p-6 shadow-[0_8px_28px_rgba(10,59,37,0.07)] sm:grid-cols-3 sm:divide-x">
           {stats.map((s) => (
-            <div key={s.label} className="flex flex-col items-center justify-center gap-2 px-4 py-4 text-center">
+            <div
+              key={s.label}
+              className="flex flex-col items-center justify-center gap-2 px-4 py-4 text-center"
+            >
               <span className="grid h-14 w-14 place-items-center rounded-full bg-bk-mint text-bk">
                 <s.icon className="h-7 w-7" strokeWidth={1.6} />
               </span>
@@ -570,7 +657,8 @@ function Confiance() {
         <figure className="flex flex-col justify-center rounded-3xl bg-white p-7 shadow-[0_8px_28px_rgba(10,59,37,0.07)]">
           <span className="font-jakarta text-5xl font-extrabold leading-none text-bk">“</span>
           <blockquote className="mt-1 text-[15px] leading-relaxed text-bk-ink/85">
-            Depuis que j'utilise BoutikBF, ma gestion est beaucoup plus simple et mes ventes ont augmenté.
+            Depuis que j'utilise BoutikBF, ma gestion est beaucoup plus simple et mes ventes ont
+            augmenté.
           </blockquote>
           <figcaption className="mt-5 flex items-center gap-3">
             <img src={av4} alt="" className="h-12 w-12 rounded-full object-cover" loading="lazy" />
@@ -588,18 +676,38 @@ function Confiance() {
 function Temoignages() {
   const scroller = useRef<HTMLDivElement>(null);
   const items = [
-    { img: av1, name: "Assita Traoré", role: "Propriétaire de boutique", text: "Depuis que j'utilise BoutikBF, ma gestion est beaucoup plus simple et mes ventes ont augmenté !" },
-    { img: av2, name: "Issa Ouédraogo", role: "Gérant de commerce", text: "Un logiciel très facile à utiliser. Le support est vraiment réactif. Merci BoutikBF !" },
-    { img: av3, name: "Fatou Sawadogo", role: "Commerçante", text: "Enfin une solution adaptée à nos réalités au Burkina. Je recommande vivement !" },
+    {
+      img: av1,
+      name: "Assita Traoré",
+      role: "Propriétaire de boutique",
+      text: "Depuis que j'utilise BoutikBF, ma gestion est beaucoup plus simple et mes ventes ont augmenté !",
+    },
+    {
+      img: av2,
+      name: "Issa Ouédraogo",
+      role: "Gérant de commerce",
+      text: "Un logiciel très facile à utiliser. Le support est vraiment réactif. Merci BoutikBF !",
+    },
+    {
+      img: av3,
+      name: "Fatou Sawadogo",
+      role: "Commerçante",
+      text: "Enfin une solution adaptée à nos réalités au Burkina. Je recommande vivement !",
+    },
   ];
   const scrollBy = (dir: number) =>
-    scroller.current?.scrollBy({ left: dir * (scroller.current.clientWidth * 0.8), behavior: "smooth" });
+    scroller.current?.scrollBy({
+      left: dir * (scroller.current.clientWidth * 0.8),
+      behavior: "smooth",
+    });
   return (
     <section id="avis" className="mx-auto max-w-[1400px] px-5 pb-20 sm:px-8">
       <div className="flex items-end justify-between gap-4">
         <div>
           <h2 className={h2}>La confiance de nos commerçants</h2>
-          <p className="mt-2 text-bk-ink/75">Découvrez ce que disent de BoutikBF nos utilisateurs.</p>
+          <p className="mt-2 text-bk-ink/75">
+            Découvrez ce que disent de BoutikBF nos utilisateurs.
+          </p>
         </div>
         <div className="flex gap-2">
           <button
@@ -630,8 +738,15 @@ function Temoignages() {
             className="w-[85%] shrink-0 snap-start rounded-3xl border border-bk-ink/5 bg-white p-6 shadow-[0_8px_28px_rgba(10,59,37,0.07)] sm:w-[46%] lg:w-[calc((100%-2.5rem)/3)]"
           >
             <div className="flex gap-4">
-              <img src={t.img} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover" loading="lazy" />
-              <blockquote className="text-[15px] leading-relaxed text-bk-ink/85">« {t.text} »</blockquote>
+              <img
+                src={t.img}
+                alt=""
+                className="h-14 w-14 shrink-0 rounded-full object-cover"
+                loading="lazy"
+              />
+              <blockquote className="text-[15px] leading-relaxed text-bk-ink/85">
+                « {t.text} »
+              </blockquote>
             </div>
             <figcaption className="mt-4 flex items-end justify-between gap-3">
               <span className="text-sm">
@@ -679,12 +794,17 @@ function Tarifs() {
     },
   ];
   return (
-    <section id="tarifs" className="bg-gradient-to-b from-white to-bk-mint/60 px-5 pb-20 pt-4 sm:px-8">
+    <section
+      id="tarifs"
+      className="bg-gradient-to-b from-white to-bk-mint/60 px-5 pb-20 pt-4 sm:px-8"
+    >
       <div className="mx-auto grid max-w-[1400px] items-center gap-10 lg:grid-cols-[0.7fr_1.3fr]">
         <div>
           <span className={pill}>Des offres adaptées</span>
           <h2 className={`${h2} mt-5`}>Choisissez l'offre qui vous convient</h2>
-          <p className="mt-4 max-w-sm text-bk-ink/75">Commencez gratuitement et évoluez selon vos besoins.</p>
+          <p className="mt-4 max-w-sm text-bk-ink/75">
+            Commencez gratuitement et évoluez selon vos besoins.
+          </p>
         </div>
         <div className="grid items-end gap-5 pt-6 md:grid-cols-3">
           {plans.map((p) => (
@@ -705,7 +825,9 @@ function Tarifs() {
               <p className="mt-1 text-sm text-bk-ink/65">{p.desc}</p>
               <p className="mt-4 font-jakarta text-3xl font-extrabold text-bk-ink">
                 {p.price}
-                {p.unit && <span className="ml-1 text-sm font-medium text-bk-ink/60">{p.unit}</span>}
+                {p.unit && (
+                  <span className="ml-1 text-sm font-medium text-bk-ink/60">{p.unit}</span>
+                )}
               </p>
               <ul className="mt-4 space-y-2 text-sm text-bk-ink/80">
                 {p.features.map((f) => (
@@ -715,7 +837,10 @@ function Tarifs() {
                   </li>
                 ))}
               </ul>
-              <Link to={p.to} className={`${p.popular ? btnPrimary : btnOutline} mt-6 w-full !py-2.5 text-sm`}>
+              <Link
+                to={p.to}
+                className={`${p.popular ? btnPrimary : btnOutline} mt-6 w-full !py-2.5 text-sm`}
+              >
                 {p.cta}
               </Link>
             </div>
@@ -738,17 +863,22 @@ function CallToAction() {
         />
         <div>
           <span className={pill}>Prêt à passer à l'action ?</span>
-          <h2 className={`${h2} mt-4`}>Commencez dès aujourd'hui et transformez votre commerce !</h2>
+          <h2 className={`${h2} mt-4`}>
+            Commencez dès aujourd'hui et transformez votre commerce !
+          </h2>
           <p className="mt-4 text-bk-ink/75">
-            Rejoignez une communauté grandissante de commerçants qui ont choisi BoutikBF pour gérer leur activité
-            sereinement.
+            Rejoignez une communauté grandissante de commerçants qui ont choisi BoutikBF pour gérer
+            leur activité sereinement.
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-5">
             <Link to="/auth" className={btnPrimary}>
               Essayer gratuitement
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <a href="#tarifs" className="inline-flex items-center gap-1.5 font-semibold text-bk underline underline-offset-4">
+            <a
+              href="#tarifs"
+              className="inline-flex items-center gap-1.5 font-semibold text-bk underline underline-offset-4"
+            >
               Voir nos tarifs
               <ArrowRight className="h-4 w-4" />
             </a>
@@ -787,7 +917,10 @@ function Footer() {
       <div className="mx-auto max-w-[1400px] px-5 py-10 sm:px-8">
         <div className="flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
           <Logo light />
-          <nav aria-label="Pied de page" className="flex flex-wrap gap-x-7 gap-y-3 text-sm font-medium">
+          <nav
+            aria-label="Pied de page"
+            className="flex flex-wrap gap-x-7 gap-y-3 text-sm font-medium"
+          >
             {links.map((l) => (
               <a key={l.label} href={l.href} className="text-white/85 hover:text-white">
                 {l.label}
@@ -813,7 +946,10 @@ function Footer() {
                 </li>
               ))}
             </ul>
-            <Link to="/auth" className="hidden rounded-full bg-bk px-6 py-3 text-[15px] font-semibold text-white ring-1 ring-white/20 hover:bg-bk-dark sm:inline-flex sm:items-center sm:gap-2">
+            <Link
+              to="/auth"
+              className="hidden rounded-full bg-bk px-6 py-3 text-[15px] font-semibold text-white ring-1 ring-white/20 hover:bg-bk-dark sm:inline-flex sm:items-center sm:gap-2"
+            >
               Essayer gratuitement
               <ArrowRight className="h-4 w-4" />
             </Link>
@@ -822,13 +958,33 @@ function Footer() {
         <div className="mt-8 flex flex-col gap-3 border-t border-white/15 pt-6 text-sm text-white/75 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} BoutikBF. Tous droits réservés.</p>
           <ul className="flex flex-wrap gap-x-5 gap-y-2">
-            <li><Link to="/conditions" className="hover:text-white">Conditions d'utilisation</Link></li>
-            <li><Link to="/confidentialite" className="hover:text-white">Confidentialité</Link></li>
-            <li><Link to="/cookies" className="hover:text-white">Cookies</Link></li>
-            <li><Link to="/mentions-legales" className="hover:text-white">Mentions légales</Link></li>
+            <li>
+              <Link to="/conditions" className="hover:text-white">
+                Conditions d'utilisation
+              </Link>
+            </li>
+            <li>
+              <Link to="/confidentialite" className="hover:text-white">
+                Confidentialité
+              </Link>
+            </li>
+            <li>
+              <Link to="/cookies" className="hover:text-white">
+                Cookies
+              </Link>
+            </li>
+            <li>
+              <Link to="/mentions-legales" className="hover:text-white">
+                Mentions légales
+              </Link>
+            </li>
           </ul>
           <p className="flex items-center gap-2">
-            Fait avec <span className="text-red-500" aria-label="amour">♥</span> au Burkina Faso
+            Fait avec{" "}
+            <span className="text-red-500" aria-label="amour">
+              ♥
+            </span>{" "}
+            au Burkina Faso
             <BurkinaFlag className="h-4 w-6" />
           </p>
         </div>
@@ -848,6 +1004,7 @@ function Landing() {
         <PhotoTiles />
         <Features />
         <Pilotez />
+        <PosSimulator />
         <MobileMoney />
         <Confiance />
         <Temoignages />
