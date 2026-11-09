@@ -28,6 +28,7 @@ import {
   Zap,
 } from "lucide-react";
 
+import logoImg from "@/assets/logo-trim.png";
 import heroPhoto from "@/assets/mock/hero.jpg";
 import tileVentes from "@/assets/mock/tile-ventes.jpg";
 import tileStock from "@/assets/mock/tile-stock.jpg";
@@ -60,40 +61,11 @@ const h2 =
   "font-jakarta text-3xl font-extrabold leading-tight tracking-tight text-bk-ink sm:text-4xl";
 
 function Logo({ light = false }: { light?: boolean }) {
-  return (
-    <span className="flex items-center gap-2.5">
-      <svg viewBox="0 0 48 52" className="h-10 w-9" aria-hidden="true">
-        <path
-          d="M16 14c0-6 3.6-10 8-10s8 4 8 10"
-          fill="none"
-          stroke={light ? "#fff" : "#0b7a42"}
-          strokeWidth="4"
-          strokeLinecap="round"
-        />
-        <rect x="3" y="14" width="42" height="34" rx="8" fill={light ? "#fff" : "#0b7a42"} />
-        <path
-          d="M15 31l6.5 6.5L33 25"
-          fill="none"
-          stroke={light ? "#0a3b25" : "#fff"}
-          strokeWidth="4.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <span className="leading-none">
-        <span
-          className={`block font-jakarta text-[26px] font-extrabold tracking-tight ${light ? "text-white" : "text-bk-ink"}`}
-        >
-          Boutik<span className={light ? "text-white" : "text-bk"}>BF</span>
-        </span>
-        <span
-          className={`mt-1 block text-[11px] font-medium ${light ? "text-white/70" : "text-bk-ink/70"}`}
-        >
-          Gérez. Vendez. Grandissez.
-        </span>
-      </span>
-    </span>
+  const img = (
+    <img src={logoImg} alt="BoutikBF" width={880} height={441} className="h-12 w-auto sm:h-14" />
   );
+  // Sur fond vert foncé, le logo est posé sur une pastille blanche pour rester lisible.
+  return light ? <span className="inline-block rounded-2xl bg-white px-4 py-2">{img}</span> : img;
 }
 
 function BurkinaFlag({ className = "h-6 w-9" }: { className?: string }) {
@@ -303,7 +275,7 @@ function Hero() {
   return (
     <section
       id="top"
-      className="relative -mt-[68px] overflow-hidden bg-gradient-to-b from-white via-white to-bk-mint/40 pt-[68px]"
+      className="relative -mt-[76px] overflow-hidden bg-gradient-to-b from-white via-white to-bk-mint/40 pt-[76px]"
     >
       <div className="mx-auto grid max-w-[1400px] items-center gap-6 px-5 pb-8 pt-12 sm:px-8 lg:grid-cols-[1.02fr_1fr] lg:pt-16">
         <div className="relative z-10">
