@@ -21,6 +21,7 @@ import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as EmployeeRouteImport } from './routes/employee'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as RemoteScanRouteImport } from './routes/remote-scan'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SuperadminRouteImport } from './routes/superadmin'
 import { Route as AuthenticatedAccountingRouteImport } from './routes/_authenticated/accounting'
 import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authenticated/categories'
@@ -106,6 +107,11 @@ const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
 const RemoteScanRoute = RemoteScanRouteImport.update({
   id: '/remote-scan',
   path: '/remote-scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SuperadminRoute = SuperadminRouteImport.update({
@@ -256,6 +262,7 @@ export interface FileRoutesByFullPath {
   '/employee': typeof EmployeeRouteWithChildren
   '/mentions-legales': typeof MentionsLegalesRoute
   '/remote-scan': typeof RemoteScanRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/superadmin': typeof SuperadminRouteWithChildren
   '/accounting': typeof AuthenticatedAccountingRoute
   '/categories': typeof AuthenticatedCategoriesRoute
@@ -296,6 +303,7 @@ export interface FileRoutesByTo {
   '/employee': typeof EmployeeRouteWithChildren
   '/mentions-legales': typeof MentionsLegalesRoute
   '/remote-scan': typeof RemoteScanRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/accounting': typeof AuthenticatedAccountingRoute
   '/categories': typeof AuthenticatedCategoriesRoute
   '/clients': typeof AuthenticatedClientsRoute
@@ -337,6 +345,7 @@ export interface FileRoutesById {
   '/employee': typeof EmployeeRouteWithChildren
   '/mentions-legales': typeof MentionsLegalesRoute
   '/remote-scan': typeof RemoteScanRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/superadmin': typeof SuperadminRouteWithChildren
   '/_authenticated/accounting': typeof AuthenticatedAccountingRoute
   '/_authenticated/categories': typeof AuthenticatedCategoriesRoute
@@ -379,6 +388,7 @@ export interface FileRouteTypes {
     | '/employee'
     | '/mentions-legales'
     | '/remote-scan'
+    | '/reset-password'
     | '/superadmin'
     | '/accounting'
     | '/categories'
@@ -419,6 +429,7 @@ export interface FileRouteTypes {
     | '/employee'
     | '/mentions-legales'
     | '/remote-scan'
+    | '/reset-password'
     | '/accounting'
     | '/categories'
     | '/clients'
@@ -459,6 +470,7 @@ export interface FileRouteTypes {
     | '/employee'
     | '/mentions-legales'
     | '/remote-scan'
+    | '/reset-password'
     | '/superadmin'
     | '/_authenticated/accounting'
     | '/_authenticated/categories'
@@ -501,6 +513,7 @@ export interface RootRouteChildren {
   EmployeeRoute: typeof EmployeeRouteWithChildren
   MentionsLegalesRoute: typeof MentionsLegalesRoute
   RemoteScanRoute: typeof RemoteScanRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SuperadminRoute: typeof SuperadminRouteWithChildren
 }
 
@@ -588,6 +601,13 @@ declare module '@tanstack/react-router' {
       path: '/remote-scan'
       fullPath: '/remote-scan'
       preLoaderRoute: typeof RemoteScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/superadmin': {
@@ -876,18 +896,9 @@ const rootRouteChildren: RootRouteChildren = {
   EmployeeRoute: EmployeeRouteWithChildren,
   MentionsLegalesRoute: MentionsLegalesRoute,
   RemoteScanRoute: RemoteScanRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SuperadminRoute: SuperadminRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
