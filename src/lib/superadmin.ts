@@ -195,8 +195,41 @@ export type ShopDetails = {
   audit: { action: string; created_at: string; details: unknown; admin: string | null }[];
 };
 
-/** Lien WhatsApp (numéros burkinabè à 8 chiffres : indicatif 226 ajouté). */
-export function whatsappLink(phone: string | null | undefined, message: string): string | null {
+/* ---------- Paiements d'abonnement (registre super admin) ---------- */
+
+export const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  orange_money: "Orange Money",
+  moov_money: "Moov Money",
+  wave: "Wave",
+  cash: "Espèces",
+  bank: "Virement / banque",
+  other: "Autre",
+};
+
+export type ShopPayments = {
+  payments: {
+    id: string;
+    amount: number;
+    method: string;
+    plan: string | null;
+    period_start: string | null;
+    period_end: string | null;
+    paid_at: string;
+    note: string | null;
+    created_at: string;
+  }[];
+  summary: {
+    count: number;
+    total: number;
+    total_12m: number;
+    last_paid_at: string | null;
+  };
+};
+
+/** Lien WhatsApp (numéros burkinabè à 8 chiffres : indicatif 226 ajouté). */ export function whatsappLink(
+  phone: string | null | undefined,
+  message: string,
+): string | null {
   const digits = (phone ?? "").replace(/\D/g, "");
   if (digits.length < 8) return null;
   const full = digits.length === 8 ? `226${digits}` : digits;

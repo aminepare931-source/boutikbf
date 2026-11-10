@@ -1,7 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Search, Settings2, Trash2, Ban, CheckCircle2, MessageCircle } from "lucide-react";
+import {
+  Loader2,
+  Search,
+  Settings2,
+  Trash2,
+  Ban,
+  CheckCircle2,
+  MessageCircle,
+  Plus,
+  X,
+} from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -44,10 +54,12 @@ import {
 } from "@/components/ui/dialog";
 import {
   adminRpc,
+  PAYMENT_METHOD_LABELS,
   PLAN_LABELS,
   trialDaysLeft,
   type AdminShop,
   type ShopDetails,
+  type ShopPayments,
 } from "@/lib/superadmin";
 import { fmtDate, fmtMoney, fmtNumber } from "@/lib/format";
 
@@ -294,6 +306,7 @@ function ShopDialog({
             <TabsList className="w-full justify-start">
               <TabsTrigger value="perf">Performance</TabsTrigger>
               <TabsTrigger value="fiche">Boutique & stock</TabsTrigger>
+              <TabsTrigger value="pay">Abonnements</TabsTrigger>
               <TabsTrigger value="gestion">Gestion</TabsTrigger>
             </TabsList>
 
@@ -579,6 +592,18 @@ function ShopDialog({
               </div>
             </TabsContent>
 
+            {/* ===== Abonnements & paiements ===== */}
+            <TabsContent value="pay">
+              <PaymentsTab
+                shopId={shop.id}
+                currentPlan={shop.plan}
+                onChanged={() => {
+                  onChanged();
+                  qc.invalidateQueries({ queryKey: ["sa-shop", shop.id] });
+                }}
+              />
+            </TabsContent>
+
             {/* ===== Gestion ===== */}
             <TabsContent value="gestion" className="space-y-5">
               <section className="space-y-2">
@@ -739,5 +764,245 @@ function ShopDialog({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/* ---------- Onglet Abonnements & paiements ---------- */
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+function PaymentsTab({
+  shopId,
+  currentPlan,
+  onChanged,
+}: {
+  shopId: string;
+  currentPlan: string;
+  onChanged: () => void;
+}) {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["sa-shop-payments", shopId],
+    queryFn: () => adminRpc<ShopPayments>("admin_list_shop_payments", { p_shop_id: shopId }),
+  });
+
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState("orange_money");
+  const [plan, setPlan] = useState(currentPlan === "essentiel" ? "essentiel_paid" : currentPlan);
+  const [date, setDate] = useState(today());
+  const [coversUntil, setCoversUntil] = useState("");
+  const [note, setNote] = useState("");
+
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["sa-shop-payments", shopId] });
+    onChanged();
+  };
+
+  const add = useMutation({
+    mutationFn: () =>
+      adminRpc("admin_add_shop_payment", {
+        p_shop_id: shopId,
+        p_amount: Number(amount),
+        p_method: method,
+        p_plan: plan || null,
+        p_paid_at: new Date(`${date}T12:00:00`).toISOString(),
+        p_period_end: coversUntil ? coversUntil : null,
+        p_note: note || null,
+      }),
+    onSuccess: () => {
+      toast.success("Paiement enregistré");
+      setAmount("");
+      setNote("");
+      setCoversUntil("");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const del = useMutation({
+    mutationFn: (id: string) => adminRpc("admin_delete_shop_payment", { p_payment_id: id }),
+    onSuccess: () => {
+      toast.success("Paiement supprimé");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  if (isLoading || !data)
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+
+  const canAdd = Number(amount) > 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Résumé */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <MiniStat label="Total payé" value={fmtMoney(Number(data.summary.total))} />
+        <MiniStat
+          label="12 derniers mois"
+          value={fmtMoney(Number(data.summary.total_12m))}
+          sub={`${data.summary.count} paiement(s)`}
+        />
+        <MiniStat
+          label="Dernier paiement"
+          value={data.summary.last_paid_at ? fmtDate(data.summary.last_paid_at) : "Jamais"}
+        />
+        <MiniStat
+          label="Formule actuelle"
+          value={PLAN_LABELS[currentPlan] ?? currentPlan}
+          sub={
+            data.summary.last_paid_at &&
+            Date.now() - new Date(data.summary.last_paid_at).getTime() > 35 * 86_400_000
+              ? "⚠ aucun paiement depuis 1 mois"
+              : undefined
+          }
+        />
+      </div>
+
+      {/* Saisie */}
+      <div className="rounded-xl border border-border p-4">
+        <h4 className="mb-3 text-sm font-semibold">Enregistrer un paiement reçu</h4>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label>Montant (F CFA)</Label>
+            <Input
+              type="number"
+              min="1"
+              step="100"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="5000"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Reçu via</Label>
+            <Select value={method} onValueChange={setMethod}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(PAYMENT_METHOD_LABELS).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>
+                    {v}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Formule payée</Label>
+            <Select value={plan || "none"} onValueChange={(v) => setPlan(v === "none" ? "" : v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— (hors abonnement)</SelectItem>
+                {Object.entries(PLAN_LABELS)
+                  .filter(([k]) => k !== "essentiel")
+                  .map(([k, v]) => (
+                    <SelectItem key={k} value={k}>
+                      {v}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Date du paiement</Label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>
+              Couvre jusqu'au <span className="font-normal text-muted-foreground">(optionnel)</span>
+            </Label>
+            <Input
+              type="date"
+              value={coversUntil}
+              onChange={(e) => setCoversUntil(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>
+              Note <span className="font-normal text-muted-foreground">(optionnel)</span>
+            </Label>
+            <Input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Ex : reçu par Orange Money, réf 4487"
+            />
+          </div>
+        </div>
+        <Button
+          size="sm"
+          className="mt-3"
+          disabled={!canAdd || add.isPending}
+          onClick={() => add.mutate()}
+        >
+          <Plus className="mr-1.5 h-4 w-4" /> Enregistrer le paiement
+        </Button>
+      </div>
+
+      {/* Historique */}
+      <div>
+        <h4 className="mb-2 text-sm font-semibold">Historique des paiements</h4>
+        {data.payments.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            Aucun paiement enregistré pour cette boutique.
+          </p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Montant</TableHead>
+                <TableHead>Formule</TableHead>
+                <TableHead>Reçu via</TableHead>
+                <TableHead>Couverture</TableHead>
+                <TableHead>Note</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.payments.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell className="py-1.5 text-xs">{fmtDate(p.paid_at)}</TableCell>
+                  <TableCell className="py-1.5 text-right text-xs font-semibold">
+                    {fmtMoney(Number(p.amount))}
+                  </TableCell>
+                  <TableCell className="py-1.5 text-xs">
+                    {p.plan ? (PLAN_LABELS[p.plan] ?? p.plan) : "—"}
+                  </TableCell>
+                  <TableCell className="py-1.5 text-xs">
+                    {PAYMENT_METHOD_LABELS[p.method] ?? p.method}
+                  </TableCell>
+                  <TableCell className="py-1.5 text-xs text-muted-foreground">
+                    {p.period_end ? `→ ${fmtDate(p.period_end)}` : "—"}
+                  </TableCell>
+                  <TableCell className="max-w-[160px] truncate py-1.5 text-xs text-muted-foreground">
+                    {p.note ?? ""}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      title="Supprimer ce paiement (erreur de saisie)"
+                      disabled={del.isPending}
+                      onClick={() => del.mutate(p.id)}
+                    >
+                      <X className="h-3.5 w-3.5 text-destructive" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+    </div>
   );
 }
