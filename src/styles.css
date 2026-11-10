@@ -447,3 +447,9 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .bk-print, .bk-pop { animation: none; }
 }
+
+/* Barre de progression des navigations (fiche admin + app) */
+@keyframes nav-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { BrowserMultiFormatReader } from "@zxing/browser";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +17,10 @@ type Props = {
   title?: string;
   continuous?: boolean;
 };
+
+// @zxing (~400 Ko) n'est chargé que quand le scanner s'ouvre réellement.
+let zxingPromise: Promise<typeof import("@zxing/browser")> | undefined;
+const zxing = () => (zxingPromise ??= import("@zxing/browser"));
 
 export function BarcodeScanner({
   open,
@@ -41,9 +44,10 @@ export function BarcodeScanner({
         // First, request camera permission explicitly
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         // Stop the stream immediately, we just needed permission
-        stream.getTracks().forEach(track => track.stop());
-        
+        stream.getTracks().forEach((track) => track.stop());
+
         // Now list devices
+        const { BrowserMultiFormatReader } = await zxing();
         const list = await BrowserMultiFormatReader.listVideoInputDevices();
         if (cancelled) return;
         setDevices(list);
@@ -53,7 +57,9 @@ export function BarcodeScanner({
       } catch (e: any) {
         console.error("Camera error:", e);
         if (e?.name === "NotAllowedError" || e?.name === "PermissionDeniedError") {
-          setError("Permission caméra refusée. Veuillez autoriser l'accès à la caméra dans les paramètres de votre navigateur.");
+          setError(
+            "Permission caméra refusée. Veuillez autoriser l'accès à la caméra dans les paramètres de votre navigateur.",
+          );
         } else if (e?.name === "NotFoundError") {
           setError("Aucune caméra détectée sur cet appareil.");
         } else {
@@ -71,48 +77,54 @@ export function BarcodeScanner({
 
   useEffect(() => {
     if (!open || !deviceId || !videoRef.current) return;
-    
+
     // Use MultiFormatReader for better detection (QR, barcodes, etc.)
-    const reader = new BrowserMultiFormatReader();
     let stopped = false;
     let lastCode = "";
     let lastAt = 0;
     let attempts = 0;
     const maxAttempts = 3; // Try multiple times for better accuracy
 
-    reader
-      .decodeFromVideoDevice(deviceId, videoRef.current, (result, _err, controls) => {
-        if (stopped) return;
-        controlsRef.current = controls;
-        
-        if (result) {
-          const text = result.getText();
-          const now = Date.now();
-          
-          // Faster detection - reduce debounce to 800ms
-          if (continuous) {
-            if (text === lastCode && now - lastAt < 800) return;
-            lastCode = text;
-            lastAt = now;
-            onDetected(text);
-          } else {
-            // For single scan, verify the code multiple times for accuracy
-            attempts++;
-            if (attempts >= maxAttempts || text === lastCode) {
-              controls.stop();
-              stopped = true;
-              onDetected(text);
-              onOpenChange(false);
-            } else {
+    (async () => {
+      const { BrowserMultiFormatReader } = await zxing();
+      if (stopped || !videoRef.current) return;
+      const reader = new BrowserMultiFormatReader();
+      const video = videoRef.current;
+
+      return reader
+        .decodeFromVideoDevice(deviceId, video, (result, _err, controls) => {
+          if (stopped) return;
+          controlsRef.current = controls;
+
+          if (result) {
+            const text = result.getText();
+            const now = Date.now();
+
+            // Faster detection - reduce debounce to 800ms
+            if (continuous) {
+              if (text === lastCode && now - lastAt < 800) return;
               lastCode = text;
+              lastAt = now;
+              onDetected(text);
+            } else {
+              // For single scan, verify the code multiple times for accuracy
+              attempts++;
+              if (attempts >= maxAttempts || text === lastCode) {
+                controls.stop();
+                stopped = true;
+                onDetected(text);
+                onOpenChange(false);
+              } else {
+                lastCode = text;
+              }
             }
           }
-        }
-      })
-      .catch((e) => {
-        console.error("Scanner error:", e);
-        setError(e?.message ?? "Impossible de démarrer la caméra");
-      });
+        })
+        .catch((e) => {
+          console.error("Scanner error:", e);
+          setError(e?.message ?? "Impossible de démarrer la caméra");
+        });
+    })();
 
     return () => {
       stopped = true;

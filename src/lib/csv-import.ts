@@ -1,4 +1,12 @@
-import * as XLSX from "xlsx";
+// xlsx (~400 Ko) est chargé à la demande uniquement quand l'utilisateur
+// importe un fichier ou télécharge le modèle — sinon il ralentit l'ouverture
+// de la page Produits pour tout le monde.
+type XLSXModule = typeof import("xlsx");
+let xlsxPromise: Promise<XLSXModule> | undefined;
+function xlsx(): Promise<XLSXModule> {
+  if (!xlsxPromise) xlsxPromise = import("xlsx");
+  return xlsxPromise;
+}
 
 export type ImportRow = {
   name: string;
@@ -24,7 +32,8 @@ const HEADERS = [
   "Unite",
 ];
 
-export function downloadTemplate() {
+export async function downloadTemplate() {
+  const XLSX = await xlsx();
   const ws = XLSX.utils.aoa_to_sheet([
     HEADERS,
     ["Riz parfumé 5kg", "Alimentation", 4500, 5500, 20, "", "SOSUCO", "", "sac"],
@@ -149,8 +158,9 @@ function assertImportSize(file: File) {
 
 export async function parseFile(file: File): Promise<ImportRow[]> {
   assertImportSize(file);
+  const XLSX = await xlsx();
   const buf = await file.arrayBuffer();
-  let wb: XLSX.WorkBook;
+  let wb: import("xlsx").WorkBook;
   try {
     wb = XLSX.read(buf, { type: "array", cellDates: true, cellText: false });
   } catch {
@@ -339,8 +349,9 @@ export async function parseFileRaw(
   file: File,
 ): Promise<{ columns: string[]; rows: Record<string, any>[] }> {
   assertImportSize(file);
+  const XLSX = await xlsx();
   const buf = await file.arrayBuffer();
-  let wb: XLSX.WorkBook;
+  let wb: import("xlsx").WorkBook;
   try {
     wb = XLSX.read(buf, { type: "array", cellDates: true, cellText: false });
   } catch {

@@ -5,6 +5,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -127,7 +128,6 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
-
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
@@ -145,9 +145,22 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
+        <NavProgressBar />
         <Outlet />
         <Toaster richColors position="top-right" />
       </ThemeProvider>
     </QueryClientProvider>
+  );
+}
+
+/** Fine barre de progression en haut pendant qu'une navigation est en cours :
+ * le clic est immédiatement visible même si le chunk de la page tarde. */
+function NavProgressBar() {
+  const status = useRouterState({ select: (s) => s.status });
+  if (status === "idle") return null;
+  return (
+    <div className="fixed inset-x-0 top-0 z-[100] h-0.5 overflow-hidden bg-primary/20" aria-hidden>
+      <div className="h-full w-1/3 animate-[nav-sweep_1s_ease-in-out_infinite] bg-primary" />
+    </div>
   );
 }

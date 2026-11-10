@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { BrowserMultiFormatReader } from "@zxing/browser";
 import { sendBarcodeToDesktop } from "@/lib/remote-scanner";
 import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Smartphone, CheckCircle2, XCircle } from "lucide-react";
@@ -28,11 +27,13 @@ function RemoteScanPage() {
     setError(null);
 
     try {
+      // @zxing chargé à la demande (chunk de ~400 Ko) uniquement au démarrage du scan
+      const { BrowserMultiFormatReader } = await import("@zxing/browser");
       // First, request camera permission explicitly
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       // Stop the stream immediately, we just needed permission
-      stream.getTracks().forEach(track => track.stop());
-      
+      stream.getTracks().forEach((track) => track.stop());
+
       const reader = new BrowserMultiFormatReader();
       const devices = await BrowserMultiFormatReader.listVideoInputDevices();
       const back = devices.find((d) => /back|rear|environment/i.test(d.label));
@@ -55,7 +56,9 @@ function RemoteScanPage() {
       console.error("Camera error:", e);
       if (e instanceof Error) {
         if (e.name === "NotAllowedError" || e.name === "PermissionDeniedError") {
-          setError("Permission caméra refusée. Veuillez autoriser l'accès à la caméra dans les paramètres de votre navigateur.");
+          setError(
+            "Permission caméra refusée. Veuillez autoriser l'accès à la caméra dans les paramètres de votre navigateur.",
+          );
         } else if (e.name === "NotFoundError") {
           setError("Aucune caméra détectée sur cet appareil.");
         } else {
