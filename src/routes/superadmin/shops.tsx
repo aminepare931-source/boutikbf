@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Search, Settings2, Trash2, Ban, CheckCircle2, MessageCircle } from "lucide-react";
@@ -49,6 +49,7 @@ function planBadge(s: AdminShop) {
 
 function ShopsPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [planFilter, setPlanFilter] = useState("all");
   const [selected, setSelected] = useState<AdminShop | null>(null);
@@ -131,7 +132,13 @@ function ShopsPage() {
             </TableHeader>
             <TableBody>
               {filtered.map((s) => (
-                <TableRow key={s.id} className="cursor-pointer" onClick={() => setSelected(s)}>
+                <TableRow
+                  key={s.id}
+                  className="cursor-pointer"
+                  onClick={() =>
+                    navigate({ to: "/superadmin/shops/$shopId", params: { shopId: s.id } })
+                  }
+                >
                   <TableCell>
                     <div className="font-medium">{s.name}</div>
                     <div className="text-xs text-muted-foreground">
@@ -154,7 +161,17 @@ function ShopsPage() {
                     {s.last_sale_at ? fmtDate(s.last_sale_at) : "Jamais"}
                   </TableCell>
                   <TableCell>
-                    <Settings2 className="h-4 w-4 text-muted-foreground" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Actions rapides"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelected(s);
+                      }}
+                    >
+                      <Settings2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

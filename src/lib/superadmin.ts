@@ -126,6 +126,75 @@ export type AdminDashboard = {
   hot_trials: DashboardShopRow[];
 };
 
+/* ---------- Fiche boutique : infos complètes + performance ---------- */
+
+export type ShopDetails = {
+  days: number;
+  shop: AdminShop & {
+    slug: string;
+    logo_url: string | null;
+    currency: string;
+    country: string | null;
+    address: string | null;
+    email: string | null;
+    trial_end: string;
+  };
+  owner: {
+    email: string | null;
+    full_name: string | null;
+    phone: string | null;
+    created_at: string | null;
+    last_sign_in_at: string | null;
+    banned_until: string | null;
+  };
+  sales: {
+    n_all: number;
+    v_all: number;
+    n_cancelled: number;
+    last_sale: string | null;
+    n_p: number;
+    v_p: number;
+    n_prev: number;
+    v_prev: number;
+    avg_basket_p: number | null;
+    avg_basket_all: number | null;
+  };
+  series: { day: string; sales: number; volume: number }[];
+  payments: { method: string; n: number; volume: number }[];
+  top_products: { name: string; qty: number; revenue: number }[];
+  top_customers: { name: string; n: number; volume: number }[];
+  catalog: {
+    categories: number;
+    products: number;
+    active: number;
+    inactive: number;
+    with_barcode: number;
+    stock_units: number;
+    stock_value: number;
+    out_of_stock: number;
+    low_stock: number;
+  };
+  stock_alerts: {
+    name: string;
+    stock: number;
+    unit: string | null;
+    stock_min: number;
+    state: string;
+  }[];
+  customers: { count: number; with_credit: number; credit_total: number };
+  members: { name: string | null; role: string; created_at: string }[];
+  employees: { name: string; role: string; is_active: boolean; created_at: string }[];
+  recent_sales: {
+    id: string;
+    created_at: string;
+    total: number;
+    payment_method: string;
+    status: string;
+    customer: string | null;
+  }[];
+  audit: { action: string; created_at: string; details: unknown; admin: string | null }[];
+};
+
 /** Lien WhatsApp (numéros burkinabè à 8 chiffres : indicatif 226 ajouté). */
 export function whatsappLink(phone: string | null | undefined, message: string): string | null {
   const digits = (phone ?? "").replace(/\D/g, "");
