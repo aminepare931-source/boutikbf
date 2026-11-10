@@ -19,8 +19,8 @@ dist-ssr
 # Environment variables (sensitive keys)
 .env
 
-# Lovable metadata (auto-generated)
-.lovable/
+# Metadata CLI Supabase (auto-généré)
+supabase/.temp/
 
 # Wrangler / Cloudflare
 .wrangler/

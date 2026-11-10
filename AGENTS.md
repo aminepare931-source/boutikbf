@@ -1,12 +1,22 @@
-<!-- LOVABLE:BEGIN -->
+# BoutikBF — notes projet
 
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
+## Stack & déploiement (100 % autonome)
 
-<!-- LOVABLE:END -->
+- Vite + TanStack Start (SSR) + TanStack Router + Tailwind 4 + Nitro.
+- `vite.config.ts` est la configuration complète, sans wrapper éditeur tiers.
+- Déploiement : **Vercel** (`vercel.json`, `NITRO_PRESET=vercel`, sortie dans `.output/`,
+  démarrable en local avec `npm run build && npm start`).
+- Base de données : **Supabase** (projet `boutikbf`, ref `fxjtajofzqfbxojmgrqt`).
+
+## Conventions
+
+- Ne jamais réécrire l'historique git déjà poussé sur `main` (pas de force-push,
+  rebase ou amend de commits publiés).
+- Les fonctions SQL `admin_*` sont SECURITY DEFINER + `is_super_admin()` : les
+  garder en lecture seule sauf besoin explicite, et ne jamais les exposer à `anon`.
+- Nouvelles migrations SQL : fichier dans `supabase/migrations/` PUIS application
+  réelle avec `supabase db query --remote=fxjtajofzqfbxojmgrqt --yes -f <fichier>`.
+- Les fichiers `supabase/APPLIQUER_*.sql` sont des copies pour l'éditeur SQL
+  Supabase (méthode historique) ; la CLI est désormais la méthode recommandée.
+- `src/routeTree.gen.ts` est généré automatiquement par le plugin TanStack Router
+  (dès que `npm run dev` ou `npm run build` tourne) — ne pas le modifier à la main.
