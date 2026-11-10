@@ -1,7 +1,16 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Search, Settings2, Trash2, Ban, CheckCircle2, MessageCircle } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-parts";
 import { Button } from "@/components/ui/button";
@@ -10,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -32,7 +42,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { adminRpc, PLAN_LABELS, trialDaysLeft, type AdminShop } from "@/lib/superadmin";
+import {
+  adminRpc,
+  PLAN_LABELS,
+  trialDaysLeft,
+  type AdminShop,
+  type ShopDetails,
+} from "@/lib/superadmin";
 import { fmtDate, fmtMoney, fmtNumber } from "@/lib/format";
 
 export const Route = createFileRoute("/superadmin/shops")({ component: ShopsPage });
@@ -49,7 +65,6 @@ function planBadge(s: AdminShop) {
 
 function ShopsPage() {
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [planFilter, setPlanFilter] = useState("all");
   const [selected, setSelected] = useState<AdminShop | null>(null);
@@ -132,13 +147,7 @@ function ShopsPage() {
             </TableHeader>
             <TableBody>
               {filtered.map((s) => (
-                <TableRow
-                  key={s.id}
-                  className="cursor-pointer"
-                  onClick={() =>
-                    navigate({ to: "/superadmin/shops/$shopId", params: { shopId: s.id } })
-                  }
-                >
+                <TableRow key={s.id} className="cursor-pointer" onClick={() => setSelected(s)}>
                   <TableCell>
                     <div className="font-medium">{s.name}</div>
                     <div className="text-xs text-muted-foreground">
@@ -161,17 +170,7 @@ function ShopsPage() {
                     {s.last_sale_at ? fmtDate(s.last_sale_at) : "Jamais"}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="Actions rapides"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelected(s);
-                      }}
-                    >
-                      <Settings2 className="h-4 w-4 text-muted-foreground" />
-                    </Button>
+                    <Settings2 className="h-4 w-4 text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ))}
@@ -202,6 +201,35 @@ function ShopsPage() {
   );
 }
 
+/* ---------- petits éléments de la fiche ---------- */
+
+const PAYMENT_LABELS: Record<string, string> = {
+  cash: "Espèces",
+  mobile: "Mobile Money",
+  card: "Carte",
+};
+
+const shortDay = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
+
+function MiniStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-3">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="mt-1 text-lg font-bold leading-tight">{value}</div>
+      {sub && <div className="text-[11px] text-muted-foreground">{sub}</div>}
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 py-1 text-sm">
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      <span className="text-right font-medium">{value ?? "—"}</span>
+    </div>
+  );
+}
+
 function ShopDialog({
   shop,
   onClose,
@@ -211,31 +239,25 @@ function ShopDialog({
   onClose: () => void;
   onChanged: () => void;
 }) {
+  const qc = useQueryClient();
   const [notes, setNotes] = useState(shop.admin_notes ?? "");
   const [confirmName, setConfirmName] = useState("");
 
+  const { data: d, isLoading } = useQuery({
+    queryKey: ["sa-shop", shop.id],
+    queryFn: () => adminRpc<ShopDetails>("admin_shop_details", { p_shop_id: shop.id }),
+  });
+
   const run = useMutation({
-    mutationFn: async ({
-      fn,
-      args,
-      ok,
-    }: {
-      fn: string;
-      args: Record<string, unknown>;
-      ok: string;
-    }) => {
+    mutationFn: async ({ fn, args }: { fn: string; args: Record<string, unknown> }) => {
       await adminRpc(fn, args);
-      return ok;
     },
-    onSuccess: (ok) => {
-      toast.success(ok);
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sa-shop", shop.id] });
       onChanged();
     },
     onError: (e: Error) => toast.error(e.message),
   });
-
-  const act = (fn: string, args: Record<string, unknown>, ok: string) =>
-    run.mutate({ fn, args: { p_shop_id: shop.id, ...args }, ok });
 
   const remove = useMutation({
     mutationFn: () => adminRpc("admin_delete_shop", { p_shop_id: shop.id }),
@@ -248,10 +270,11 @@ function ShopDialog({
   });
 
   const phone = (shop.phone ?? "").replace(/\D/g, "");
+  const trialLeft = trialDaysLeft(shop);
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {shop.name} {planBadge(shop)}
@@ -262,119 +285,458 @@ function ShopDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <section className="space-y-2">
-          <Label>Formule (après paiement reçu)</Label>
-          <Select
-            value={shop.plan}
-            onValueChange={(v) => act("admin_set_shop_plan", { p_plan: v }, "Formule mise à jour")}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(PLAN_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>
-                  {v}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </section>
+        {isLoading || !d ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <Tabs defaultValue="perf">
+            <TabsList className="w-full justify-start">
+              <TabsTrigger value="perf">Performance</TabsTrigger>
+              <TabsTrigger value="fiche">Boutique & stock</TabsTrigger>
+              <TabsTrigger value="gestion">Gestion</TabsTrigger>
+            </TabsList>
 
-        {shop.plan === "essentiel" && (
-          <section className="space-y-2">
-            <Label>
-              Prolonger l'essai{" "}
-              <span className="font-normal text-muted-foreground">
-                ({trialDaysLeft(shop) > 0 ? `${trialDaysLeft(shop)} j restants` : "expiré"})
-              </span>
-            </Label>
-            <div className="flex gap-2">
-              {[7, 15, 30].map((d) => (
+            {/* ===== Performance ===== */}
+            <TabsContent value="perf" className="space-y-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <MiniStat
+                  label={`Volume · ${d.days} j`}
+                  value={fmtMoney(Number(d.sales.v_p))}
+                  sub={
+                    d.sales.v_prev > 0
+                      ? `${d.sales.v_p >= d.sales.v_prev ? "+" : ""}${Math.round(((Number(d.sales.v_p) - Number(d.sales.v_prev)) / Number(d.sales.v_prev)) * 100)} % vs 30 j préc.`
+                      : d.sales.n_p > 0
+                        ? "nouveau"
+                        : "aucune vente avant"
+                  }
+                />
+                <MiniStat
+                  label={`Ventes · ${d.days} j`}
+                  value={fmtNumber(d.sales.n_p)}
+                  sub={`total : ${fmtNumber(d.sales.n_all)}`}
+                />
+                <MiniStat
+                  label="Panier moyen"
+                  value={fmtMoney(Number(d.sales.avg_basket_p ?? 0))}
+                  sub={`vie : ${fmtMoney(Number(d.sales.avg_basket_all ?? 0))}`}
+                />
+                <MiniStat
+                  label="Dernière vente"
+                  value={d.sales.last_sale ? fmtDate(d.sales.last_sale) : "Jamais"}
+                  sub={
+                    d.sales.last_sale &&
+                    Date.now() - new Date(d.sales.last_sale).getTime() > 14 * 86_400_000
+                      ? "⚠ inactive depuis 14 j"
+                      : undefined
+                  }
+                />
+              </div>
+
+              <div className="h-40 rounded-xl border border-border p-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={d.series}>
+                    <defs>
+                      <linearGradient id="dlgVol" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="var(--color-border)"
+                    />
+                    <XAxis
+                      dataKey="day"
+                      tickFormatter={shortDay}
+                      tick={{ fontSize: 10 }}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10 }}
+                      width={55}
+                      tickFormatter={(v) => `${Math.round(Number(v) / 1000)}k`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "var(--color-card)",
+                        border: "1px solid var(--color-border)",
+                        borderRadius: 10,
+                        fontSize: 12,
+                      }}
+                      labelFormatter={(l) => shortDay(String(l))}
+                      formatter={(value) => [fmtMoney(Number(value)), "Volume"]}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="volume"
+                      stroke="var(--color-primary)"
+                      fill="url(#dlgVol)"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold">Top produits</h4>
+                  {d.top_products.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Aucune vente terminée.</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {d.top_products.slice(0, 5).map((p, i) => (
+                        <div key={i} className="flex justify-between gap-2 text-xs">
+                          <span className="truncate">{p.name}</span>
+                          <span className="shrink-0 text-muted-foreground">
+                            {fmtNumber(Number(p.qty))} × · {fmtMoney(Number(p.revenue))}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold">Paiements · {d.days} j</h4>
+                  {d.payments.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Aucun paiement sur la période.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {d.payments.map((p) => {
+                        const pct = d.sales.n_p ? Math.round((p.n / d.sales.n_p) * 100) : 0;
+                        return (
+                          <div key={p.method}>
+                            <div className="flex justify-between text-xs">
+                              <span>{PAYMENT_LABELS[p.method] ?? p.method}</span>
+                              <span className="text-muted-foreground">
+                                {pct} % · {fmtMoney(Number(p.volume))}
+                              </span>
+                            </div>
+                            <div className="mt-1 h-1.5 rounded-full bg-secondary">
+                              <div
+                                className="h-1.5 rounded-full bg-primary"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="mb-2 text-sm font-semibold">Dernières ventes</h4>
+                {d.recent_sales.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Aucune vente.</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Mode</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {d.recent_sales.slice(0, 6).map((s) => (
+                        <TableRow key={s.id}>
+                          <TableCell className="py-1.5 text-xs">{fmtDate(s.created_at)}</TableCell>
+                          <TableCell className="py-1.5 text-xs">{s.customer ?? "—"}</TableCell>
+                          <TableCell className="py-1.5 text-xs">
+                            {PAYMENT_LABELS[s.payment_method] ?? s.payment_method}
+                          </TableCell>
+                          <TableCell className="py-1.5 text-right text-xs font-medium">
+                            {fmtMoney(Number(s.total))}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* ===== Boutique & stock ===== */}
+            <TabsContent value="fiche" className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Card className="p-4">
+                  <h4 className="mb-2 text-sm font-semibold">Boutique</h4>
+                  <InfoRow label="Formule" value={PLAN_LABELS[d.shop.plan] ?? d.shop.plan} />
+                  {d.shop.plan === "essentiel" && (
+                    <InfoRow label="Essai jusqu'au" value={fmtDate(d.shop.trial_end)} />
+                  )}
+                  <InfoRow label="Téléphone" value={d.shop.phone} />
+                  <InfoRow label="Adresse" value={d.shop.address} />
+                  <InfoRow
+                    label="Pays / devise"
+                    value={`${d.shop.country ?? "—"} · ${d.shop.currency}`}
+                  />
+                  <InfoRow
+                    label="Statut"
+                    value={
+                      d.shop.is_suspended ? (
+                        <span className="text-destructive">Suspendue</span>
+                      ) : (
+                        "Active"
+                      )
+                    }
+                  />
+                </Card>
+
+                <Card className="p-4">
+                  <h4 className="mb-2 text-sm font-semibold">Propriétaire</h4>
+                  <InfoRow label="Nom" value={d.owner.full_name ?? shop.owner_name} />
+                  <InfoRow label="Email" value={d.owner.email} />
+                  <InfoRow label="Téléphone" value={d.owner.phone} />
+                  <InfoRow
+                    label="Inscrit le"
+                    value={d.owner.created_at ? fmtDate(d.owner.created_at) : "—"}
+                  />
+                  <InfoRow
+                    label="Dernière connexion"
+                    value={d.owner.last_sign_in_at ? fmtDate(d.owner.last_sign_in_at) : "Jamais"}
+                  />
+                </Card>
+
+                <Card className="p-4">
+                  <h4 className="mb-2 text-sm font-semibold">Catalogue & stock</h4>
+                  <InfoRow label="Catégories" value={fmtNumber(d.catalog.categories)} />
+                  <InfoRow
+                    label="Produits"
+                    value={`${fmtNumber(d.catalog.products)} (${fmtNumber(d.catalog.active)} actifs)`}
+                  />
+                  <InfoRow
+                    label="Valeur du stock"
+                    value={fmtMoney(Number(d.catalog.stock_value))}
+                  />
+                  <InfoRow
+                    label="Ruptures"
+                    value={
+                      d.catalog.out_of_stock > 0 ? (
+                        <span className="text-destructive">
+                          {fmtNumber(d.catalog.out_of_stock)}
+                        </span>
+                      ) : (
+                        "0"
+                      )
+                    }
+                  />
+                  <InfoRow label="Stocks bas" value={fmtNumber(d.catalog.low_stock)} />
+                  {d.stock_alerts.length > 0 && (
+                    <div className="mt-2 space-y-1 border-t border-border pt-2">
+                      {d.stock_alerts.slice(0, 6).map((s, i) => (
+                        <div key={i} className="flex justify-between gap-2 text-xs">
+                          <span className="truncate">{s.name}</span>
+                          <span
+                            className={s.state === "rupture" ? "text-destructive" : "text-warning"}
+                          >
+                            {fmtNumber(Number(s.stock))} {s.unit ?? ""}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+
+                <Card className="p-4">
+                  <h4 className="mb-2 text-sm font-semibold">Équipe & clients</h4>
+                  <InfoRow label="Clients enregistrés" value={fmtNumber(d.customers.count)} />
+                  {d.customers.with_credit > 0 && (
+                    <InfoRow
+                      label="Créances"
+                      value={
+                        <span className="text-warning">
+                          {fmtMoney(Number(d.customers.credit_total))} ({d.customers.with_credit})
+                        </span>
+                      }
+                    />
+                  )}
+                  <div className="mt-2 border-t border-border pt-2 text-xs text-muted-foreground">
+                    <div className="mb-1 font-medium text-foreground">
+                      Membres ({d.members.length}) · Employés ({d.employees.length})
+                    </div>
+                    {d.members.slice(0, 4).map((m, i) => (
+                      <div key={i} className="flex justify-between">
+                        <span className="truncate">{m.name ?? "—"}</span>
+                        <span>{m.role}</span>
+                      </div>
+                    ))}
+                    {d.employees.slice(0, 4).map((e, i) => (
+                      <div key={`e${i}`} className="flex justify-between">
+                        <span className="truncate">{e.name}</span>
+                        <span>
+                          {e.role}
+                          {e.is_active ? "" : " (inactif)"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* ===== Gestion ===== */}
+            <TabsContent value="gestion" className="space-y-5">
+              <section className="space-y-2">
+                <Label>Formule (après paiement reçu)</Label>
+                <Select
+                  value={shop.plan}
+                  onValueChange={(v) =>
+                    run.mutate(
+                      { fn: "admin_set_shop_plan", args: { p_shop_id: shop.id, p_plan: v } },
+                      { onSuccess: () => toast.success("Formule mise à jour") },
+                    )
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PLAN_LABELS).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>
+                        {v}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </section>
+
+              {shop.plan === "essentiel" && (
+                <section className="space-y-2">
+                  <Label>
+                    Prolonger l'essai{" "}
+                    <span className="font-normal text-muted-foreground">
+                      ({trialLeft > 0 ? `${trialLeft} j restants` : "expiré"})
+                    </span>
+                  </Label>
+                  <div className="flex gap-2">
+                    {[7, 15, 30].map((days) => (
+                      <Button
+                        key={days}
+                        variant="outline"
+                        size="sm"
+                        disabled={run.isPending}
+                        onClick={() =>
+                          run.mutate(
+                            {
+                              fn: "admin_extend_trial",
+                              args: { p_shop_id: shop.id, p_days: days },
+                            },
+                            { onSuccess: () => toast.success(`Essai prolongé de ${days} jours`) },
+                          )
+                        }
+                      >
+                        +{days} jours
+                      </Button>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <section className="flex flex-wrap gap-2">
                 <Button
-                  key={d}
-                  variant="outline"
+                  variant={shop.is_suspended ? "default" : "outline"}
                   size="sm"
                   disabled={run.isPending}
                   onClick={() =>
-                    act("admin_extend_trial", { p_days: d }, `Essai prolongé de ${d} jours`)
+                    run.mutate(
+                      {
+                        fn: "admin_set_shop_suspended",
+                        args: { p_shop_id: shop.id, p_suspended: !shop.is_suspended },
+                      },
+                      {
+                        onSuccess: () =>
+                          toast.success(
+                            shop.is_suspended ? "Boutique réactivée" : "Boutique suspendue",
+                          ),
+                      },
+                    )
                   }
                 >
-                  +{d} jours
+                  {shop.is_suspended ? (
+                    <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                  ) : (
+                    <Ban className="mr-1.5 h-4 w-4" />
+                  )}
+                  {shop.is_suspended ? "Réactiver" : "Suspendre"}
                 </Button>
-              ))}
-            </div>
-          </section>
+                {phone && (
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">
+                      <MessageCircle className="mr-1.5 h-4 w-4" /> WhatsApp
+                    </a>
+                  </Button>
+                )}
+              </section>
+
+              <section className="space-y-2">
+                <Label>Notes privées</Label>
+                <Textarea
+                  rows={3}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Ex : a payé 5 000 F le 03/10 par Orange Money"
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={run.isPending || notes === (shop.admin_notes ?? "")}
+                  onClick={() =>
+                    run.mutate(
+                      { fn: "admin_set_shop_notes", args: { p_shop_id: shop.id, p_notes: notes } },
+                      { onSuccess: () => toast.success("Notes enregistrées") },
+                    )
+                  }
+                >
+                  Enregistrer la note
+                </Button>
+              </section>
+
+              {d.audit.length > 0 && (
+                <section>
+                  <Label className="mb-1 block">Journal admin</Label>
+                  <div className="max-h-36 space-y-1 overflow-y-auto rounded-xl border border-border p-3 text-xs text-muted-foreground">
+                    {d.audit.map((a, i) => (
+                      <div key={i} className="flex justify-between gap-2">
+                        <span>
+                          {a.action}
+                          {a.admin ? ` — ${a.admin}` : ""}
+                        </span>
+                        <span className="shrink-0">{fmtDate(a.created_at)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <section className="space-y-2 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+                <Label className="text-destructive">Zone dangereuse</Label>
+                <p className="text-xs text-muted-foreground">
+                  Supprime la boutique et toutes ses données (produits, ventes, clients…).
+                  Irréversible. Tape son nom pour confirmer.
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    value={confirmName}
+                    onChange={(e) => setConfirmName(e.target.value)}
+                    placeholder={shop.name}
+                  />
+                  <Button
+                    variant="destructive"
+                    disabled={confirmName !== shop.name || remove.isPending}
+                    onClick={() => remove.mutate()}
+                  >
+                    <Trash2 className="mr-1.5 h-4 w-4" /> Supprimer
+                  </Button>
+                </div>
+              </section>
+            </TabsContent>
+          </Tabs>
         )}
-
-        <section className="flex flex-wrap gap-2">
-          <Button
-            variant={shop.is_suspended ? "default" : "outline"}
-            size="sm"
-            disabled={run.isPending}
-            onClick={() =>
-              act(
-                "admin_set_shop_suspended",
-                { p_suspended: !shop.is_suspended },
-                shop.is_suspended ? "Boutique réactivée" : "Boutique suspendue",
-              )
-            }
-          >
-            {shop.is_suspended ? (
-              <CheckCircle2 className="mr-1.5 h-4 w-4" />
-            ) : (
-              <Ban className="mr-1.5 h-4 w-4" />
-            )}
-            {shop.is_suspended ? "Réactiver" : "Suspendre"}
-          </Button>
-          {phone && (
-            <Button variant="outline" size="sm" asChild>
-              <a href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer">
-                <MessageCircle className="mr-1.5 h-4 w-4" /> WhatsApp
-              </a>
-            </Button>
-          )}
-        </section>
-
-        <section className="space-y-2">
-          <Label>Notes privées</Label>
-          <Textarea
-            rows={3}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Ex : a payé 5 000 F le 03/10 par Orange Money"
-          />
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={run.isPending || notes === (shop.admin_notes ?? "")}
-            onClick={() => act("admin_set_shop_notes", { p_notes: notes }, "Notes enregistrées")}
-          >
-            Enregistrer la note
-          </Button>
-        </section>
-
-        <section className="space-y-2 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
-          <Label className="text-destructive">Zone dangereuse</Label>
-          <p className="text-xs text-muted-foreground">
-            Supprime la boutique et toutes ses données (produits, ventes, clients…). Irréversible.
-            Tape son nom pour confirmer.
-          </p>
-          <div className="flex gap-2">
-            <Input
-              value={confirmName}
-              onChange={(e) => setConfirmName(e.target.value)}
-              placeholder={shop.name}
-            />
-            <Button
-              variant="destructive"
-              disabled={confirmName !== shop.name || remove.isPending}
-              onClick={() => remove.mutate()}
-            >
-              <Trash2 className="mr-1.5 h-4 w-4" /> Supprimer
-            </Button>
-          </div>
-        </section>
       </DialogContent>
     </Dialog>
   );

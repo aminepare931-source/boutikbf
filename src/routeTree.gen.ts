@@ -49,7 +49,6 @@ import { Route as SuperadminIndexRouteImport } from './routes/superadmin/index'
 import { Route as SuperadminAdminsRouteImport } from './routes/superadmin/admins'
 import { Route as SuperadminShopsRouteImport } from './routes/superadmin/shops'
 import { Route as SuperadminUsersRouteImport } from './routes/superadmin/users'
-import { Route as SuperadminShopsShopIdRouteImport } from './routes/superadmin/shops.$shopId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -250,11 +249,6 @@ const SuperadminUsersRoute = SuperadminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => SuperadminRoute,
 } as any)
-const SuperadminShopsShopIdRoute = SuperadminShopsShopIdRouteImport.update({
-  id: '/$shopId',
-  path: '/$shopId',
-  getParentRoute: () => SuperadminShopsRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -293,10 +287,9 @@ export interface FileRoutesByFullPath {
   '/employee/suppliers': typeof EmployeeSuppliersRoute
   '/employee/team': typeof EmployeeTeamRoute
   '/superadmin/admins': typeof SuperadminAdminsRoute
-  '/superadmin/shops': typeof SuperadminShopsRouteWithChildren
+  '/superadmin/shops': typeof SuperadminShopsRoute
   '/superadmin/users': typeof SuperadminUsersRoute
   '/superadmin/': typeof SuperadminIndexRoute
-  '/superadmin/shops/$shopId': typeof SuperadminShopsShopIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -334,10 +327,9 @@ export interface FileRoutesByTo {
   '/employee/suppliers': typeof EmployeeSuppliersRoute
   '/employee/team': typeof EmployeeTeamRoute
   '/superadmin/admins': typeof SuperadminAdminsRoute
-  '/superadmin/shops': typeof SuperadminShopsRouteWithChildren
+  '/superadmin/shops': typeof SuperadminShopsRoute
   '/superadmin/users': typeof SuperadminUsersRoute
   '/superadmin': typeof SuperadminIndexRoute
-  '/superadmin/shops/$shopId': typeof SuperadminShopsShopIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -378,10 +370,9 @@ export interface FileRoutesById {
   '/employee/suppliers': typeof EmployeeSuppliersRoute
   '/employee/team': typeof EmployeeTeamRoute
   '/superadmin/admins': typeof SuperadminAdminsRoute
-  '/superadmin/shops': typeof SuperadminShopsRouteWithChildren
+  '/superadmin/shops': typeof SuperadminShopsRoute
   '/superadmin/users': typeof SuperadminUsersRoute
   '/superadmin/': typeof SuperadminIndexRoute
-  '/superadmin/shops/$shopId': typeof SuperadminShopsShopIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -425,7 +416,6 @@ export interface FileRouteTypes {
     | '/superadmin/shops'
     | '/superadmin/users'
     | '/superadmin/'
-    | '/superadmin/shops/$shopId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -466,7 +456,6 @@ export interface FileRouteTypes {
     | '/superadmin/shops'
     | '/superadmin/users'
     | '/superadmin'
-    | '/superadmin/shops/$shopId'
   id:
     | '__root__'
     | '/'
@@ -509,7 +498,6 @@ export interface FileRouteTypes {
     | '/superadmin/shops'
     | '/superadmin/users'
     | '/superadmin/'
-    | '/superadmin/shops/$shopId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -811,13 +799,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperadminUsersRouteImport
       parentRoute: typeof SuperadminRoute
     }
-    '/superadmin/shops/$shopId': {
-      id: '/superadmin/shops/$shopId'
-      path: '/$shopId'
-      fullPath: '/superadmin/shops/$shopId'
-      preLoaderRoute: typeof SuperadminShopsShopIdRouteImport
-      parentRoute: typeof SuperadminShopsRoute
-    }
   }
 }
 
@@ -884,28 +865,16 @@ const EmployeeRouteWithChildren = EmployeeRoute._addFileChildren(
   EmployeeRouteChildren,
 )
 
-interface SuperadminShopsRouteChildren {
-  SuperadminShopsShopIdRoute: typeof SuperadminShopsShopIdRoute
-}
-
-const SuperadminShopsRouteChildren: SuperadminShopsRouteChildren = {
-  SuperadminShopsShopIdRoute: SuperadminShopsShopIdRoute,
-}
-
-const SuperadminShopsRouteWithChildren = SuperadminShopsRoute._addFileChildren(
-  SuperadminShopsRouteChildren,
-)
-
 interface SuperadminRouteChildren {
   SuperadminAdminsRoute: typeof SuperadminAdminsRoute
-  SuperadminShopsRoute: typeof SuperadminShopsRouteWithChildren
+  SuperadminShopsRoute: typeof SuperadminShopsRoute
   SuperadminUsersRoute: typeof SuperadminUsersRoute
   SuperadminIndexRoute: typeof SuperadminIndexRoute
 }
 
 const SuperadminRouteChildren: SuperadminRouteChildren = {
   SuperadminAdminsRoute: SuperadminAdminsRoute,
-  SuperadminShopsRoute: SuperadminShopsRouteWithChildren,
+  SuperadminShopsRoute: SuperadminShopsRoute,
   SuperadminUsersRoute: SuperadminUsersRoute,
   SuperadminIndexRoute: SuperadminIndexRoute,
 }
