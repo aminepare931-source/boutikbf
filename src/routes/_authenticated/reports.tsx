@@ -463,6 +463,8 @@ type ZSale = {
   change_due: number;
   payments: { method: string; amount: number }[] | null;
   cashier_id: string | null;
+  employee_id: string | null;
+  employees?: { name: string } | null;
 };
 
 const Z_METHOD_LABEL: Record<string, string> = {
@@ -489,7 +491,9 @@ function ZReport({ currency }: { currency: string }) {
       const end = new Date(start.getTime() + 86_400_000);
       const { data } = await supabase
         .from("sales")
-        .select("id,total,payment_method,amount_paid,change_due,payments,cashier_id")
+        .select(
+          "id,total,payment_method,amount_paid,change_due,payments,cashier_id,employee_id,employees(name)",
+        )
         .eq("shop_id", current.id)
         .eq("status", "completed")
         .gte("created_at", start.toISOString())
@@ -558,7 +562,9 @@ function ZReport({ currency }: { currency: string }) {
 
   const byCashier = new Map<string, { n: number; total: number }>();
   for (const s of rows) {
-    const k = s.cashier_id ? (names[s.cashier_id] ?? "Caissier") : "Propriétaire";
+    const k = s.cashier_id
+      ? (names[s.cashier_id] ?? "Caissier")
+      : (s.employees?.name ?? "Propriétaire");
     const e = byCashier.get(k) ?? { n: 0, total: 0 };
     e.n++;
     e.total += Number(s.total);

@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { openReceipt } from "@/lib/receipt";
+import { getEmployeeSession } from "@/lib/employee-session";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import { PhoneScanner } from "@/components/phone-scanner";
 
@@ -117,6 +118,8 @@ function EmployeePOS() {
       .insert({
         shop_id: current.id,
         cashier_id: userData.user?.id,
+        // attribution réel à l'employé connecté par PIN (stats « Mon équipe »)
+        employee_id: getEmployeeSession()?.employeeId ?? null,
         subtotal,
         total: subtotal,
         payment_method: payment,

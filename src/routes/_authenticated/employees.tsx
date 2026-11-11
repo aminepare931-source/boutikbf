@@ -344,18 +344,42 @@ function EmployeesPage() {
     });
   };
 
+  const planLimit = PLAN_LIMITS[current?.plan ?? "essentiel"] ?? 3;
+  const activeCount = employees.filter((e) => e.is_active).length;
+  const atLimit = activeCount >= planLimit;
+
   return (
     <div>
       <PageHeader
         title="Mon équipe"
         description="Ajoutez les personnes qui travaillent avec vous : caissiers, gérants, comptables."
         actions={
-          <Button onClick={openWizard} className="bg-gradient-primary shadow-elegant">
-            <Plus className="mr-2 h-4 w-4" />
-            Ajouter quelqu'un
-          </Button>
+          <div className="flex items-center gap-2">
+            <Badge
+              variant={atLimit ? "destructive" : "secondary"}
+              className="text-xs"
+              title="Places d'employés incluses dans votre formule"
+            >
+              {activeCount} / {planLimit} places
+            </Badge>
+            <Button
+              onClick={openWizard}
+              disabled={atLimit}
+              className="bg-gradient-primary shadow-elegant"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Ajouter quelqu'un
+            </Button>
+          </div>
         }
       />
+
+      {atLimit && (
+        <div className="mb-4 rounded-xl border border-warning/30 bg-warning/5 p-3 text-sm">
+          Tu as atteint la limite d'employés de ta formule ({planLimit}). Contacte BoutikBF pour
+          passer à une formule supérieure et débloquer plus de places.
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-16">

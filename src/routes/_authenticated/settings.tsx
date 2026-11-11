@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { downloadCsv } from "@/lib/export-csv";
 import {
   Loader2,
   Upload,
@@ -27,6 +28,9 @@ import {
   Phone,
   MessageSquare,
   AlertTriangle,
+  ShieldCheck,
+  Database,
+  Download,
 } from "lucide-react";
 import {
   Dialog,
@@ -151,7 +155,19 @@ function SettingsPage() {
     phone: "",
     email: "",
     address: "",
+    shop_type: "general",
   });
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [pwdSaving, setPwdSaving] = useState(false);
+  const [backingUp, setBackingUp] = useState(false);
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSessionEmail(data.session?.user?.email ?? null);
+    });
+  }, []);
   const [saving, setSaving] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -172,6 +188,7 @@ function SettingsPage() {
         phone: current.phone ?? "",
         email: current.email ?? "",
         address: current.address ?? "",
+        shop_type: current.shop_type ?? "general",
       });
       resolveLogoUrl(current.logo_url).then(setLogoPreview);
     }
@@ -185,6 +202,49 @@ function SettingsPage() {
     if (error) return toast.error(error.message);
     toast.success("Paramètres enregistrés");
     reload();
+  };
+
+  const changePassword = async () => {
+    if (newPwd.length < 8) return toast.error("Mot de passe trop court (8 caractères minimum)");
+    if (newPwd !== confirmPwd) return toast.error("Les deux mots de passe ne correspondent pas");
+    setPwdSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: newPwd });
+    setPwdSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Mot de passe changé ✅");
+    setNewPwd("");
+    setConfirmPwd("");
+  };
+
+  const backupAll = async () => {
+    if (!current) return;
+    setBackingUp(true);
+    try {
+      const [products, sales, customers, suppliers, movs] = await Promise.all([
+        supabase.from("products").select("*").eq("shop_id", current.id).limit(100000),
+        supabase.from("sales").select("*").eq("shop_id", current.id).limit(100000),
+        supabase.from("customers").select("*").eq("shop_id", current.id).limit(100000),
+        supabase.from("suppliers").select("*").eq("shop_id", current.id).limit(100000),
+        supabase.from("stock_movements").select("*").eq("shop_id", current.id).limit(100000),
+      ]);
+      const d = new Date().toISOString().slice(0, 10);
+      downloadCsv(`boutique-produits-${d}.csv`, (products.data ?? []) as Record<string, unknown>[]);
+      downloadCsv(`boutique-ventes-${d}.csv`, (sales.data ?? []) as Record<string, unknown>[]);
+      downloadCsv(`boutique-clients-${d}.csv`, (customers.data ?? []) as Record<string, unknown>[]);
+      downloadCsv(
+        `boutique-fournisseurs-${d}.csv`,
+        (suppliers.data ?? []) as Record<string, unknown>[],
+      );
+      downloadCsv(
+        `boutique-mouvements-stock-${d}.csv`,
+        (movs.data ?? []) as Record<string, unknown>[],
+      );
+      toast.success("Sauvegarde téléchargée (5 fichiers CSV)");
+    } catch (e) {
+      toast.error("Échec de la sauvegarde : " + (e as Error).message);
+    } finally {
+      setBackingUp(false);
+    }
   };
 
   const uploadLogo = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -325,10 +385,106 @@ function SettingsPage() {
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
               />
             </div>
+            <div className="space-y-2">
+              <Label>Type de boutique</Label>
+              <Select
+                value={form.shop_type}
+                onValueChange={(v) => setForm({ ...form, shop_type: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[
+                    { value: "general", label: "Général" },
+                    { value: "epicerie", label: "Épicerie / Alimentation" },
+                    { value: "vetements", label: "Vêtements / Mode" },
+                    { value: "quincaillerie", label: "Quincaillerie" },
+                    { value: "pharmacie", label: "Pharmacie / Santé" },
+                    { value: "restaurant", label: "Restaurant / Food" },
+                    { value: "cosmetique", label: "Cosmétique / Beauté" },
+                    { value: "electronique", label: "Électronique" },
+                  ].map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Sert aux suggestions de catégories et aux aides contextuelles.
+              </p>
+            </div>
             <Button onClick={save} disabled={saving} className="bg-gradient-primary shadow-elegant">
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Enregistrer
             </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Sécurité & données */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <Card className="shadow-soft">
+          <CardHeader>
+            <CardTitle className="font-display text-lg flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-primary" /> Sécurité du compte
+            </CardTitle>
+            <CardDescription className="text-sm">
+              Change ton mot de passe — connecté en tant que <b>{sessionEmail ?? "…"}</b>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label>Nouveau mot de passe</Label>
+                <Input
+                  type="password"
+                  value={newPwd}
+                  onChange={(e) => setNewPwd(e.target.value)}
+                  placeholder="8 caractères minimum"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Confirmation</Label>
+                <Input
+                  type="password"
+                  value={confirmPwd}
+                  onChange={(e) => setConfirmPwd(e.target.value)}
+                  placeholder="Retape-le"
+                />
+              </div>
+            </div>
+            <Button variant="outline" onClick={changePassword} disabled={pwdSaving || !newPwd}>
+              {pwdSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Changer le mot de passe
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-soft">
+          <CardHeader>
+            <CardTitle className="font-display text-lg flex items-center gap-2">
+              <Database className="h-5 w-5 text-primary" /> Mes données
+            </CardTitle>
+            <CardDescription className="text-sm">
+              Sauvegarde complète : produits, ventes, clients, fournisseurs et mouvements de stock,
+              en fichiers CSV ouvrables sur ton téléphone ou Excel.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" onClick={backupAll} disabled={backingUp}>
+              {backingUp ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              Télécharger ma sauvegarde complète
+            </Button>
+            <p className="mt-2 text-xs text-muted-foreground">
+              💡 À faire une fois par mois : tes données t'appartiennent, même si tu quittes
+              BoutikBF.
+            </p>
           </CardContent>
         </Card>
       </div>

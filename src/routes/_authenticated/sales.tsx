@@ -67,8 +67,10 @@ type Sale = {
   change_due: number;
   payments: { method: string; amount: number }[] | null;
   cashier_id: string | null;
+  employee_id: string | null;
   customer_id: string | null;
   customers: { name: string } | null;
+  employees: { name: string } | null;
 };
 type SaleItem = { name: string; quantity: number; unit_price: number; total: number };
 
@@ -115,7 +117,7 @@ function SalesPage() {
     const base = supabase
       .from("sales")
       .select(
-        "id,reference,created_at,payment_method,status,subtotal,tax,discount,total,amount_paid,change_due,payments,cashier_id,customer_id,customers(name)",
+        "id,reference,created_at,payment_method,status,subtotal,tax,discount,total,amount_paid,change_due,payments,cashier_id,employee_id,customer_id,customers(name),employees(name)",
       )
       .eq("shop_id", current.id);
 
@@ -272,7 +274,9 @@ function SalesPage() {
         reference: s.reference ?? "",
         date: new Date(s.created_at).toLocaleString("fr-FR"),
         client: s.customers?.name ?? "",
-        caissier: s.cashier_id ? (cashiers[s.cashier_id] ?? "") : "Propriétaire",
+        caissier: s.cashier_id
+          ? (cashiers[s.cashier_id] ?? "")
+          : (s.employees?.name ?? "Propriétaire"),
         paiement: labelPay[s.payment_method] ?? s.payment_method,
         statut: labelStatus[s.status] ?? s.status,
         sous_total: Number(s.subtotal),
@@ -441,7 +445,9 @@ function SalesPage() {
                         {s.customers?.name ?? <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-sm">
-                        {s.cashier_id ? (cashiers[s.cashier_id] ?? "—") : "Propriétaire"}
+                        {s.cashier_id
+                          ? (cashiers[s.cashier_id] ?? "—")
+                          : (s.employees?.name ?? "Propriétaire")}
                       </TableCell>
                       <TableCell className="text-sm">
                         {labelPay[s.payment_method] ?? s.payment_method}
@@ -542,7 +548,7 @@ function SalesPage() {
                     <span className="mx-1">·</span>
                     {detail.sale.cashier_id
                       ? (cashiers[detail.sale.cashier_id] ?? "Caissier")
-                      : "Propriétaire"}
+                      : (detail.sale.employees?.name ?? "Propriétaire")}
                   </div>
 
                   <div className="divide-y divide-border rounded-xl border border-border">
