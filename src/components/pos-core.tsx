@@ -627,6 +627,55 @@ function PosCore({ mode }: { mode: PosMode }) {
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
+  // — douchettes code-barres USB/Bluetooth (émulation clavier) —
+  // Ces appareils « tapent » le code très vite puis Entrée. On les capte même
+  // si aucun champ n'est focusé (typique des scanners gun et PDA Android).
+  useEffect(() => {
+    let buf = "";
+    let last = 0;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      const inField =
+        t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+      if (inField) return; // le champ recherche gère lui-même Entrée
+      const now = Date.now();
+      if (now - last > 120) buf = ""; // frappe humaine → pas un scanner
+      last = now;
+      if (e.key === "Enter") {
+        if (buf.length >= 5) {
+          onScan(buf);
+          e.preventDefault();
+        }
+        buf = "";
+      } else if (e.key.length === 1 && /[0-9A-Za-z-]/.test(e.key)) {
+        buf += e.key;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products]);
+
+  const onSearchEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter") return;
+    const c = q.trim();
+    if (!c) return;
+    const exact = products.find(
+      (p) =>
+        (p.barcode && p.barcode.toLowerCase() === c.toLowerCase()) ||
+        (p.sku && p.sku.toLowerCase() === c.toLowerCase()),
+    );
+    if (exact) {
+      if (exact.stock <= 0) return toast.error(`${exact.name} : rupture de stock`);
+      add(exact);
+      setQ("");
+      toast.success(`Ajouté : ${exact.name}`);
+    } else if (filtered.length === 1) {
+      add(filtered[0]);
+      setQ("");
+    }
+  };
+
   return (
     <div>
       <PageHeader
@@ -673,6 +722,7 @@ function PosCore({ mode }: { mode: PosMode }) {
               <Input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
+                onKeyDown={onSearchEnter}
                 placeholder="Rechercher un produit…"
                 className="pl-9 h-11 text-base"
                 autoFocus
