@@ -1224,29 +1224,28 @@ function ProductsPage() {
         </CardContent>
       </Card>
 
-      {/* Dialog produit */}
-      {/* Dialog produit - Formulaire complet */}
+      {/* Dialog produit - Formulaire compact, hauteur limitée, sections visibles */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[92vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+          <DialogHeader className="shrink-0 px-6 pb-2 pt-6">
             <DialogTitle className="font-display">
               {editing ? "Modifier" : "Nouveau"} produit
             </DialogTitle>
           </DialogHeader>
-          <div className="grid gap-5 py-2 sm:grid-cols-2">
-            <div className="space-y-2 sm:col-span-2">
+          <div className="grid min-h-0 flex-1 grid-cols-2 content-start gap-4 overflow-y-auto px-6 py-4 md:grid-cols-3">
+            <div className="col-span-2 space-y-1.5">
               <Label>Nom *</Label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Nom du produit"
-                className="h-11"
+                className="h-10"
               />
             </div>
 
-            {/* Photo */}
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Photo du produit</Label>
+            {/* Photo compacte */}
+            <div className="space-y-1.5">
+              <Label>Photo</Label>
               <input
                 ref={imgRef}
                 type="file"
@@ -1258,33 +1257,34 @@ function ProductsPage() {
                   e.target.value = "";
                 }}
               />
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {form.image_url ? (
-                  <div className="relative">
+                  <div className="relative shrink-0">
                     <img
                       src={form.image_url}
                       alt="aperçu"
-                      className="h-20 w-20 rounded-xl border border-border object-cover"
+                      className="h-10 w-10 rounded-lg border border-border object-cover"
                     />
                     <Button
                       type="button"
                       size="icon"
                       variant="destructive"
-                      className="absolute -right-2 -top-2 h-6 w-6 rounded-full"
+                      className="absolute -right-1.5 -top-1.5 h-5 w-5 rounded-full"
                       onClick={() => setForm({ ...form, image_url: "" })}
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <X className="h-3 w-3" />
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid h-20 w-20 place-items-center rounded-xl border border-dashed border-border bg-secondary/30">
-                    <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-dashed border-border bg-secondary/30">
+                    <ImagePlus className="h-4 w-4 text-muted-foreground" />
                   </div>
                 )}
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="h-10 flex-1"
                   disabled={imgBusy}
                   onClick={() => imgRef.current?.click()}
                 >
@@ -1293,12 +1293,12 @@ function ProductsPage() {
                   ) : (
                     <Upload className="mr-1.5 h-4 w-4" />
                   )}
-                  {form.image_url ? "Changer la photo" : "Ajouter une photo"}
+                  {form.image_url ? "Changer" : "Photo"}
                 </Button>
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="col-span-2 space-y-1.5 md:col-span-2">
               <Label>Catégorie</Label>
               {cats.length === 0 ? (
                 <>
@@ -1316,7 +1316,7 @@ function ProductsPage() {
                   value={form.category_id || "none"}
                   onValueChange={(v) => setForm({ ...form, category_id: v === "none" ? "" : v })}
                 >
-                  <SelectTrigger className="h-11">
+                  <SelectTrigger className="h-10">
                     <SelectValue placeholder="Choisir…" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1347,27 +1347,30 @@ function ProductsPage() {
                 </Select>
               )}
             </div>
-            <div className="space-y-2">
-              <Label>Référence (auto si vide)</Label>
+            <div className="space-y-1.5">
+              <Label>Référence</Label>
               <Input
                 value={form.sku}
                 onChange={(e) => setForm({ ...form, sku: e.target.value })}
-                placeholder="Ex : QNC-000001"
-                className="h-11"
+                placeholder="auto si vide"
+                className="h-10"
               />
             </div>
-            <div className="space-y-2">
+
+            <div className="col-span-2 space-y-1.5 md:col-span-3">
               <Label>Code-barres</Label>
               <div className="flex gap-2">
                 <Input
                   value={form.barcode}
                   onChange={(e) => setForm({ ...form, barcode: e.target.value })}
                   placeholder="Scannez ou générez"
+                  className="h-10 flex-1"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
+                  className="h-10 w-10 shrink-0"
                   onClick={() => setScanOpen(true)}
                   title="Scanner"
                 >
@@ -1377,6 +1380,7 @@ function ProductsPage() {
                   type="button"
                   variant="outline"
                   size="icon"
+                  className="h-10 w-10 shrink-0"
                   onClick={generateBarcode}
                   title="Générer un code-barres"
                 >
@@ -1384,95 +1388,108 @@ function ProductsPage() {
                 </Button>
               </div>
             </div>
-            <div className="sm:col-span-2 -mb-1 mt-1 border-t border-border pt-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+
+            <div className="col-span-2 -mb-1 mt-1 border-t border-border pt-3 text-xs font-bold uppercase tracking-wider text-muted-foreground md:col-span-3">
               Prix & stock
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Prix d'achat</Label>
               <Input
                 type="number"
                 value={form.cost_price}
                 onChange={(e) => setForm({ ...form, cost_price: +e.target.value })}
+                className="h-10"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Prix de vente</Label>
               <Input
                 type="number"
                 value={form.sale_price}
                 onChange={(e) => setForm({ ...form, sale_price: +e.target.value })}
+                className="h-10"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Stock</Label>
-              <Input
-                type="number"
-                value={form.stock}
-                onChange={(e) => setForm({ ...form, stock: +e.target.value })}
-              />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label>Stock</Label>
+                <Input
+                  type="number"
+                  value={form.stock}
+                  onChange={(e) => setForm({ ...form, stock: +e.target.value })}
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Unité</Label>
+                <Input
+                  value={form.unit}
+                  onChange={(e) => setForm({ ...form, unit: e.target.value })}
+                  placeholder="kg, sac…"
+                  className="h-10"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Unité</Label>
-              <Input
-                value={form.unit}
-                onChange={(e) => setForm({ ...form, unit: e.target.value })}
-                placeholder="unité, kg, sac..."
-              />
-            </div>
-            <div className="sm:col-span-2 -mb-1 mt-1 border-t border-border pt-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+
+            <div className="col-span-2 -mb-1 mt-1 border-t border-border pt-3 text-xs font-bold uppercase tracking-wider text-muted-foreground md:col-span-3">
               Caractéristiques
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Fournisseur</Label>
               <Input
                 value={form.supplier}
                 onChange={(e) => setForm({ ...form, supplier: e.target.value })}
-                placeholder="Nom du fournisseur"
+                placeholder="Fournisseur"
+                className="h-10"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Marque</Label>
               <Input
                 value={form.brand}
                 onChange={(e) => setForm({ ...form, brand: e.target.value })}
-                placeholder="Marque du produit"
+                placeholder="Marque"
+                className="h-10"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
+              <Label>Taille</Label>
+              <Input
+                value={form.size}
+                onChange={(e) => setForm({ ...form, size: e.target.value })}
+                placeholder="M, XL, 42…"
+                className="h-10"
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label>Poids</Label>
               <Input
                 value={form.weight}
                 onChange={(e) => setForm({ ...form, weight: e.target.value })}
-                placeholder="Ex: 1.5 kg"
+                placeholder="1,5 kg"
+                className="h-10"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Couleur</Label>
               <Input
                 value={form.color}
                 onChange={(e) => setForm({ ...form, color: e.target.value })}
                 placeholder="Couleur"
+                className="h-10"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Taille</Label>
-              <Input
-                value={form.size}
-                onChange={(e) => setForm({ ...form, size: e.target.value })}
-                placeholder="Ex: M, L, XL, 42..."
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
+            <div className="col-span-2 space-y-1.5 md:col-span-3">
               <Label>Description</Label>
               <Textarea
-                rows={3}
+                rows={2}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 placeholder="Description du produit…"
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="m-0 shrink-0 border-t border-border px-6 py-4">
             <Button variant="ghost" onClick={() => setOpen(false)}>
               Annuler
             </Button>
