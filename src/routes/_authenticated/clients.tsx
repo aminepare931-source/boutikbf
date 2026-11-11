@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, Plus, Search, Trash2, Pencil } from "lucide-react";
+import { Users, Plus, Search, Trash2, Pencil, MessageCircle } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -158,6 +158,25 @@ function ClientsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-end gap-1">
+                          {Number(c.credit_balance) > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title="Relancer ce client par WhatsApp"
+                              onClick={() => {
+                                const digits = (c.phone ?? "").replace(/\D/g, "");
+                                const full = digits.length === 8 ? `226${digits}` : digits;
+                                const msg = `Bonjour ${c.name}, petit rappel de ${current?.name ?? "BoutikBF"} : il vous reste un crédit de ${fmtMoney(c.credit_balance, current?.currency)} à régler. Merci 🙏`;
+                                const url = full
+                                  ? `https://wa.me/${full}?text=${encodeURIComponent(msg)}`
+                                  : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                                window.open(url, "_blank");
+                              }}
+                            >
+                              <MessageCircle className="h-4 w-4 text-success" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"

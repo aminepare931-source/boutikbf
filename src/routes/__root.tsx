@@ -1,4 +1,5 @@
 import { clearShopCaches } from "@/lib/shop-store";
+import { replayPendingSales } from "@/lib/offline-queue";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -85,6 +86,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Plateforme SaaS de gestion complète : stock, caisse (POS), ventes, clients, fournisseurs, comptabilité et e-commerce pour boutiques, supermarchés, pharmacies et quincailleries.",
       },
       { name: "author", content: "BoutikBF" },
+      { name: "theme-color", content: "#009e49" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "mobile-web-app-capable", content: "yes" },
       { property: "og:title", content: "BoutikBF — ERP moderne pour commerces" },
       {
         property: "og:description",
@@ -103,6 +107,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "apple-touch-icon", href: "/favicon.ico" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),
   shellComponent: RootShell,
@@ -141,6 +146,28 @@ function RootComponent() {
     });
     return () => sub.subscription.unsubscribe();
   }, [router, queryClient]);
+
+  // PWA : enregistrement du service worker + rejeu global de la file hors-ligne
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (import.meta.env.PROD && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {
+        // blocage (contexte privé, etc.) : l'app fonctionne quand même
+      });
+    }
+    const onOnline = () => {
+      replayPendingSales().then(({ done, left }) => {
+        if (done > 0) {
+          queryClient.invalidateQueries();
+          window.dispatchEvent(
+            new CustomEvent("boutikbf:offline-sync", { detail: { done, left } }),
+          );
+        }
+      });
+    };
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>

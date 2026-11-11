@@ -5,6 +5,7 @@ import { useShops } from "@/lib/shop-store";
 import { PageHeader, StatCard } from "@/components/page-parts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -28,7 +29,10 @@ import {
   Loader2,
   AlertTriangle,
   Lightbulb,
+  Printer,
 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import { fmtMoney, fmtNumber, fmtDate } from "@/lib/format";
 import { downloadCsv } from "@/lib/export-csv";
 
@@ -439,10 +443,284 @@ function ReportsPage() {
         </Card>
       </div>
 
+      <ZReport currency={cur} />
+
       <p className="mt-6 text-xs text-muted-foreground">
         💡 Astuce : tous les boutons « Télécharger » créent un fichier Excel que vous pouvez envoyer
         à votre comptable ou ouvrir sur votre téléphone.
       </p>
     </div>
+  );
+}
+
+/* ---------- Z de caisse (rapport de fermeture journalier) ---------- */
+
+type ZSale = {
+  id: string;
+  total: number;
+  payment_method: string;
+  amount_paid: number | null;
+  change_due: number;
+  payments: { method: string; amount: number }[] | null;
+  cashier_id: string | null;
+};
+
+const Z_METHOD_LABEL: Record<string, string> = {
+  cash: "Espèces",
+  mobile: "Mobile Money",
+  card: "Carte bancaire",
+  credit: "Crédit",
+  mixed: "Mixte",
+};
+
+function ZReport({ currency }: { currency: string }) {
+  const { current } = useShops();
+  const [day, setDay] = useState(() => new Date().toISOString().slice(0, 10));
+  const [float, setFloat] = useState("0");
+  const [counted, setCounted] = useState("");
+  const [sales, setSales] = useState<ZSale[] | null>(null);
+  const [names, setNames] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!current) return;
+    setSales(null);
+    (async () => {
+      const start = new Date(`${day}T00:00:00`);
+      const end = new Date(start.getTime() + 86_400_000);
+      const { data } = await supabase
+        .from("sales")
+        .select("id,total,payment_method,amount_paid,change_due,payments,cashier_id")
+        .eq("shop_id", current.id)
+        .eq("status", "completed")
+        .gte("created_at", start.toISOString())
+        .lt("created_at", end.toISOString());
+      const rows = (data ?? []) as ZSale[];
+      setSales(rows);
+      const cashierIds = [...new Set(rows.map((r) => r.cashier_id).filter(Boolean) as string[])];
+      if (cashierIds.length > 0) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("id,full_name")
+          .in("id", cashierIds);
+        setNames(
+          Object.fromEntries(
+            (prof ?? []).map((p) => [p.id as string, (p.full_name ?? "Caissier") as string]),
+          ),
+        );
+      }
+    })();
+  }, [current?.id, day]);
+
+  if (!current) return null;
+
+  const rows = sales ?? [];
+  const byMethod = new Map<
+    string,
+    { n: number; total: number; cashPart: number; change: number }
+  >();
+  for (const s of rows) {
+    const key = s.payment_method;
+    const e = byMethod.get(key) ?? { n: 0, total: 0, cashPart: 0, change: 0 };
+    e.n++;
+    e.total += Number(s.total);
+    if (key === "cash") {
+      const paid = Number(s.amount_paid ?? s.total);
+      e.cashPart += paid; // encaissé physiquement
+      e.change += Number(s.change_due ?? 0);
+    } else if (key === "mixed" && Array.isArray(s.payments)) {
+      for (const p of s.payments) {
+        const sub = byMethod.get(p.method) ?? { n: 0, total: 0, cashPart: 0, change: 0 };
+        if (p.method === "cash") sub.cashPart += Number(p.amount);
+        else sub.total += Number(p.amount);
+        byMethod.set(p.method, sub);
+      }
+    } else {
+      e.cashPart += 0;
+    }
+    byMethod.set(key, e);
+  }
+
+  const floatNum = Number(float || 0);
+  const expectedCash =
+    floatNum +
+    rows.reduce((a, s) => {
+      if (s.payment_method === "cash")
+        return a + Number(s.amount_paid ?? s.total) - Number(s.change_due ?? 0);
+      if (s.payment_method === "mixed" && Array.isArray(s.payments))
+        return (
+          a +
+          s.payments.filter((p) => p.method === "cash").reduce((x, p) => x + Number(p.amount), 0)
+        );
+      return a;
+    }, 0);
+  const countedNum = counted === "" ? null : Number(counted);
+  const diff = countedNum === null ? null : countedNum - expectedCash;
+
+  const byCashier = new Map<string, { n: number; total: number }>();
+  for (const s of rows) {
+    const k = s.cashier_id ? (names[s.cashier_id] ?? "Caissier") : "Propriétaire";
+    const e = byCashier.get(k) ?? { n: 0, total: 0 };
+    e.n++;
+    e.total += Number(s.total);
+    byCashier.set(k, e);
+  }
+
+  const print = () => {
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Rapport de caisse ${day}</title>
+<style>body{font-family:sans-serif;max-width:640px;margin:20px auto;color:#111}h1{font-size:18px}table{width:100%;border-collapse:collapse;margin:12px 0}td,th{padding:6px 4px;border-bottom:1px solid #ddd;text-align:left;font-size:14px}td.r,th.r{text-align:right}.tot{font-weight:700;border-top:2px solid #111}.noprint{margin-bottom:12px}@media print{.noprint{display:none}}</style>
+</head><body>
+<div class="noprint"><button onclick="window.print()" style="background:#ce1126;color:#fff;border:0;padding:8px 14px;border-radius:6px;font-weight:600;cursor:pointer">🖨️ Imprimer</button></div>
+<h1>${current.name} — Rapport de caisse (Z)</h1>
+<p>Journée du <b>${day}</b> · ${rows.length} vente(s) · ${fmtNumber(rows.reduce((a, s) => a + Number(s.total), 0))} ${currency}</p>
+<table><tr><th>Mode</th><th class="r">Ventes</th><th class="r">Montant</th></tr>
+${[...byMethod.entries()]
+  .map(
+    ([m, e]) =>
+      `<tr><td>${Z_METHOD_LABEL[m] ?? m}</td><td class="r">${e.n}</td><td class="r">${fmtMoney(e.total, currency)}</td></tr>`,
+  )
+  .join("")}</table>
+<table>
+<tr><td>Fond de caisse ouvert</td><td class="r">${fmtMoney(floatNum, currency)}</td></tr>
+<tr><td>Espèces attendues en caisse</td><td class="r tot">${fmtMoney(expectedCash, currency)}</td></tr>
+${
+  countedNum !== null
+    ? `<tr><td>Espèces comptées</td><td class="r">${fmtMoney(countedNum, currency)}</td></tr>
+<tr><td class="tot">Écart</td><td class="r tot" style="color:${diff && diff < 0 ? "#c00" : "#080"}">${fmtMoney(diff ?? 0, currency)}</td></tr>`
+    : ""
+}
+</table>
+<table><tr><th>Caissier</th><th class="r">Ventes</th><th class="r">Total</th></tr>
+${[...byCashier.entries()]
+  .map(
+    ([n, e]) =>
+      `<tr><td>${n}</td><td class="r">${e.n}</td><td class="r">${fmtMoney(e.total, currency)}</td></tr>`,
+  )
+  .join("")}</table>
+</body></html>`;
+    const w = window.open("", "_blank", "width=520,height=720");
+    if (!w) return toast?.error?.("Autorisez les pop-ups") ?? alert("Autorisez les pop-ups");
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  };
+
+  return (
+    <Card className="mt-8">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Wallet className="h-4 w-4 text-primary" />
+          Rapport de caisse du jour (Z)
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1">
+            <Label>Journée</Label>
+            <Input
+              type="date"
+              value={day}
+              onChange={(e) => setDay(e.target.value)}
+              className="w-44"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Fond de caisse (départ)</Label>
+            <Input
+              type="number"
+              value={float}
+              onChange={(e) => setFloat(e.target.value)}
+              className="w-40"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Espèces comptées (fermeture)</Label>
+            <Input
+              type="number"
+              value={counted}
+              onChange={(e) => setCounted(e.target.value)}
+              placeholder="À compteur en fin de journée"
+              className="w-52"
+            />
+          </div>
+          <Button variant="outline" onClick={print} disabled={sales === null}>
+            <Printer className="mr-2 h-4 w-4" /> Imprimer le Z
+          </Button>
+        </div>
+
+        {sales === null ? (
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        ) : (
+          <>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-border p-4">
+                <h4 className="mb-2 text-sm font-semibold">Par mode de paiement</h4>
+                {byMethod.size === 0 ? (
+                  <p className="text-xs text-muted-foreground">Aucune vente ce jour.</p>
+                ) : (
+                  <Table>
+                    <TableBody>
+                      {[...byMethod.entries()].map(([m, e]) => (
+                        <TableRow key={m}>
+                          <TableCell className="py-1.5 text-xs">{Z_METHOD_LABEL[m] ?? m}</TableCell>
+                          <TableCell className="py-1.5 text-xs text-muted-foreground">
+                            {e.n} vente(s)
+                          </TableCell>
+                          <TableCell className="py-1.5 text-right text-xs font-medium">
+                            {fmtMoney(e.total, currency)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+              <div className="rounded-xl border border-border p-4">
+                <h4 className="mb-2 text-sm font-semibold">Par caissier</h4>
+                <Table>
+                  <TableBody>
+                    {[...byCashier.entries()].map(([n, e]) => (
+                      <TableRow key={n}>
+                        <TableCell className="py-1.5 text-xs">{n}</TableCell>
+                        <TableCell className="py-1.5 text-xs text-muted-foreground">
+                          {e.n} vente(s)
+                        </TableCell>
+                        <TableCell className="py-1.5 text-right text-xs font-medium">
+                          {fmtMoney(e.total, currency)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-4 rounded-xl border border-primary/30 bg-primary/5 p-4">
+              <div>
+                <div className="text-xs text-muted-foreground">Espèces attendues en caisse</div>
+                <div className="font-display text-2xl font-bold">
+                  {fmtMoney(expectedCash, currency)}
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  fond {fmtMoney(floatNum, currency)} + espèces vendues − monnaie rendue
+                </div>
+              </div>
+              {countedNum !== null && diff !== null && (
+                <div className="ml-auto text-right">
+                  <div className="text-xs text-muted-foreground">Écart de comptage</div>
+                  <div
+                    className={`font-display text-2xl font-bold ${diff < 0 ? "text-destructive" : diff > 0 ? "text-warning" : "text-success"}`}
+                  >
+                    {diff > 0 ? "+" : ""}
+                    {fmtMoney(diff, currency)}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {diff === 0 ? "Caisse juste ✅" : "À vérifier avant fermeture"}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

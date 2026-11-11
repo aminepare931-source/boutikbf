@@ -5,8 +5,17 @@ import { useShops, resolveLogoUrl } from "@/lib/shop-store";
 import { PageHeader } from "@/components/page-parts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Search,
   Plus,
@@ -18,6 +27,12 @@ import {
   Banknote,
   ShoppingCart,
   ScanLine,
+  PauseCircle,
+  PlayCircle,
+  MessageCircle,
+  Printer,
+  WifiOff,
+  RefreshCw,
 } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
@@ -31,6 +46,13 @@ import {
 import { openReceipt } from "@/lib/receipt";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import { PhoneScanner } from "@/components/phone-scanner";
+import {
+  queueSale,
+  listPendingSales,
+  replayPendingSales,
+  isNetworkError,
+  type PendingSale,
+} from "@/lib/offline-queue";
 
 export const Route = createFileRoute("/_authenticated/pos")({
   head: () => ({ meta: [{ title: "Caisse (POS) — BoutikBF" }] }),
@@ -49,8 +71,49 @@ type Product = {
 };
 type CartItem = Product & { qty: number };
 
+type HeldTicket = { id: string; at: string; cart: { id: string; name: string; qty: number }[] };
+
+const heldKey = (shopId: string) => `boutikbf-held-${shopId}`;
+
+function loadHeld(shopId: string): HeldTicket[] {
+  try {
+    return JSON.parse(localStorage.getItem(heldKey(shopId)) ?? "[]") as HeldTicket[];
+  } catch {
+    return [];
+  }
+}
+function saveHeld(shopId: string, list: HeldTicket[]) {
+  localStorage.setItem(heldKey(shopId), JSON.stringify(list));
+}
+
+const roundUpTo = (v: number, step: number) => Math.ceil(v / step) * step;
+
+function receiptWhatsAppText(
+  shopName: string,
+  ref: string,
+  items: { name: string; qty: number; total: number }[],
+  total: number,
+  currency: string,
+  paymentLine: string,
+  change?: number,
+): string {
+  const lines = [
+    `🧾 *${shopName}*`,
+    `Ticket ${ref}`,
+    "",
+    ...items.map((i) => `${i.name} ×${i.qty} : ${fmtMoney(i.total, currency)}`),
+    "",
+    `*Total : ${fmtMoney(total, currency)}*`,
+    paymentLine,
+    ...(change && change > 0 ? [`Monnaie rendue : ${fmtMoney(change, currency)}`] : []),
+    "",
+    "Merci de votre visite 🇧🇫",
+  ];
+  return lines.join("\n");
+}
+
 function POSPage() {
-  const { current } = useShops();
+  const { current, shops } = useShops();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
@@ -62,6 +125,30 @@ function POSPage() {
   const [scanOpen, setScanOpen] = useState(false);
   const [scanContinuous, setScanContinuous] = useState(false);
   const [phoneScanOpen, setPhoneScanOpen] = useState(false);
+
+  // — paiement pro —
+  const [received, setReceived] = useState("");
+  const [mixCash, setMixCash] = useState("");
+  const [mixRest, setMixRest] = useState("mobile");
+
+  // — tickets en attente —
+  const [held, setHeld] = useState<HeldTicket[]>([]);
+  const [heldOpen, setHeldOpen] = useState(false);
+
+  // — après vente —
+  const [done, setDone] = useState<{
+    ref: string;
+    total: number;
+    created_at: string;
+    paymentLine: string;
+    change: number;
+    items: { name: string; qty: number; total: number }[];
+  } | null>(null);
+
+  // — hors-ligne —
+  const [pending, setPending] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+  const [online, setOnline] = useState(true);
 
   useEffect(() => {
     if (!current) return;
@@ -80,16 +167,16 @@ function POSPage() {
           .order("sort_order", { ascending: true }),
       ]);
 
-      const products = (productRes.data ?? []) as Array<
+      const prods = (productRes.data ?? []) as Array<
         Product & { categories?: { name: string | null } | Array<{ name: string | null }> }
       >;
 
       setProducts(
-        products.map((p) => {
-          const categories = p.categories;
-          const categoryName = Array.isArray(categories)
-            ? (categories[0]?.name ?? undefined)
-            : (categories?.name ?? undefined);
+        prods.map((p) => {
+          const cats = p.categories;
+          const categoryName = Array.isArray(cats)
+            ? (cats[0]?.name ?? undefined)
+            : (cats?.name ?? undefined);
           return {
             id: p.id,
             name: p.name,
@@ -106,6 +193,30 @@ function POSPage() {
     };
 
     loadData();
+    setHeld(loadHeld(current.id));
+    listPendingSales(current.id).then((p) => setPending(p.length));
+  }, [current?.id]);
+
+  useEffect(() => {
+    const goOnline = () => {
+      setOnline(true);
+      if (current) {
+        setSyncing(true);
+        replayPendingSales().then(({ done, left }) => {
+          setSyncing(false);
+          setPending(left);
+          if (done > 0) toast.success(`${done} vente(s) hors-ligne synchronisée(s)`);
+        });
+      }
+    };
+    const goOffline = () => setOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    setOnline(navigator.onLine);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
   }, [current?.id]);
 
   const onScan = (code: string) => {
@@ -116,7 +227,6 @@ function POSPage() {
       add(match);
       toast.success(`Ajouté : ${match.name}`);
     } else {
-      // Rediriger vers la page produits pour ajouter le nouveau produit
       navigate({ to: "/products", search: { barcode: c } });
       toast.info(`Code "${c}" non trouvé. Ajoutez-le comme nouveau produit.`);
     }
@@ -162,62 +272,207 @@ function POSPage() {
   const rm = (id: string) => setCart((c) => c.filter((i) => i.id !== id));
 
   const subtotal = cart.reduce((a, i) => a + i.sale_price * i.qty, 0);
+  const cur = current?.currency ?? "XOF";
+
+  // — monnaie & mixte —
+  const receivedNum = Number(received || 0);
+  const change = payment === "cash" && receivedNum >= subtotal ? receivedNum - subtotal : 0;
+  const cashShort = payment === "cash" && receivedNum > 0 && receivedNum < subtotal;
+  const mixCashNum = Number(mixCash || 0);
+  const mixRestAmount = subtotal - mixCashNum;
+  const mixValid = payment !== "mixed" || (mixCashNum > 0 && mixRestAmount > 0);
+
+  const quickCash = [
+    subtotal,
+    roundUpTo(subtotal, 500),
+    roundUpTo(subtotal, 1000),
+    roundUpTo(subtotal, 2000),
+    roundUpTo(subtotal, 5000),
+    roundUpTo(subtotal, 10000),
+  ]
+    .filter((v, i, a) => v > 0 && a.indexOf(v) === i)
+    .slice(0, 5);
+
+  const paymentLine = useMemo(() => {
+    if (payment === "cash") return `Paiement : espèces (${fmtMoney(receivedNum || subtotal, cur)})`;
+    if (payment === "mixed")
+      return `Paiement : ${fmtMoney(mixCashNum, cur)} espèces + ${fmtMoney(Math.max(0, mixRestAmount), cur)} ${mixRest === "mobile" ? "Mobile Money" : "carte"}`;
+    if (payment === "mobile") return "Paiement : Mobile Money";
+    return "Paiement : carte bancaire";
+  }, [payment, receivedNum, mixCashNum, mixRestAmount, mixRest, cur, subtotal]);
+
+  // — mise en attente —
+  const holdCart = () => {
+    if (!current || cart.length === 0) return;
+    const t: HeldTicket = {
+      id: "T-" + Date.now().toString(36).toUpperCase(),
+      at: new Date().toISOString(),
+      cart: cart.map((i) => ({ id: i.id, name: i.name, qty: i.qty })),
+    };
+    const next = [...held, t];
+    setHeld(next);
+    saveHeld(current.id, next);
+    setCart([]);
+    setReceived("");
+    setMixCash("");
+    toast.success("Ticket mis en attente");
+  };
+  const restoreHeld = (t: HeldTicket) => {
+    const items: CartItem[] = [];
+    for (const h of t.cart) {
+      const p = products.find((x) => x.id === h.id);
+      if (p) items.push({ ...p, qty: h.qty });
+      else toast.error(`Produit disparu du catalogue : ${h.name}`);
+    }
+    setCart(items);
+    const next = held.filter((x) => x.id !== t.id);
+    setHeld(next);
+    if (current) saveHeld(current.id, next);
+    setHeldOpen(false);
+  };
+  const dropHeld = (id: string) => {
+    const next = held.filter((x) => x.id !== id);
+    setHeld(next);
+    if (current) saveHeld(current.id, next);
+  };
 
   const checkout = async () => {
-    if (!current || cart.length === 0) return;
+    if (!current || cart.length === 0 || !mixValid) return;
     setProcessing(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const { data: sale, error } = await supabase
-      .from("sales")
-      .insert({
-        shop_id: current.id,
-        cashier_id: userData.user?.id,
-        subtotal,
-        total: subtotal,
-        payment_method: payment,
-        reference: "V-" + Date.now().toString(36).toUpperCase(),
-      })
-      .select()
-      .single();
-    if (error || !sale) {
-      setProcessing(false);
-      toast.error(error?.message ?? "Erreur");
-      return;
-    }
 
-    const items = cart.map((i) => ({
-      sale_id: sale.id,
+    const ref = "V-" + Date.now().toString(36).toUpperCase();
+    const createdAt = new Date().toISOString();
+    const payments =
+      payment === "mixed"
+        ? [
+            { method: "cash", amount: mixCashNum },
+            { method: mixRest, amount: mixRestAmount },
+          ]
+        : null;
+    const amountPaid = payment === "cash" && receivedNum > 0 ? receivedNum : subtotal;
+    const methodStored = payment === "mixed" ? "mixed" : payment;
+
+    const salePayload = {
+      shop_id: current.id,
+      subtotal,
+      total: subtotal,
+      payment_method: methodStored,
+      amount_paid: amountPaid,
+      change_due: change,
+      payments: payments ?? undefined,
+      reference: ref,
+      created_at: createdAt,
+    };
+
+    const itemsPayload = cart.map((i) => ({
       product_id: i.id,
       name: i.name,
       quantity: i.qty,
       unit_price: i.sale_price,
       total: i.sale_price * i.qty,
     }));
-    const { error: itemsError } = await supabase.from("sale_items").insert(items);
-    if (itemsError) {
+
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const { data: sale, error } = await supabase
+        .from("sales")
+        .insert({
+          ...salePayload,
+          cashier_id: userData.user?.id,
+        })
+        .select()
+        .single();
+      if (error || !sale) throw error ?? new Error("Vente non créée");
+
+      const { error: itemsError } = await supabase
+        .from("sale_items")
+        .insert(itemsPayload.map((i) => ({ ...i, sale_id: sale.id })));
+      if (itemsError) throw itemsError;
+
+      for (const i of cart) {
+        const { error: stockError } = await (
+          supabase as never as {
+            rpc: (fn: string, args: Record<string, unknown>) => Promise<{ error: Error | null }>;
+          }
+        ).rpc("adjust_stock", { p_product_id: i.id, p_delta: -i.qty });
+        if (stockError) throw stockError;
+        await supabase.from("stock_movements").insert({
+          shop_id: current.id,
+          product_id: i.id,
+          type: "out",
+          quantity: i.qty,
+          reason: "Vente " + ref,
+        });
+      }
+
+      toast.success(`Vente ${ref} enregistrée — ${fmtMoney(subtotal, cur)}`);
+      setDone({
+        ref,
+        total: subtotal,
+        created_at: sale.created_at ?? createdAt,
+        paymentLine,
+        change,
+        items: cart.map((i) => ({ name: i.name, qty: i.qty, total: i.sale_price * i.qty })),
+      });
+      setCart([]);
+      setReceived("");
+      setMixCash("");
+      // reload stock
+      const { data } = await supabase
+        .from("products")
+        .select("id,name,sale_price,stock,sku,barcode")
+        .eq("shop_id", current.id)
+        .eq("is_active", true);
+      setProducts((data ?? []) as Product[]);
+    } catch (e) {
+      if (isNetworkError(e) || !navigator.onLine) {
+        // HORS-LIGNE : on met en file, on décrémente le stock localement, la caisse continue
+        const sale: PendingSale = {
+          ref,
+          shop_id: current.id,
+          cashier_id: null,
+          created_at: createdAt,
+          subtotal,
+          total: subtotal,
+          payment_method: methodStored,
+          amount_paid: amountPaid,
+          change_due: change,
+          payments,
+          items: itemsPayload,
+          queued_at: new Date().toISOString(),
+        };
+        await queueSale(sale);
+        setProducts((ps) =>
+          ps.map((p) => {
+            const it = itemsPayload.find((i) => i.product_id === p.id);
+            return it ? { ...p, stock: p.stock - it.quantity } : p;
+          }),
+        );
+        setPending((n) => n + 1);
+        toast.warning(
+          `Vente ${ref} enregistrée HORS-LIGNE — elle se synchronisera au retour du réseau`,
+        );
+        setDone({
+          ref,
+          total: subtotal,
+          created_at: createdAt,
+          paymentLine: paymentLine + " · (hors-ligne)",
+          change,
+          items: cart.map((i) => ({ name: i.name, qty: i.qty, total: i.sale_price * i.qty })),
+        });
+        setCart([]);
+        setReceived("");
+        setMixCash("");
+      } else {
+        toast.error("Vente non enregistrée : " + (e as Error).message);
+      }
+    } finally {
       setProcessing(false);
-      toast.error("Vente non enregistrée : " + itemsError.message);
-      return;
     }
-    // Décrémenter le stock de façon atomique (sûr même avec plusieurs caisses en même temps)
-    for (const i of cart) {
-      const { error: stockError } = await (supabase as any).rpc("adjust_stock", {
-        p_product_id: i.id,
-        p_delta: -i.qty,
-      });
-      if (stockError) toast.error(`Stock de ${i.name} non mis à jour : ${stockError.message}`);
-      await supabase.from("stock_movements").insert({
-        shop_id: current.id,
-        product_id: i.id,
-        type: "out",
-        quantity: i.qty,
-        reason: "Vente " + (sale.reference ?? ""),
-      });
-    }
-    toast.success(
-      `Vente ${sale.reference ?? ""} enregistrée — ${fmtMoney(subtotal, current.currency)}`,
-    );
-    // Open receipt in a new window
+  };
+
+  const printDone = async () => {
+    if (!done || !current) return;
     const logoUrl = await resolveLogoUrl(current.logo_url);
     openReceipt({
       shop: {
@@ -226,36 +481,76 @@ function POSPage() {
         phone: current.phone,
         email: current.email,
         logoUrl,
-        currency: current.currency,
+        currency: cur,
       },
       sale: {
-        reference: sale.reference ?? sale.id,
-        created_at: sale.created_at,
-        payment_method: payment,
-        subtotal,
-        total: subtotal,
+        reference: done.ref,
+        created_at: done.created_at,
+        payment_method: payment === "mixed" ? "mixed" : payment,
+        subtotal: done.total,
+        total: done.total,
+        paid: done.paymentLine,
+        change: done.change,
       },
-      items: cart.map((i) => ({
+      items: done.items.map((i) => ({
         name: i.name,
         quantity: i.qty,
-        unit_price: i.sale_price,
-        total: i.sale_price * i.qty,
+        unit_price: Math.round(i.total / Math.max(1, i.qty)),
+        total: i.total,
       })),
     });
-    setCart([]);
-    setProcessing(false);
-    // reload stock
-    const { data } = await supabase
-      .from("products")
-      .select("id,name,sale_price,stock,sku,barcode")
-      .eq("shop_id", current.id)
-      .eq("is_active", true);
-    setProducts((data ?? []) as Product[]);
+  };
+
+  const whatsappDone = () => {
+    if (!done || !current) return;
+    const text = receiptWhatsAppText(
+      current.name,
+      done.ref,
+      done.items,
+      done.total,
+      cur,
+      done.paymentLine,
+      done.change,
+    );
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
   return (
     <div>
-      <PageHeader title="Caisse" description="Vente rapide au comptoir" />
+      <PageHeader
+        title="Caisse"
+        description="Vente rapide au comptoir"
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {!online && (
+              <Badge variant="destructive">
+                <WifiOff className="mr-1 h-3 w-3" /> Hors-ligne
+              </Badge>
+            )}
+            {pending > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={syncing}
+                onClick={() => {
+                  setSyncing(true);
+                  replayPendingSales().then(({ done: n, left }) => {
+                    setSyncing(false);
+                    setPending(left);
+                    toast.success(`${n} vente(s) synchronisée(s)`);
+                  });
+                }}
+              >
+                <RefreshCw className={`mr-1.5 h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+                {pending} en attente de sync
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => setHeldOpen(true)}>
+              <PauseCircle className="mr-1.5 h-4 w-4" /> En attente ({held.length})
+            </Button>
+          </div>
+        }
+      />
 
       <div className="grid gap-4 lg:grid-cols-[1fr_400px]">
         {/* Catalogue */}
@@ -326,16 +621,14 @@ function POSPage() {
             </div>
           </div>
           {grouped.length > 0 ? (
-            grouped.map(([categoryName, products]) => (
+            grouped.map(([categoryName, prods]) => (
               <div key={categoryName} className="mb-6">
                 <div className="mb-3 flex items-center justify-between rounded-xl border border-border bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-800">
                   <span>{categoryName}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {products.length} produit(s)
-                  </span>
+                  <span className="text-xs text-muted-foreground">{prods.length} produit(s)</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
-                  {products.map((p) => (
+                  {prods.map((p) => (
                     <button
                       key={p.id}
                       onClick={() => add(p)}
@@ -358,7 +651,7 @@ function POSPage() {
                       </div>
                       <div className="line-clamp-2 font-medium">{p.name}</div>
                       <div className="mt-1 font-display text-lg font-bold text-primary">
-                        {fmtMoney(p.sale_price, current?.currency)}
+                        {fmtMoney(p.sale_price, cur)}
                       </div>
                     </button>
                   ))}
@@ -372,7 +665,7 @@ function POSPage() {
           )}
         </div>
 
-        {/* Panier - Sur mobile, il sera en bas de page */}
+        {/* Panier */}
         <Card className="shadow-elegant lg:sticky lg:top-24">
           <div className="flex items-center justify-between border-b border-border p-4">
             <h3 className="font-display text-lg font-semibold flex items-center gap-2">
@@ -380,9 +673,14 @@ function POSPage() {
               Ticket
             </h3>
             {cart.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={() => setCart([])}>
-                Vider
-              </Button>
+              <div className="flex gap-1">
+                <Button variant="ghost" size="sm" onClick={holdCart} title="Mettre en attente">
+                  <PauseCircle className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setCart([])}>
+                  Vider
+                </Button>
+              </div>
             )}
           </div>
           <CardContent className="p-0">
@@ -391,13 +689,13 @@ function POSPage() {
                 Panier vide — cliquez sur un produit.
               </div>
             ) : (
-              <div className="max-h-[40vh] divide-y divide-border overflow-y-auto lg:max-h-[45vh]">
+              <div className="max-h-[35vh] divide-y divide-border overflow-y-auto lg:max-h-[40vh]">
                 {cart.map((i) => (
                   <div key={i.id} className="flex items-center gap-2 p-3">
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">{i.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {fmtMoney(i.sale_price, current?.currency)}
+                        {fmtMoney(i.sale_price, cur)}
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
@@ -433,16 +731,13 @@ function POSPage() {
             )}
           </CardContent>
           <div className="space-y-3 border-t border-border p-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Sous-total</span>
-              <span>{fmtMoney(subtotal, current?.currency)}</span>
-            </div>
-            <div className="flex items-center justify-between border-t border-dashed border-border pt-3">
+            <div className="flex items-center justify-between border-b border-dashed border-border pb-3">
               <span className="font-display text-lg font-semibold">Total</span>
               <span className="font-display text-xl md:text-2xl font-bold text-primary">
-                {fmtMoney(subtotal, current?.currency)}
+                {fmtMoney(subtotal, cur)}
               </span>
             </div>
+
             <Select value={payment} onValueChange={setPayment}>
               <SelectTrigger>
                 <SelectValue />
@@ -460,18 +755,111 @@ function POSPage() {
                   <CreditCard className="mr-2 inline h-4 w-4" />
                   Carte bancaire
                 </SelectItem>
+                <SelectItem value="mixed">
+                  <RefreshCw className="mr-2 inline h-4 w-4" />
+                  Paiement mixte (2 moyens)
+                </SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Espèces : reçu / monnaie */}
+            {payment === "cash" && cart.length > 0 && (
+              <div className="space-y-2 rounded-xl border border-border bg-secondary/30 p-3">
+                <Label className="text-xs">Montant reçu (optionnel)</Label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={received}
+                  onChange={(e) => setReceived(e.target.value)}
+                  placeholder={String(subtotal)}
+                  className="h-10 text-lg font-semibold"
+                />
+                <div className="flex flex-wrap gap-1.5">
+                  {quickCash.map((v) => (
+                    <Button
+                      key={v}
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => setReceived(String(v))}
+                    >
+                      {v === subtotal ? "Compte exact" : fmtMoney(v, cur)}
+                    </Button>
+                  ))}
+                </div>
+                {receivedNum > 0 && (
+                  <div className="flex items-center justify-between rounded-lg bg-background px-3 py-2 text-sm">
+                    {cashShort ? (
+                      <span className="text-destructive font-medium">
+                        Il manque {fmtMoney(subtotal - receivedNum, cur)}
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-muted-foreground">Monnaie à rendre</span>
+                        <span className="font-display text-lg font-bold text-success">
+                          {fmtMoney(change, cur)}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Mixte */}
+            {payment === "mixed" && cart.length > 0 && (
+              <div className="space-y-2 rounded-xl border border-border bg-secondary/30 p-3">
+                <Label className="text-xs">Part en espèces</Label>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={mixCash}
+                  onChange={(e) => setMixCash(e.target.value)}
+                  placeholder="Ex : 2000"
+                  className="h-10"
+                />
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Le reste en</span>
+                  <Select value={mixRest} onValueChange={setMixRest}>
+                    <SelectTrigger className="h-9 flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mobile">Mobile Money</SelectItem>
+                      <SelectItem value="card">Carte bancaire</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {mixCashNum > 0 && (
+                  <div className="rounded-lg bg-background px-3 py-2 text-sm">
+                    {mixValid ? (
+                      <span className="text-muted-foreground">
+                        {fmtMoney(mixCashNum, cur)} espèces + <b>{fmtMoney(mixRestAmount, cur)}</b>{" "}
+                        {mixRest === "mobile" ? "Mobile Money" : "carte"}
+                      </span>
+                    ) : (
+                      <span className="text-destructive">
+                        La part espèces doit être entre 0 et le total.
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <Button
               onClick={checkout}
-              disabled={cart.length === 0 || processing}
+              disabled={cart.length === 0 || processing || !mixValid || cashShort}
               className="h-12 w-full bg-gradient-primary text-base shadow-elegant"
             >
-              Encaisser {cart.length > 0 && `· ${fmtMoney(subtotal, current?.currency)}`}
+              Encaisser {cart.length > 0 && `· ${fmtMoney(subtotal, cur)}`}
             </Button>
           </div>
         </Card>
       </div>
+
+      {/* Scanner */}
       <BarcodeScanner
         open={scanOpen}
         onOpenChange={setScanOpen}
@@ -480,6 +868,76 @@ function POSPage() {
         title={scanContinuous ? "Scan continu — panier" : "Scanner un produit"}
       />
       <PhoneScanner open={phoneScanOpen} onOpenChange={setPhoneScanOpen} onDetected={onScan} />
+
+      {/* Tickets en attente */}
+      <Dialog open={heldOpen} onOpenChange={setHeldOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Tickets en attente</DialogTitle>
+            <DialogDescription>
+              Les paniers mis en attente restent sur cet appareil.
+            </DialogDescription>
+          </DialogHeader>
+          {held.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Aucun ticket en attente.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {held.map((t) => (
+                <div
+                  key={t.id}
+                  className="flex items-center gap-2 rounded-xl border border-border p-3"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium">{t.id}</div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {t.cart.map((i) => `${i.name} ×${i.qty}`).join(", ")}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {new Date(t.at).toLocaleTimeString("fr-FR")}
+                    </div>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => restoreHeld(t)}>
+                    <PlayCircle className="mr-1 h-4 w-4" /> Reprendre
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={() => dropHeld(t.id)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Après vente */}
+      <Dialog open={!!done} onOpenChange={(o) => !o && setDone(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-success" />
+              Vente {done?.ref} enregistrée
+            </DialogTitle>
+            <DialogDescription>
+              {done && fmtMoney(done.total, cur)}
+              {done && done.change > 0 && ` · monnaie rendue : ${fmtMoney(done.change, cur)}`}
+              {done && done.paymentLine.startsWith("Paiement") && ` · ${done.paymentLine}`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-col">
+            <Button className="w-full" onClick={printDone}>
+              <Printer className="mr-2 h-4 w-4" /> Imprimer le ticket
+            </Button>
+            <Button className="w-full" variant="outline" onClick={whatsappDone}>
+              <MessageCircle className="mr-2 h-4 w-4 text-success" /> Envoyer par WhatsApp
+            </Button>
+            <Button className="w-full" variant="ghost" onClick={() => setDone(null)}>
+              Nouvelle vente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

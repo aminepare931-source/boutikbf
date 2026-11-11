@@ -18,6 +18,8 @@ export type ReceiptData = {
     tax?: number;
     discount?: number;
     total: number;
+    paid?: string; // ligne « Payé : … » libre
+    change?: number; // monnaie rendue
   };
   items: { name: string; quantity: number; unit_price: number; total: number }[];
   customer?: { name?: string | null; phone?: string | null } | null;
@@ -45,6 +47,7 @@ const payLabel: Record<string, string> = {
   mobile: "Mobile Money",
   card: "Carte bancaire",
   credit: "Crédit",
+  mixed: "Paiement mixte",
 };
 
 export function buildReceiptHtml(d: ReceiptData): string {
@@ -157,7 +160,8 @@ export function buildReceiptHtml(d: ReceiptData): string {
     ${d.sale.discount ? `<tr><td>Remise</td><td style="text-align:right">- ${fmtMoney(d.sale.discount, cur)}</td></tr>` : ""}
     ${d.sale.tax ? `<tr><td>TVA</td><td style="text-align:right">${fmtMoney(d.sale.tax, cur)}</td></tr>` : ""}
     <tr class="grand"><td>TOTAL</td><td style="text-align:right">${fmtMoney(d.sale.total, cur)}</td></tr>
-    <tr><td colspan="2" style="padding-top:6px;color:#555">Paiement : ${escapeHtml(payLabel[d.sale.payment_method] ?? d.sale.payment_method)}</td></tr>
+    <tr><td colspan="2" style="padding-top:6px;color:#555">Paiement : ${escapeHtml(payLabel[d.sale.payment_method] ?? d.sale.payment_method)}${d.sale.paid ? ` — ${escapeHtml(d.sale.paid.replace(/^Paiement : ?/, ""))}` : ""}</td></tr>
+    ${d.sale.change ? `<tr><td>Monnaie rendue</td><td style="text-align:right">${fmtMoney(d.sale.change, cur)}</td></tr>` : ""}
   </table>
   <div class="barcode">${barcodeSvg(d.sale.reference)}</div>
   <div class="thanks">Merci pour votre achat 🇧🇫<br>Généré par BoutikBF</div>
