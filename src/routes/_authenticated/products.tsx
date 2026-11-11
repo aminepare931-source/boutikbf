@@ -1,10 +1,11 @@
-import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShops } from "@/lib/shop-store";
 import { PageHeader, EmptyState } from "@/components/page-parts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -25,7 +26,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -47,6 +50,8 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
+  ImagePlus,
+  X,
 } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
@@ -87,7 +92,13 @@ type Product = {
   stock: number;
   unit: string;
   is_active: boolean;
+  description?: string | null;
+  brand?: string | null;
+  image_url?: string | null;
+  extra?: { supplier?: string; weight?: string; color?: string; size?: string } | null;
 };
+
+type Cat = { id: string; name: string; parent_id: string | null };
 
 const FIELD_OPTIONS = [
   { value: "name", label: "Nom du produit *" },
@@ -115,12 +126,15 @@ function ProductsPage() {
   const navigate = useNavigate();
   const { barcode: barcodeParam } = useSearch({ from: "/_authenticated/products" });
   const [items, setItems] = useState<Product[]>([]);
+  const [cats, setCats] = useState<Cat[]>([]);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [imgBusy, setImgBusy] = useState(false);
+  const imgRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: "",
-    category: "",
+    category_id: "",
     sku: "",
     barcode: "",
     cost_price: 0,
@@ -133,7 +147,26 @@ function ProductsPage() {
     color: "",
     size: "",
     description: "",
+    image_url: "",
   });
+
+  const emptyForm = {
+    name: "",
+    category_id: "",
+    sku: "",
+    barcode: "",
+    cost_price: 0,
+    sale_price: 0,
+    stock: 0,
+    unit: "unité",
+    supplier: "",
+    brand: "",
+    weight: "",
+    color: "",
+    size: "",
+    description: "",
+    image_url: "",
+  };
 
   // Détecter le paramètre barcode dans l'URL et ouvrir le formulaire
   useEffect(() => {
@@ -172,13 +205,21 @@ function ProductsPage() {
 
   const load = async () => {
     if (!current) return;
-    const { data } = await supabase
-      .from("products")
-      .select(
-        "id,name,category_id,sku,barcode,cost_price,sale_price,stock,unit,is_active,categories(name)",
-      )
-      .eq("shop_id", current.id)
-      .order("created_at", { ascending: false });
+    const [{ data }, { data: catRows }] = await Promise.all([
+      supabase
+        .from("products")
+        .select(
+          "id,name,category_id,sku,barcode,cost_price,sale_price,stock,unit,is_active,description,brand,image_url,extra,categories(name)",
+        )
+        .eq("shop_id", current.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("categories")
+        .select("id,name,parent_id")
+        .eq("shop_id", current.id)
+        .order("name"),
+    ]);
+    setCats((catRows ?? []) as Cat[]);
 
     const products = (data ?? []) as Array<
       Product & { categories?: { name: string | null } | Array<{ name: string | null }> }
@@ -204,41 +245,27 @@ function ProductsPage() {
 
   const openNew = () => {
     setEditing(null);
-    setForm({
-      name: "",
-      category: "",
-      sku: "",
-      barcode: "",
-      cost_price: 0,
-      sale_price: 0,
-      stock: 0,
-      unit: "unité",
-      supplier: "",
-      brand: "",
-      weight: "",
-      color: "",
-      size: "",
-      description: "",
-    });
+    setForm({ ...emptyForm });
     setOpen(true);
   };
   const openEdit = (p: Product) => {
     setEditing(p);
     setForm({
       name: p.name,
-      category: p.category ?? "",
+      category_id: p.category_id ?? "",
       sku: p.sku ?? "",
       barcode: p.barcode ?? "",
       cost_price: p.cost_price,
       sale_price: p.sale_price,
       stock: p.stock,
       unit: p.unit,
-      supplier: "",
-      brand: "",
-      weight: "",
-      color: "",
-      size: "",
-      description: "",
+      supplier: p.extra?.supplier ?? "",
+      brand: p.brand ?? "",
+      weight: p.extra?.weight ?? "",
+      color: p.extra?.color ?? "",
+      size: p.extra?.size ?? "",
+      description: p.description ?? "",
+      image_url: p.image_url ?? "",
     });
     setOpen(true);
   };
@@ -305,6 +332,16 @@ function ProductsPage() {
       sale_price: Number(form.sale_price) || 0,
       stock: Number(form.stock) || 0,
       unit: form.unit.trim() || "unité",
+      category_id: form.category_id ? form.category_id : null,
+      description: form.description.trim() || null,
+      brand: form.brand.trim() || null,
+      image_url: form.image_url || null,
+      extra: {
+        supplier: form.supplier.trim() || undefined,
+        weight: form.weight.trim() || undefined,
+        color: form.color.trim() || undefined,
+        size: form.size.trim() || undefined,
+      },
     };
     const { error } = editing
       ? await supabase.from("products").update(payload).eq("id", editing.id)
@@ -313,6 +350,24 @@ function ProductsPage() {
     toast.success(editing ? "Produit mis à jour" : "Produit ajouté");
     setOpen(false);
     load();
+  };
+
+  // Upload photo produit → bucket product-images/<shop>/<uuid>
+  const uploadImage = async (file: File) => {
+    if (!current) return;
+    if (file.size > 2 * 1024 * 1024) return toast.error("Image trop lourde (max 2 Mo)");
+    setImgBusy(true);
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = `${current.id}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("product-images").upload(path, file, {
+      contentType: file.type,
+      upsert: false,
+    });
+    setImgBusy(false);
+    if (error) return toast.error("Upload image : " + error.message);
+    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+    setForm((f) => ({ ...f, image_url: data.publicUrl }));
+    toast.success("Photo ajoutée");
   };
 
   const remove = async (id: string) => {
@@ -638,6 +693,18 @@ function ProductsPage() {
       (p.category ?? "").toLowerCase().includes(search)
     );
   });
+
+  // « Parent · Enfant » pour l'affichage et la recherche de catégorie
+  const catPath = (id?: string | null): string | null => {
+    if (!id) return null;
+    const c = cats.find((x) => x.id === id);
+    if (!c) return null;
+    if (c.parent_id) {
+      const par = cats.find((x) => x.id === c.parent_id);
+      return par ? `${par.name} · ${c.name}` : c.name;
+    }
+    return c.name;
+  };
   const selectedProducts = filtered.filter((p) => selected[p.id]);
 
   const printSelectedLabels = () => {
@@ -656,22 +723,7 @@ function ProductsPage() {
       toast.success(`Produit trouvé : ${match.name}`);
     } else {
       setEditing(null);
-      setForm({
-        name: "",
-        category: "",
-        sku: "",
-        barcode: c,
-        cost_price: 0,
-        sale_price: 0,
-        stock: 0,
-        unit: "unité",
-        supplier: "",
-        brand: "",
-        weight: "",
-        color: "",
-        size: "",
-        description: "",
-      });
+      setForm({ ...emptyForm, barcode: c });
       setOpen(true);
       toast.info(`Nouveau produit — code-barres ${c} pré-rempli`);
     }
@@ -1022,8 +1074,8 @@ function ProductsPage() {
             </div>
           ) : (
             // TABLEAU PRODUITS - Style Excel avec toutes les colonnes
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto rounded-lg border border-slate-300">
+              <Table className="[&_th]:border-r [&_th]:border-r-slate-600 [&_td]:border-r [&_td]:border-r-slate-200 [&_th:last-child]:border-r-0 [&_td:last-child]:border-r-0 [&_td]:px-4 [&_td]:py-3">
                 <TableHeader>
                   <TableRow className="bg-slate-800 hover:bg-slate-800">
                     <TableHead className="w-10 text-white font-bold">
@@ -1085,9 +1137,24 @@ function ProductsPage() {
                           onCheckedChange={(v) => setSelected((s) => ({ ...s, [p.id]: !!v }))}
                         />
                       </TableCell>
-                      <TableCell className="font-medium text-slate-900">{p.name}</TableCell>
+                      <TableCell className="font-medium text-slate-900">
+                        <div className="flex items-center gap-2.5">
+                          {p.image_url ? (
+                            <img
+                              src={p.image_url}
+                              alt=""
+                              className="h-9 w-9 shrink-0 rounded-lg border border-slate-200 object-cover"
+                            />
+                          ) : (
+                            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-slate-100">
+                              <Package className="h-4 w-4 text-slate-400" />
+                            </div>
+                          )}
+                          <span>{p.name}</span>
+                        </div>
+                      </TableCell>
                       <TableCell className="text-slate-600 text-xs hidden md:table-cell">
-                        {p.category || "—"}
+                        {catPath(p.category_id) ?? p.category ?? "—"}
                       </TableCell>
                       <TableCell className="font-mono text-xs text-slate-500 hidden sm:table-cell">
                         {p.sku ?? "—"}
@@ -1166,22 +1233,119 @@ function ProductsPage() {
               {editing ? "Modifier" : "Nouveau"} produit
             </DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-2 sm:grid-cols-2">
+          <div className="grid gap-5 py-2 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
               <Label>Nom *</Label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Nom du produit"
+                className="h-11"
               />
             </div>
+
+            {/* Photo */}
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Photo du produit</Label>
+              <input
+                ref={imgRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) uploadImage(f);
+                  e.target.value = "";
+                }}
+              />
+              <div className="flex items-center gap-3">
+                {form.image_url ? (
+                  <div className="relative">
+                    <img
+                      src={form.image_url}
+                      alt="aperçu"
+                      className="h-20 w-20 rounded-xl border border-border object-cover"
+                    />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="destructive"
+                      className="absolute -right-2 -top-2 h-6 w-6 rounded-full"
+                      onClick={() => setForm({ ...form, image_url: "" })}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid h-20 w-20 place-items-center rounded-xl border border-dashed border-border bg-secondary/30">
+                    <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={imgBusy}
+                  onClick={() => imgRef.current?.click()}
+                >
+                  {imgBusy ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="mr-1.5 h-4 w-4" />
+                  )}
+                  {form.image_url ? "Changer la photo" : "Ajouter une photo"}
+                </Button>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label>Catégorie</Label>
-              <Input
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-                placeholder="Ex: Alimentation, Hygiène..."
-              />
+              {cats.length === 0 ? (
+                <>
+                  <Input value="" disabled placeholder="Aucune catégorie créée" />
+                  <p className="text-xs text-muted-foreground">
+                    Créez d'abord vos catégories (avec sous-catégories) dans la page{" "}
+                    <Link to="/categories" className="underline font-medium">
+                      Catégories
+                    </Link>
+                    .
+                  </p>
+                </>
+              ) : (
+                <Select
+                  value={form.category_id || "none"}
+                  onValueChange={(v) => setForm({ ...form, category_id: v === "none" ? "" : v })}
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="Choisir…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">— Aucune catégorie —</SelectItem>
+                    {(() => {
+                      const byId = new Map(cats.map((c) => [c.id, c]));
+                      const roots = cats.filter((c) => !c.parent_id || !byId.has(c.parent_id));
+                      const childrenOf = (id: string) => cats.filter((c) => c.parent_id === id);
+                      return roots.map((root) => {
+                        const kids = childrenOf(root.id);
+                        return (
+                          <SelectGroup key={root.id}>
+                            <SelectLabel>{root.name}</SelectLabel>
+                            <SelectItem value={root.id}>
+                              {root.name}
+                              {kids.length > 0 ? " (catégorie générale)" : ""}
+                            </SelectItem>
+                            {kids.map((k) => (
+                              <SelectItem key={k.id} value={k.id} className="pl-8">
+                                {k.name}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        );
+                      });
+                    })()}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Référence (auto si vide)</Label>
@@ -1189,6 +1353,7 @@ function ProductsPage() {
                 value={form.sku}
                 onChange={(e) => setForm({ ...form, sku: e.target.value })}
                 placeholder="Ex : QNC-000001"
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
@@ -1218,6 +1383,9 @@ function ProductsPage() {
                   <Barcode className="h-4 w-4" />
                 </Button>
               </div>
+            </div>
+            <div className="sm:col-span-2 -mb-1 mt-1 border-t border-border pt-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Prix & stock
             </div>
             <div className="space-y-2">
               <Label>Prix d'achat</Label>
@@ -1250,6 +1418,9 @@ function ProductsPage() {
                 onChange={(e) => setForm({ ...form, unit: e.target.value })}
                 placeholder="unité, kg, sac..."
               />
+            </div>
+            <div className="sm:col-span-2 -mb-1 mt-1 border-t border-border pt-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Caractéristiques
             </div>
             <div className="space-y-2">
               <Label>Fournisseur</Label>
@@ -1293,10 +1464,11 @@ function ProductsPage() {
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Description</Label>
-              <Input
+              <Textarea
+                rows={3}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Description du produit..."
+                placeholder="Description du produit…"
               />
             </div>
           </div>

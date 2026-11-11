@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShops } from "@/lib/shop-store";
 import { PageHeader, EmptyState } from "@/components/page-parts";
@@ -80,6 +80,12 @@ function CategoriesPage() {
     }
   }, [current?.id]);
 
+  const topLevel = useMemo(
+    () => categories.filter((c) => !c.parent_id || !categories.some((x) => x.id === c.parent_id)),
+    [categories],
+  );
+  const childrenOf = (id: string) => categories.filter((c) => c.parent_id === id);
+
   const loadCategories = async () => {
     if (!current?.id) return;
     setLoading(true);
@@ -118,6 +124,7 @@ function CategoriesPage() {
             description: cat.description,
             keywords: cat.keywords,
             sort_order: cat.sort_order,
+            parent_id: cat.parent_id || null,
           })
           .eq("id", cat.id);
         if (error) throw error;
@@ -129,6 +136,7 @@ function CategoriesPage() {
           description: cat.description,
           keywords: cat.keywords,
           sort_order: cat.sort_order,
+          parent_id: cat.parent_id || null,
           is_auto_generated: false,
         });
         if (error) throw error;
@@ -324,6 +332,32 @@ function CategoriesPage() {
               </p>
             </div>
             <div>
+              <label className="text-sm font-medium mb-1.5 block">Catégorie parente</label>
+              <Select
+                value={editing?.parent_id || "none"}
+                onValueChange={(v) =>
+                  setEditing({ ...editing!, parent_id: v === "none" ? null : v })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Aucune (catégorie principale)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Aucune (catégorie principale)</SelectItem>
+                  {categories
+                    .filter((c) => c.id !== editing?.id && !c.parent_id)
+                    .map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Choisissez une parente pour en faire une sous-catégorie.
+              </p>
+            </div>
+            <div>
               <label className="text-sm font-medium mb-1.5 block">Ordre d'affichage</label>
               <Input
                 type="number"
@@ -358,7 +392,7 @@ function CategoriesPage() {
         </Card>
       )}
 
-      {/* Liste des catégories */}
+      {/* Liste des catégories (parent → sous-catégories) */}
       {categories.length === 0 ? (
         <EmptyState
           icon={Tags}
@@ -366,79 +400,132 @@ function CategoriesPage() {
           description="Générez des catégories selon votre type de boutique ou créez-en manuellement."
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {categories.map((cat) => (
-            <Card key={cat.id} className="shadow-soft">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-sm truncate">{cat.name}</h3>
-                      {cat.is_auto_generated && (
-                        <Badge variant="secondary" className="text-[10px] shrink-0">
-                          Auto
-                        </Badge>
-                      )}
-                    </div>
-                    {cat.description && (
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                        {cat.description}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7"
-                      onClick={() => {
-                        setEditing(cat);
-                        setShowForm(true);
-                      }}
-                    >
-                      <Edit className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7"
-                      onClick={() => deleteCategory(cat.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="mt-3 flex items-center justify-between">
-                  <Badge variant="outline" className="text-xs">
-                    {cat.product_count} produit{cat.product_count !== 1 ? "s" : ""}
-                  </Badge>
-                  {cat.keywords && cat.keywords.length > 0 && (
-                    <span className="text-xs text-muted-foreground">
-                      {cat.keywords.length} mot{cat.keywords.length > 1 ? "s" : ""}-clé
-                    </span>
-                  )}
-                </div>
-
-                {cat.keywords && cat.keywords.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {cat.keywords.slice(0, 5).map((k) => (
-                      <Badge key={k} variant="secondary" className="text-[10px]">
-                        {k}
-                      </Badge>
+        <div className="space-y-3">
+          {topLevel.map((parent) => {
+            const kids = childrenOf(parent.id);
+            return (
+              <div key={parent.id} className="space-y-2">
+                <CategoryCard
+                  cat={parent}
+                  onEdit={() => {
+                    setEditing(parent);
+                    setShowForm(true);
+                  }}
+                  onDelete={() => deleteCategory(parent.id)}
+                  onAddSub={() => {
+                    setEditing({
+                      id: "",
+                      name: "",
+                      description: "",
+                      keywords: [],
+                      sort_order: 0,
+                      is_auto_generated: false,
+                      parent_id: parent.id,
+                    });
+                    setShowForm(true);
+                  }}
+                />
+                {kids.length > 0 && (
+                  <div className="ml-4 space-y-2 border-l-2 border-border pl-4">
+                    {kids.map((sub) => (
+                      <CategoryCard
+                        key={sub.id}
+                        cat={sub}
+                        onEdit={() => {
+                          setEditing(sub);
+                          setShowForm(true);
+                        }}
+                        onDelete={() => deleteCategory(sub.id)}
+                      />
                     ))}
-                    {cat.keywords.length > 5 && (
-                      <Badge variant="secondary" className="text-[10px]">
-                        +{cat.keywords.length - 5}
-                      </Badge>
-                    )}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
+  );
+}
+
+/* ---------- carte de catégorie (parent ou sous-catégorie) ---------- */
+
+function CategoryCard({
+  cat,
+  onEdit,
+  onDelete,
+  onAddSub,
+}: {
+  cat: Category;
+  onEdit: () => void;
+  onDelete: () => void;
+  onAddSub?: () => void;
+}) {
+  return (
+    <Card className="shadow-soft">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-sm truncate">{cat.name}</h3>
+              {cat.is_auto_generated && (
+                <Badge variant="secondary" className="text-[10px] shrink-0">
+                  Auto
+                </Badge>
+              )}
+            </div>
+            {cat.description && (
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{cat.description}</p>
+            )}
+          </div>
+          <div className="flex gap-1 shrink-0">
+            {onAddSub && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 gap-1 text-xs"
+                onClick={onAddSub}
+                title="Ajouter une sous-catégorie"
+              >
+                <Plus className="h-3.5 w-3.5" /> Sous-catégorie
+              </Button>
+            )}
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onEdit}>
+              <Edit className="h-3.5 w-3.5" />
+            </Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onDelete}>
+              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-3 flex items-center justify-between">
+          <Badge variant="outline" className="text-xs">
+            {cat.product_count ?? 0} produit{cat.product_count !== 1 ? "s" : ""}
+          </Badge>
+          {cat.keywords && cat.keywords.length > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {cat.keywords.length} mot{cat.keywords.length > 1 ? "s" : ""}-clé
+            </span>
+          )}
+        </div>
+
+        {cat.keywords && cat.keywords.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {cat.keywords.slice(0, 5).map((k) => (
+              <Badge key={k} variant="secondary" className="text-[10px]">
+                {k}
+              </Badge>
+            ))}
+            {cat.keywords.length > 5 && (
+              <Badge variant="secondary" className="text-[10px]">
+                +{cat.keywords.length - 5}
+              </Badge>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

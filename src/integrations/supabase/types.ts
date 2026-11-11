@@ -362,6 +362,7 @@ export type Database = {
           cost_price: number
           created_at: string
           description: string | null
+          extra: Json
           id: string
           image_url: string | null
           is_active: boolean
@@ -384,6 +385,7 @@ export type Database = {
           cost_price?: number
           created_at?: string
           description?: string | null
+          extra?: Json
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -406,6 +408,7 @@ export type Database = {
           cost_price?: number
           created_at?: string
           description?: string | null
+          extra?: Json
           id?: string
           image_url?: string | null
           is_active?: boolean
