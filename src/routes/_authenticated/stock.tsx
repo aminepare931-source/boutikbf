@@ -43,7 +43,7 @@ import {
   Check,
 } from "lucide-react";
 import { toast } from "sonner";
-import { fmtDate } from "@/lib/format";
+import { fmtDate, fmtNumber } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/stock")({
   head: () => ({ meta: [{ title: "Stock — BoutikBF" }] }),
@@ -67,6 +67,16 @@ type StockCount = {
   created_at: string;
 };
 
+type Movement = {
+  id: string;
+  product_id: string | null;
+  type: string;
+  quantity: number;
+  reason: string | null;
+  created_at: string;
+  products?: { name: string } | null;
+};
+
 function StockPage() {
   const { current, shops } = useShops();
   const [items, setItems] = useState<P[]>([]);
@@ -81,6 +91,19 @@ function StockPage() {
   const [receiveOpen, setReceiveOpen] = useState(false);
   const [countOpen, setCountOpen] = useState(false);
   const [counts, setCounts] = useState<StockCount[]>([]);
+  const [movs, setMovs] = useState<Movement[]>([]);
+  const [movFilter, setMovFilter] = useState("all");
+
+  const loadMovs = async () => {
+    if (!current) return;
+    const { data } = await supabase
+      .from("stock_movements")
+      .select("id,product_id,type,quantity,reason,created_at,products(name)")
+      .eq("shop_id", current.id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    setMovs((data ?? []) as Movement[]);
+  };
 
   const load = async () => {
     if (!current) return;
@@ -90,6 +113,7 @@ function StockPage() {
       .eq("shop_id", current.id)
       .order("stock", { ascending: true });
     setItems((data ?? []) as P[]);
+    loadMovs();
   };
   const loadCounts = async () => {
     if (!current) return;
@@ -104,6 +128,8 @@ function StockPage() {
   useEffect(() => {
     load();
     loadCounts();
+    loadMovs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id]);
 
   const submit = async () => {
@@ -141,6 +167,7 @@ function StockPage() {
     toast.success("Écarts d'inventaire appliqués");
     load();
     loadCounts();
+    loadMovs();
   };
 
   const lowStock = items.filter((p) => p.stock < (p.stock_min ?? 5));
@@ -281,6 +308,86 @@ function StockPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Historique des mouvements */}
+      <Card className="mt-6 shadow-soft">
+        <CardContent className="p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-display font-semibold">Mouvements récents</h3>
+            <Select value={movFilter} onValueChange={setMovFilter}>
+              <SelectTrigger className="h-9 w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les mouvements</SelectItem>
+                <SelectItem value="in">Entrées uniquement</SelectItem>
+                <SelectItem value="out">Sorties uniquement</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {movs.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Aucun mouvement pour le moment.
+            </p>
+          ) : (
+            <div className="max-h-96 overflow-auto rounded-lg border border-slate-300">
+              <Table className="[&_th]:border-r [&_th]:border-r-slate-600 [&_td]:border-r [&_td]:border-r-slate-200 [&_th:last-child]:border-r-0 [&_td:last-child]:border-r-0 [&_td]:px-4 [&_td]:py-2.5">
+                <TableHeader>
+                  <TableRow className="bg-slate-800 hover:bg-slate-800">
+                    <TableHead className="min-w-[130px] text-white font-bold">Date</TableHead>
+                    <TableHead className="min-w-[160px] text-white font-bold">Produit</TableHead>
+                    <TableHead className="text-white font-bold">Type</TableHead>
+                    <TableHead className="text-right min-w-[90px] text-white font-bold">
+                      Qté
+                    </TableHead>
+                    <TableHead className="min-w-[180px] text-white font-bold">Motif</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {movs
+                    .filter((m) => movFilter === "all" || m.type === movFilter)
+                    .map((m) => (
+                      <TableRow key={m.id}>
+                        <TableCell className="text-xs">
+                          {new Date(m.created_at).toLocaleString("fr-FR", {
+                            day: "2-digit",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </TableCell>
+                        <TableCell className="text-sm font-medium">
+                          {m.products?.name ?? "Produit supprimé"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={m.type === "in" ? "default" : "secondary"}
+                            className={
+                              m.type === "in"
+                                ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                : ""
+                            }
+                          >
+                            {m.type === "in" ? "Entrée" : "Sortie"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell
+                          className={`text-right font-mono text-sm ${m.type === "in" ? "text-green-700" : "text-red-600"}`}
+                        >
+                          {m.type === "in" ? "+" : "−"}
+                          {fmtNumber(Math.abs(Number(m.quantity)))}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {m.reason ?? "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Mouvement simple */}
       <Dialog open={open} onOpenChange={setOpen}>

@@ -255,14 +255,16 @@ function AccountingPage() {
               description="Enregistrez une vente à la caisse ou une entrée de stock : elles apparaîtront ici automatiquement."
             />
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto rounded-lg border border-slate-300">
+              <Table className="[&_th]:border-r [&_th]:border-r-slate-600 [&_td]:border-r [&_td]:border-r-slate-200 [&_th:last-child]:border-r-0 [&_td:last-child]:border-r-0 [&_td]:px-4 [&_td]:py-3">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="min-w-[120px]">Date</TableHead>
-                    <TableHead>Ce qui s'est passé</TableHead>
-                    <TableHead className="text-right hidden sm:table-cell">Argent reçu</TableHead>
-                    <TableHead className="text-right hidden sm:table-cell">
+                  <TableRow className="bg-slate-800 hover:bg-slate-800">
+                    <TableHead className="min-w-[120px] text-white font-bold">Date</TableHead>
+                    <TableHead className="text-white font-bold">Ce qui s'est passé</TableHead>
+                    <TableHead className="text-right hidden sm:table-cell text-white font-bold">
+                      Argent reçu
+                    </TableHead>
+                    <TableHead className="text-right hidden sm:table-cell text-white font-bold">
                       Argent dépensé
                     </TableHead>
                   </TableRow>
@@ -293,10 +295,13 @@ function AccountingPage() {
 function labelPay(m: string) {
   return (
     (
-      { cash: "espèces", mobile: "Mobile Money", card: "carte", credit: "à crédit" } as Record<
-        string,
-        string
-      >
+      {
+        cash: "espèces",
+        mobile: "Mobile Money",
+        card: "carte",
+        credit: "à crédit",
+        mixed: "paiement mixte",
+      } as Record<string, string>
     )[m] ?? m
   );
 }
