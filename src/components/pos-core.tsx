@@ -32,6 +32,9 @@ import {
   MessageCircle,
   Printer,
   WifiOff,
+  UserRound,
+  HandCoins,
+  X,
   RefreshCw,
 } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
@@ -119,6 +122,19 @@ function PosCore({ mode }: { mode: PosMode }) {
   const [q, setQ] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [payment, setPayment] = useState("cash");
+  const [discount, setDiscount] = useState("");
+  const [discountPct, setDiscountPct] = useState(false);
+  const [customer, setCustomer] = useState<{
+    id: string;
+    name: string;
+    phone: string | null;
+  } | null>(null);
+  const [custOpen, setCustOpen] = useState(false);
+  const [custQ, setCustQ] = useState("");
+  const [custResults, setCustResults] = useState<
+    { id: string; name: string; phone: string | null }[]
+  >([]);
+  const [newCust, setNewCust] = useState({ name: "", phone: "" });
   const [processing, setProcessing] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [scanContinuous, setScanContinuous] = useState(false);
@@ -141,6 +157,10 @@ function PosCore({ mode }: { mode: PosMode }) {
     paymentLine: string;
     change: number;
     items: { name: string; qty: number; total: number }[];
+    method: string;
+    subtotal: number;
+    discount: number;
+    customerName: string | null;
   } | null>(null);
 
   // — hors-ligne —
@@ -275,32 +295,77 @@ function PosCore({ mode }: { mode: PosMode }) {
   const subtotal = cart.reduce((a, i) => a + i.sale_price * i.qty, 0);
   const cur = current?.currency ?? "XOF";
 
+  // — remise —
+  const discountNum = Math.max(0, Number(discount || 0));
+  const discountValue = discountPct
+    ? Math.round((subtotal * Math.min(100, discountNum)) / 100)
+    : Math.min(discountNum, subtotal);
+  const total = Math.max(0, subtotal - discountValue);
+
   // — monnaie & mixte —
   const receivedNum = Number(received || 0);
-  const change = payment === "cash" && receivedNum >= subtotal ? receivedNum - subtotal : 0;
-  const cashShort = payment === "cash" && receivedNum > 0 && receivedNum < subtotal;
+  const change = payment === "cash" && receivedNum >= total ? receivedNum - total : 0;
+  const cashShort = payment === "cash" && receivedNum > 0 && receivedNum < total;
   const mixCashNum = Number(mixCash || 0);
-  const mixRestAmount = subtotal - mixCashNum;
+  const mixRestAmount = total - mixCashNum;
   const mixValid = payment !== "mixed" || (mixCashNum > 0 && mixRestAmount > 0);
+  const creditValid = payment !== "credit" || !!customer;
 
   const quickCash = [
-    subtotal,
-    roundUpTo(subtotal, 500),
-    roundUpTo(subtotal, 1000),
-    roundUpTo(subtotal, 2000),
-    roundUpTo(subtotal, 5000),
-    roundUpTo(subtotal, 10000),
+    total,
+    roundUpTo(total, 500),
+    roundUpTo(total, 1000),
+    roundUpTo(total, 2000),
+    roundUpTo(total, 5000),
+    roundUpTo(total, 10000),
   ]
     .filter((v, i, a) => v > 0 && a.indexOf(v) === i)
     .slice(0, 5);
 
   const paymentLine = useMemo(() => {
-    if (payment === "cash") return `Paiement : espèces (${fmtMoney(receivedNum || subtotal, cur)})`;
+    if (payment === "cash") return `Paiement : espèces (${fmtMoney(receivedNum || total, cur)})`;
     if (payment === "mixed")
       return `Paiement : ${fmtMoney(mixCashNum, cur)} espèces + ${fmtMoney(Math.max(0, mixRestAmount), cur)} ${mixRest === "mobile" ? "Mobile Money" : "carte"}`;
     if (payment === "mobile") return "Paiement : Mobile Money";
+    if (payment === "credit") return `À crédit — ${customer?.name ?? ""}`;
     return "Paiement : carte bancaire";
-  }, [payment, receivedNum, mixCashNum, mixRestAmount, mixRest, cur, subtotal]);
+  }, [payment, receivedNum, mixCashNum, mixRestAmount, mixRest, cur, total, customer]);
+
+  // — recherche client —
+  useEffect(() => {
+    if (!custOpen || !current) return;
+    const t = setTimeout(async () => {
+      let query = supabase
+        .from("customers")
+        .select("id,name,phone")
+        .eq("shop_id", current.id)
+        .order("name")
+        .limit(8);
+      if (custQ.trim())
+        query = query.or(`name.ilike.%${custQ.trim()}%,phone.ilike.%${custQ.trim()}%`);
+      const { data } = await query;
+      setCustResults((data ?? []) as typeof custResults);
+    }, 200);
+    return () => clearTimeout(t);
+  }, [custOpen, custQ, current?.id]);
+
+  const createCustomer = async () => {
+    if (!current || !newCust.name.trim()) return;
+    const { data, error } = await supabase
+      .from("customers")
+      .insert({
+        shop_id: current.id,
+        name: newCust.name.trim(),
+        phone: newCust.phone.trim() || null,
+      })
+      .select("id,name,phone")
+      .single();
+    if (error) return toast.error(error.message);
+    setCustomer(data as { id: string; name: string; phone: string | null });
+    setCustOpen(false);
+    setNewCust({ name: "", phone: "" });
+    toast.success("Client ajouté");
+  };
 
   // — mise en attente —
   const holdCart = () => {
@@ -316,6 +381,9 @@ function PosCore({ mode }: { mode: PosMode }) {
     setCart([]);
     setReceived("");
     setMixCash("");
+    setDiscount("");
+    setDiscountPct(false);
+    setCustomer(null);
     toast.success("Ticket mis en attente");
   };
   const restoreHeld = (t: HeldTicket) => {
@@ -338,7 +406,7 @@ function PosCore({ mode }: { mode: PosMode }) {
   };
 
   const checkout = async () => {
-    if (!current || cart.length === 0 || !mixValid) return;
+    if (!current || cart.length === 0 || !mixValid || !creditValid) return;
     setProcessing(true);
 
     const ref = "V-" + Date.now().toString(36).toUpperCase();
@@ -350,17 +418,20 @@ function PosCore({ mode }: { mode: PosMode }) {
             { method: mixRest, amount: mixRestAmount },
           ]
         : null;
-    const amountPaid = payment === "cash" && receivedNum > 0 ? receivedNum : subtotal;
+    const amountPaid =
+      payment === "credit" ? null : payment === "cash" && receivedNum > 0 ? receivedNum : total;
     const methodStored = payment === "mixed" ? "mixed" : payment;
 
     const salePayload = {
       shop_id: current.id,
       subtotal,
-      total: subtotal,
+      discount: discountValue,
+      total,
       payment_method: methodStored,
       amount_paid: amountPaid,
       change_due: change,
       payments: payments ?? undefined,
+      customer_id: customer?.id ?? null,
       reference: ref,
       created_at: createdAt,
     };
@@ -412,18 +483,39 @@ function PosCore({ mode }: { mode: PosMode }) {
         });
       }
 
-      toast.success(`Vente ${ref} enregistrée — ${fmtMoney(subtotal, cur)}`);
+      // vente à crédit : la dette du client est mise à jour
+      if (payment === "credit" && customer) {
+        const { data: cust } = await supabase
+          .from("customers")
+          .select("credit_balance")
+          .eq("id", customer.id)
+          .maybeSingle();
+        if (cust)
+          await supabase
+            .from("customers")
+            .update({ credit_balance: Number(cust.credit_balance) + total })
+            .eq("id", customer.id);
+      }
+
+      toast.success(`Vente ${ref} enregistrée — ${fmtMoney(total, cur)}`);
       setDone({
         ref,
-        total: subtotal,
+        total,
         created_at: sale.created_at ?? createdAt,
         paymentLine,
         change,
         items: cart.map((i) => ({ name: i.name, qty: i.qty, total: i.sale_price * i.qty })),
+        method: methodStored,
+        subtotal,
+        discount: discountValue,
+        customerName: customer?.name ?? null,
       });
       setCart([]);
       setReceived("");
       setMixCash("");
+      setDiscount("");
+      setDiscountPct(false);
+      setCustomer(null);
       // reload stock
       const { data } = await supabase
         .from("products")
@@ -440,9 +532,10 @@ function PosCore({ mode }: { mode: PosMode }) {
           cashier_id:
             mode === "employee" ? null : ((await supabase.auth.getUser()).data.user?.id ?? null),
           employee_id: mode === "employee" ? (getEmployeeSession()?.employeeId ?? null) : null,
+          customer_id: customer?.id ?? null,
           created_at: createdAt,
           subtotal,
-          total: subtotal,
+          total,
           payment_method: methodStored,
           amount_paid: amountPaid,
           change_due: change,
@@ -463,15 +556,22 @@ function PosCore({ mode }: { mode: PosMode }) {
         );
         setDone({
           ref,
-          total: subtotal,
+          total,
           created_at: createdAt,
           paymentLine: paymentLine + " · (hors-ligne)",
           change,
           items: cart.map((i) => ({ name: i.name, qty: i.qty, total: i.sale_price * i.qty })),
+          method: methodStored,
+          subtotal,
+          discount: discountValue,
+          customerName: customer?.name ?? null,
         });
         setCart([]);
         setReceived("");
         setMixCash("");
+        setDiscount("");
+        setDiscountPct(false);
+        setCustomer(null);
       } else {
         toast.error("Vente non enregistrée : " + (e as Error).message);
       }
@@ -480,10 +580,11 @@ function PosCore({ mode }: { mode: PosMode }) {
     }
   };
 
-  const printDone = async () => {
+  const printDone = async (paper: "58" | "80" = "80") => {
     if (!done || !current) return;
     const logoUrl = await resolveLogoUrl(current.logo_url);
     openReceipt({
+      paper,
       shop: {
         name: current.name,
         address: current.address,
@@ -495,8 +596,9 @@ function PosCore({ mode }: { mode: PosMode }) {
       sale: {
         reference: done.ref,
         created_at: done.created_at,
-        payment_method: payment === "mixed" ? "mixed" : payment,
-        subtotal: done.total,
+        payment_method: done.method,
+        subtotal: done.subtotal,
+        discount: done.discount,
         total: done.total,
         paid: done.paymentLine,
         change: done.change,
@@ -507,6 +609,7 @@ function PosCore({ mode }: { mode: PosMode }) {
         unit_price: Math.round(i.total / Math.max(1, i.qty)),
         total: i.total,
       })),
+      customer: done.customerName ? { name: done.customerName } : null,
     });
   };
 
@@ -740,10 +843,79 @@ function PosCore({ mode }: { mode: PosMode }) {
             )}
           </CardContent>
           <div className="space-y-3 border-t border-border p-4">
+            {/* Client au comptoir */}
+            <div className="flex items-center justify-between gap-2">
+              {customer ? (
+                <Badge variant="secondary" className="max-w-[220px] gap-1.5 py-1 text-xs">
+                  <UserRound className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{customer.name}</span>
+                  <button
+                    type="button"
+                    className="grid h-4 w-4 place-items-center rounded-full hover:bg-destructive/20"
+                    title="Retirer le client"
+                    onClick={() => {
+                      setCustomer(null);
+                      if (payment === "credit") setPayment("cash");
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ) : (
+                <span className="text-xs text-muted-foreground">Client comptoir</span>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs"
+                onClick={() => setCustOpen(true)}
+              >
+                <UserRound className="mr-1.5 h-3.5 w-3.5" /> Client
+              </Button>
+            </div>
+
+            {/* Remise */}
+            {cart.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="0"
+                  value={discount}
+                  onChange={(e) => setDiscount(e.target.value)}
+                  placeholder="Remise…"
+                  className="h-9 flex-1"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={discountPct ? "default" : "outline"}
+                  className="h-9 w-10 shrink-0"
+                  onClick={() => setDiscountPct((v) => !v)}
+                  title="Basculer % / montant"
+                >
+                  {discountPct ? "%" : cur === "XOF" ? "F" : cur}
+                </Button>
+              </div>
+            )}
+
+            {discountValue > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Sous-total</span>
+                <span className="text-muted-foreground">{fmtMoney(subtotal, cur)}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between border-b border-dashed border-border pb-3">
-              <span className="font-display text-lg font-semibold">Total</span>
+              <span className="font-display text-lg font-semibold">
+                Total
+                {discountValue > 0 && (
+                  <span className="ml-1 text-xs font-normal text-destructive">
+                    − remise {fmtMoney(discountValue, cur)}
+                  </span>
+                )}
+              </span>
               <span className="font-display text-xl md:text-2xl font-bold text-primary">
-                {fmtMoney(subtotal, cur)}
+                {fmtMoney(total, cur)}
               </span>
             </div>
 
@@ -768,6 +940,10 @@ function PosCore({ mode }: { mode: PosMode }) {
                   <RefreshCw className="mr-2 inline h-4 w-4" />
                   Paiement mixte (2 moyens)
                 </SelectItem>
+                <SelectItem value="credit">
+                  <HandCoins className="mr-2 inline h-4 w-4" />À crédit{" "}
+                  {customer ? `— ${customer.name}` : "(client requis)"}
+                </SelectItem>
               </SelectContent>
             </Select>
 
@@ -780,7 +956,7 @@ function PosCore({ mode }: { mode: PosMode }) {
                   inputMode="numeric"
                   value={received}
                   onChange={(e) => setReceived(e.target.value)}
-                  placeholder={String(subtotal)}
+                  placeholder={String(total)}
                   className="h-10 text-lg font-semibold"
                 />
                 <div className="flex flex-wrap gap-1.5">
@@ -801,7 +977,7 @@ function PosCore({ mode }: { mode: PosMode }) {
                   <div className="flex items-center justify-between rounded-lg bg-background px-3 py-2 text-sm">
                     {cashShort ? (
                       <span className="text-destructive font-medium">
-                        Il manque {fmtMoney(subtotal - receivedNum, cur)}
+                        Il manque {fmtMoney(total - receivedNum, cur)}
                       </span>
                     ) : (
                       <>
@@ -859,10 +1035,10 @@ function PosCore({ mode }: { mode: PosMode }) {
 
             <Button
               onClick={checkout}
-              disabled={cart.length === 0 || processing || !mixValid || cashShort}
+              disabled={cart.length === 0 || processing || !mixValid || !creditValid || cashShort}
               className="h-12 w-full bg-gradient-primary text-base shadow-elegant"
             >
-              Encaisser {cart.length > 0 && `· ${fmtMoney(subtotal, cur)}`}
+              Encaisser {cart.length > 0 && `· ${fmtMoney(total, cur)}`}
             </Button>
           </div>
         </Card>
@@ -935,9 +1111,14 @@ function PosCore({ mode }: { mode: PosMode }) {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col gap-2 sm:flex-col">
-            <Button className="w-full" onClick={printDone}>
-              <Printer className="mr-2 h-4 w-4" /> Imprimer le ticket
-            </Button>
+            <div className="flex gap-2">
+              <Button className="flex-1" onClick={() => printDone("80")}>
+                <Printer className="mr-2 h-4 w-4" /> Imprimer 80 mm
+              </Button>
+              <Button className="flex-1" variant="outline" onClick={() => printDone("58")}>
+                <Printer className="mr-2 h-4 w-4" /> 58 mm
+              </Button>
+            </div>
             <Button className="w-full" variant="outline" onClick={whatsappDone}>
               <MessageCircle className="mr-2 h-4 w-4 text-success" /> Envoyer par WhatsApp
             </Button>
@@ -945,6 +1126,89 @@ function PosCore({ mode }: { mode: PosMode }) {
               Nouvelle vente
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Choix du client */}
+      <Dialog open={custOpen} onOpenChange={setCustOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">Client</DialogTitle>
+            <DialogDescription>
+              Associer un client à cette vente (historique, fidélité, crédit).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                placeholder="Nom ou téléphone…"
+                value={custQ}
+                onChange={(e) => setCustQ(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="max-h-48 space-y-1 overflow-y-auto">
+              {custResults.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-lg border border-border p-2.5 text-left text-sm hover:bg-secondary"
+                  onClick={() => {
+                    setCustomer(c);
+                    setCustOpen(false);
+                  }}
+                >
+                  <span className="font-medium">{c.name}</span>
+                  <span className="text-xs text-muted-foreground">{c.phone ?? ""}</span>
+                </button>
+              ))}
+              {custResults.length === 0 && (
+                <p className="py-3 text-center text-xs text-muted-foreground">
+                  Aucun client trouvé.
+                </p>
+              )}
+            </div>
+            <div className="rounded-xl border border-dashed border-border p-3">
+              <p className="mb-2 text-xs font-semibold">Créer un nouveau client</p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Nom *"
+                  value={newCust.name}
+                  onChange={(e) => setNewCust({ ...newCust, name: e.target.value })}
+                />
+                <Input
+                  placeholder="Téléphone"
+                  className="w-36"
+                  value={newCust.phone}
+                  onChange={(e) => setNewCust({ ...newCust, phone: e.target.value })}
+                />
+                <Button
+                  size="sm"
+                  className="shrink-0"
+                  disabled={!newCust.name.trim()}
+                  onClick={createCustomer}
+                >
+                  <Plus className="mr-1 h-4 w-4" /> Créer
+                </Button>
+              </div>
+            </div>
+            {customer && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-destructive"
+                onClick={() => {
+                  setCustomer(null);
+                  setCustOpen(false);
+                  if (payment === "credit") setPayment("cash");
+                }}
+              >
+                Retirer le client actuel
+              </Button>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

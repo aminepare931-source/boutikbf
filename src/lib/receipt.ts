@@ -24,6 +24,8 @@ export type ReceiptData = {
   items: { name: string; quantity: number; unit_price: number; total: number }[];
   customer?: { name?: string | null; phone?: string | null } | null;
   mode?: "receipt" | "invoice";
+  /** Largeur papier caisse : 58 mm (tickets étroits) ou 80 mm (défaut). */
+  paper?: "58" | "80";
 };
 
 function barcodeSvg(value: string): string {
@@ -68,7 +70,8 @@ export function buildReceiptHtml(d: ReceiptData): string {
 <style>
   * { box-sizing:border-box }
   body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; color:#111; margin:0; padding:16px; background:#f5f5f5 }
-  .paper { max-width:${mode === "invoice" ? "760px" : "340px"}; margin:0 auto; background:#fff; padding:20px; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,.08) }
+  ${mode === "receipt" && d.paper === "58" ? "body, table, td, .muted, .meta { font-size:11px } h2 { font-size:15px } h1 { font-size:13px }" : ""}
+  .paper { max-width:${mode === "invoice" ? "760px" : d.paper === "58" ? "248px" : "340px"}; margin:0 auto; background:#fff; padding:${mode === "invoice" ? "20px" : d.paper === "58" ? "10px" : "20px"}; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,.08) }
   .flag { height:6px; margin:-20px -20px 16px; background:linear-gradient(90deg,#009e49 0 33%,#fcd116 33% 66%,#ce1126 66% 100%) }
   h1 { font-size:16px; margin:0; text-align:center; letter-spacing:1px }
   h2 { font-size:20px; margin:8px 0 0; text-align:center }

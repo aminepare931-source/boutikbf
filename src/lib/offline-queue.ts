@@ -7,6 +7,8 @@ export type PendingSale = {
   shop_id: string;
   cashier_id: string | null;
   employee_id?: string | null;
+  customer_id?: string | null;
+  discount?: number;
   created_at: string;
   subtotal: number;
   total: number;
@@ -108,7 +110,9 @@ export async function replayPendingSales(): Promise<{ done: number; left: number
               shop_id: sale.shop_id,
               cashier_id: sale.cashier_id,
               employee_id: sale.employee_id ?? null,
+              customer_id: sale.customer_id ?? null,
               subtotal: sale.subtotal,
+              discount: sale.discount ?? 0,
               total: sale.total,
               payment_method: sale.payment_method,
               amount_paid: sale.amount_paid,
@@ -132,6 +136,20 @@ export async function replayPendingSales(): Promise<{ done: number; left: number
             })),
           );
           if (itemsError) throw itemsError;
+
+          // vente à crédit : la dette du client est ajoutée au rejeu
+          if (sale.payment_method === "credit" && sale.customer_id) {
+            const { data: cust } = await supabase
+              .from("customers")
+              .select("credit_balance")
+              .eq("id", sale.customer_id)
+              .maybeSingle();
+            if (cust)
+              await supabase
+                .from("customers")
+                .update({ credit_balance: Number(cust.credit_balance) + Number(sale.total) })
+                .eq("id", sale.customer_id);
+          }
 
           for (const i of sale.items) {
             await (
