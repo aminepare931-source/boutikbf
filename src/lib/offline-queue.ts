@@ -8,6 +8,7 @@ export type PendingSale = {
   cashier_id: string | null;
   employee_id?: string | null;
   customer_id?: string | null;
+  customer_points_delta?: number;
   discount?: number;
   created_at: string;
   subtotal: number;
@@ -148,6 +149,25 @@ export async function replayPendingSales(): Promise<{ done: number; left: number
               await supabase
                 .from("customers")
                 .update({ credit_balance: Number(cust.credit_balance) + Number(sale.total) })
+                .eq("id", sale.customer_id);
+          }
+
+          // fidélité : points gagnés/utilisés pendant la vente hors-ligne
+          if (sale.customer_id && sale.customer_points_delta) {
+            const { data: custPts } = await supabase
+              .from("customers")
+              .select("loyalty_points")
+              .eq("id", sale.customer_id)
+              .maybeSingle();
+            if (custPts)
+              await supabase
+                .from("customers")
+                .update({
+                  loyalty_points: Math.max(
+                    0,
+                    Number(custPts.loyalty_points) + sale.customer_points_delta,
+                  ),
+                })
                 .eq("id", sale.customer_id);
           }
 

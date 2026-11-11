@@ -4,7 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useShops } from "@/lib/shop-store";
 import { PageHeader, StatCard } from "@/components/page-parts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wallet, ShoppingCart, Package, Users, TrendingUp, AlertTriangle, Sparkles, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Wallet,
+  ShoppingCart,
+  Package,
+  Users,
+  TrendingUp,
+  AlertTriangle,
+  Sparkles,
+  Star,
+  MessageCircle,
+} from "lucide-react";
 import { fmtMoney } from "@/lib/format";
 import {
   AreaChart,
@@ -139,7 +150,7 @@ function Dashboard() {
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-950 via-slate-900 to-amber-950 border border-emerald-500/10 p-6 md:p-8 text-white shadow-lg">
           <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-emerald-500/10 blur-3xl" />
           <div className="absolute right-20 bottom-0 h-40 w-40 rounded-full bg-amber-500/10 blur-3xl" />
-          
+
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full w-max">
@@ -147,21 +158,33 @@ function Dashboard() {
                 Commerce Actif
               </div>
               <h1 className="text-2xl md:text-3xl font-black font-display leading-tight">
-                Bienvenue dans <span className="bg-gradient-to-r from-emerald-400 to-amber-400 bg-clip-text text-transparent">{current.name}</span>
+                Bienvenue dans{" "}
+                <span className="bg-gradient-to-r from-emerald-400 to-amber-400 bg-clip-text text-transparent">
+                  {current.name}
+                </span>
               </h1>
               <p className="text-slate-300 text-xs md:text-sm max-w-xl">
-                Suivez vos performances commerciales, gérez votre inventaire et visualisez vos chiffres d&apos;affaires en temps réel.
+                Suivez vos performances commerciales, gérez votre inventaire et visualisez vos
+                chiffres d&apos;affaires en temps réel.
               </p>
             </div>
             <div className="hidden lg:flex items-center gap-4 bg-white/5 border border-white/10 backdrop-blur-md p-4 rounded-xl">
               <div className="space-y-0.5">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Chiffre d&apos;Affaires</span>
-                <span className="font-display font-black text-lg text-emerald-400">{fmtMoney(stats.sales, cur)}</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                  Chiffre d&apos;Affaires
+                </span>
+                <span className="font-display font-black text-lg text-emerald-400">
+                  {fmtMoney(stats.sales, cur)}
+                </span>
               </div>
               <div className="h-8 w-px bg-white/10" />
               <div className="space-y-0.5">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Ventes Effectuées</span>
-                <span className="font-display font-black text-lg text-amber-400">{stats.salesCount}</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                  Ventes Effectuées
+                </span>
+                <span className="font-display font-black text-lg text-amber-400">
+                  {stats.salesCount}
+                </span>
               </div>
             </div>
           </div>
@@ -172,6 +195,42 @@ function Dashboard() {
         title="Tableau de bord"
         description={
           current ? `Aperçu analytique global — 30 derniers jours` : "Sélectionnez une boutique"
+        }
+        actions={
+          current ? (
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const start = new Date();
+                start.setHours(0, 0, 0, 0);
+                const { data } = await supabase
+                  .from("sales")
+                  .select("total,payment_method")
+                  .eq("shop_id", current.id)
+                  .eq("status", "completed")
+                  .gte("created_at", start.toISOString());
+                const rows = data ?? [];
+                const tot = rows.reduce((a, s) => a + Number(s.total), 0);
+                const cash = rows
+                  .filter((s) => s.payment_method === "cash")
+                  .reduce((a, s) => a + Number(s.total), 0);
+                const msg = [
+                  `🏪 *${current.name} — Rapport du jour*`,
+                  new Date().toLocaleString("fr-FR"),
+                  "",
+                  `Ventes : ${rows.length}`,
+                  `CA du jour : ${fmtMoney(tot, cur)}`,
+                  `Dont espèces : ${fmtMoney(cash, cur)}`,
+                  "",
+                  `Bonne continuation 🇧🇫`,
+                ].join("\n");
+                window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+              }}
+              className="gap-1.5"
+            >
+              <MessageCircle className="h-4 w-4 text-success" /> Rapport du jour WhatsApp
+            </Button>
+          ) : undefined
         }
       />
 
@@ -324,4 +383,3 @@ function Dashboard() {
     </div>
   );
 }
-

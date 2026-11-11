@@ -38,10 +38,12 @@ import {
   ArrowRightLeft,
   Truck,
   ClipboardList,
+  ListChecks,
   Plus,
   X,
   Check,
   CalendarClock,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fmtDate, fmtNumber } from "@/lib/format";
@@ -93,6 +95,7 @@ function StockPage() {
   const [transferOpen, setTransferOpen] = useState(false);
   const [receiveOpen, setReceiveOpen] = useState(false);
   const [countOpen, setCountOpen] = useState(false);
+  const [reorderOpen, setReorderOpen] = useState(false);
   const [counts, setCounts] = useState<StockCount[]>([]);
   const [movs, setMovs] = useState<Movement[]>([]);
   const [movFilter, setMovFilter] = useState("all");
@@ -210,6 +213,14 @@ function StockPage() {
             <Button variant="outline" onClick={() => setCountOpen(true)}>
               <ClipboardList className="mr-2 h-4 w-4" />
               Inventaire
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setReorderOpen(true)}
+              disabled={lowStock.length + outStock.length === 0}
+            >
+              <ListChecks className="mr-2 h-4 w-4" />
+              Liste de réappro
             </Button>
           </div>
         }
@@ -525,6 +536,12 @@ function StockPage() {
           load();
           loadCounts();
         }}
+      />
+      <ReorderDialog
+        open={reorderOpen}
+        onOpenChange={setReorderOpen}
+        items={items}
+        shopName={current?.name ?? ""}
       />
     </div>
   );
@@ -953,6 +970,128 @@ function CountDialog({
             <ClipboardList className="mr-2 h-4 w-4" /> Enregistrer l'inventaire
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ---------- Liste de réapprovisionnement (WhatsApp) ---------- */
+
+function ReorderDialog({
+  open,
+  onOpenChange,
+  items,
+  shopName,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  items: P[];
+  shopName: string;
+}) {
+  const [supplierPhone, setSupplierPhone] = useState("");
+  const low = items.filter((p) => p.stock <= 0 || p.stock < (p.stock_min ?? 5));
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [qtys, setQtys] = useState<Record<string, string>>({});
+
+  const suggested = (p: P) => {
+    const min = p.stock_min ?? 5;
+    return Math.max(min * 2 - Math.floor(p.stock), min);
+  };
+
+  useEffect(() => {
+    if (open) {
+      const c: Record<string, boolean> = {};
+      const q: Record<string, string> = {};
+      low.forEach((p) => {
+        c[p.id] = true;
+        q[p.id] = String(suggested(p));
+      });
+      setChecked(c);
+      setQtys(q);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const selected = low.filter((p) => checked[p.id]);
+
+  const sendWhatsApp = () => {
+    if (selected.length === 0) return toast.error("Sélectionne au moins un produit");
+    const lines = [
+      `📦 *Commande réappro — ${shopName}*`,
+      `Date : ${new Date().toLocaleDateString("fr-FR")}`,
+      "",
+      ...selected.map(
+        (p) => `• ${p.name} : ${qtys[p.id] || suggested(p)} ${p.unit} (stock actuel : ${p.stock})`,
+      ),
+      "",
+      "Merci de confirmer disponibilité et prix.",
+    ];
+    const text = encodeURIComponent(lines.join("\n"));
+    const digits = supplierPhone.replace(/\D/g, "");
+    const full = digits.length === 8 ? `226${digits}` : digits;
+    window.open(
+      full ? `https://wa.me/${full}?text=${text}` : `https://wa.me/?text=${text}`,
+      "_blank",
+    );
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="font-display">Liste de réapprovisionnement</DialogTitle>
+        </DialogHeader>
+        {low.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Aucun produit en stock faible — tout va bien 👌
+          </p>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Produits en rupture ou stock bas ({low.length}). Les quantités suggérées visent 2× le
+              seuil minimum.
+            </p>
+            <div className="space-y-1.5">
+              {low.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center gap-2 rounded-lg border border-border p-2"
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!checked[p.id]}
+                    onChange={(e) => setChecked((c) => ({ ...c, [p.id]: e.target.checked }))}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{p.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      stock {p.stock} {p.unit} · min {p.stock_min ?? 5}
+                    </div>
+                  </div>
+                  <Input
+                    type="number"
+                    min="0"
+                    className="h-8 w-20 text-right text-sm"
+                    value={qtys[p.id] ?? ""}
+                    onChange={(e) => setQtys((q) => ({ ...q, [p.id]: e.target.value }))}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Téléphone du fournisseur (WhatsApp, optionnel)</Label>
+              <Input
+                value={supplierPhone}
+                onChange={(e) => setSupplierPhone(e.target.value)}
+                placeholder="70 12 34 56"
+              />
+            </div>
+            <Button onClick={sendWhatsApp} className="w-full bg-gradient-primary">
+              <MessageCircle className="mr-2 h-4 w-4" /> Envoyer la commande ({selected.length})
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

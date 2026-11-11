@@ -28,7 +28,21 @@ import {
   HelpCircle,
   Wallet,
   ShoppingBag,
+  Plus,
+  ReceiptText,
+  Trash2,
+  Loader2,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { fmtMoney, fmtDate, fmtNumber } from "@/lib/format";
 import { downloadCsv } from "@/lib/export-csv";
 
@@ -67,6 +81,46 @@ function AccountingPage() {
   >([]);
   const [movs, setMovs] = useState<Movement[]>([]);
   const [products, setProducts] = useState<ProductLite[]>([]);
+  type Expense = {
+    id: string;
+    category: string;
+    amount: number;
+    note: string | null;
+    date: string;
+    created_at: string;
+  };
+  const EXPENSE_CATS = [
+    "Loyer",
+    "Salaires",
+    "Transport",
+    "Électricité",
+    "Eau",
+    "Internet/Téléphone",
+    "Entretien",
+    "Impôts & taxes",
+    "Autre",
+  ];
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expOpen, setExpOpen] = useState(false);
+  const [expForm, setExpForm] = useState({
+    category: "Loyer",
+    amount: "",
+    note: "",
+    date: new Date().toISOString().slice(0, 10),
+  });
+  const [expSaving, setExpSaving] = useState(false);
+
+  const loadExpenses = async () => {
+    if (!current) return;
+    const { data } = await supabase
+      .from("expenses")
+      .select("*")
+      .eq("shop_id", current.id)
+      .gte("date", fromDate.slice(0, 10))
+      .order("date", { ascending: false })
+      .limit(200);
+    setExpenses((data ?? []) as Expense[]);
+  };
 
   const fromDate = useMemo(() => {
     const d = new Date();
@@ -109,7 +163,9 @@ function AccountingPage() {
       } else {
         setItems([]);
       }
+      loadExpenses();
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id, fromDate]);
 
   const cur = current?.currency ?? "XOF";
@@ -128,6 +184,8 @@ function AccountingPage() {
       return a + c * Number(m.quantity);
     }, 0);
   const benefice = encaisse - coutMarchandises;
+  const totalDepensesReelles = expenses.reduce((a, e) => a + Number(e.amount), 0);
+  const beneficeNet = benefice - totalDepensesReelles;
 
   type Entry = { date: string; libelle: string; entree: number; sortie: number };
   const entries: Entry[] = [];
@@ -152,10 +210,19 @@ function AccountingPage() {
   });
   entries.sort((a, b) => b.date.localeCompare(a.date));
 
+  // dépenses réelles dans le journal (sorties d'argent hors marchandises)
+  const expenseEntries: Entry[] = expenses.map((e) => ({
+    date: `${e.date}T12:00:00`,
+    libelle: `Dépense — ${e.category}${e.note ? " · " + e.note : ""}`,
+    entree: 0,
+    sortie: Number(e.amount),
+  }));
+  const allEntries = [...entries, ...expenseEntries].sort((a, b) => b.date.localeCompare(a.date));
+
   const exportJournal = () =>
     downloadCsv(
       `argent-entre-sort-${range}j.csv`,
-      entries.map((e) => ({
+      allEntries.map((e) => ({
         date: new Date(e.date).toLocaleString("fr-FR"),
         operation: e.libelle,
         argent_recu: e.entree || "",
@@ -227,6 +294,28 @@ function AccountingPage() {
         />
       </div>
 
+      <div className="mt-4 grid gap-4 md:grid-cols-3">
+        <StatCard
+          label="Dépenses réelles saisies"
+          value={fmtMoney(totalDepensesReelles, cur)}
+          icon={ReceiptText}
+          tone="destructive"
+          delta={`${expenses.length} dépense(s)`}
+        />
+        <StatCard
+          label="Bénéfice net estimé"
+          value={fmtMoney(beneficeNet, cur)}
+          icon={Wallet}
+          tone={beneficeNet >= 0 ? "success" : "destructive"}
+          delta="bénéfice − loyer, salaires, transport…"
+        />
+        <div className="flex items-end">
+          <Button variant="outline" onClick={() => setExpOpen(true)} className="w-full">
+            <Plus className="mr-2 h-4 w-4" /> Ajouter une dépense
+          </Button>
+        </div>
+      </div>
+
       <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
         <p className="flex items-start gap-2">
           <HelpCircle className="mt-0.5 h-4 w-4 flex-none text-primary" />
@@ -245,10 +334,10 @@ function AccountingPage() {
           <CardTitle className="font-display flex items-center gap-2">
             <FileText className="h-4 w-4" /> Toutes les opérations
           </CardTitle>
-          <span className="text-xs text-muted-foreground">{entries.length} opération(s)</span>
+          <span className="text-xs text-muted-foreground">{allEntries.length} opération(s)</span>
         </CardHeader>
         <CardContent className="p-0">
-          {entries.length === 0 ? (
+          {allEntries.length === 0 ? (
             <EmptyState
               icon={FileText}
               title="Rien encore"
@@ -270,7 +359,7 @@ function AccountingPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {entries.slice(0, 200).map((e, idx) => (
+                  {allEntries.slice(0, 200).map((e, idx) => (
                     <TableRow key={idx}>
                       <TableCell className="whitespace-nowrap text-xs">{fmtDate(e.date)}</TableCell>
                       <TableCell>{e.libelle}</TableCell>
@@ -288,6 +377,145 @@ function AccountingPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Dépenses réelles */}
+      {expenses.length > 0 && (
+        <Card className="mt-6 shadow-soft">
+          <CardHeader>
+            <CardTitle className="font-display flex items-center gap-2">
+              <ReceiptText className="h-4 w-4 text-destructive" /> Dépenses de la période
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto rounded-lg border border-slate-300">
+              <Table className="[&_th]:border-r [&_th]:border-r-slate-600 [&_td]:border-r [&_td]:border-r-slate-200 [&_th:last-child]:border-r-0 [&_td:last-child]:border-r-0 [&_td]:px-4 [&_td]:py-2.5">
+                <TableHeader>
+                  <TableRow className="bg-slate-800 hover:bg-slate-800">
+                    <TableHead className="text-white font-bold">Date</TableHead>
+                    <TableHead className="text-white font-bold">Catégorie</TableHead>
+                    <TableHead className="text-white font-bold">Note</TableHead>
+                    <TableHead className="text-right text-white font-bold">Montant</TableHead>
+                    <TableHead className="w-10"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {expenses.map((e) => (
+                    <TableRow key={e.id}>
+                      <TableCell className="text-xs">{fmtDate(e.date)}</TableCell>
+                      <TableCell className="text-sm font-medium">{e.category}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {e.note ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm text-destructive">
+                        − {fmtMoney(e.amount, cur)}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={async () => {
+                            if (!confirm("Supprimer cette dépense ?")) return;
+                            await supabase.from("expenses").delete().eq("id", e.id);
+                            loadExpenses();
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Dialog open={expOpen} onOpenChange={setExpOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">Ajouter une dépense</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Catégorie</Label>
+              <Select
+                value={expForm.category}
+                onValueChange={(v) => setExpForm({ ...expForm, category: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {EXPENSE_CATS.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Montant *</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={expForm.amount}
+                  onChange={(e) => setExpForm({ ...expForm, amount: e.target.value })}
+                  placeholder="Ex : 45000"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={expForm.date}
+                  onChange={(e) => setExpForm({ ...expForm, date: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Note (optionnelle)</Label>
+              <Input
+                value={expForm.note}
+                onChange={(e) => setExpForm({ ...expForm, note: e.target.value })}
+                placeholder="Ex : loyer octobre"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setExpOpen(false)}>
+              Annuler
+            </Button>
+            <Button
+              disabled={!Number(expForm.amount) || expSaving}
+              onClick={async () => {
+                if (!current) return;
+                setExpSaving(true);
+                const { error } = await supabase.from("expenses").insert({
+                  shop_id: current.id,
+                  category: expForm.category,
+                  amount: Number(expForm.amount),
+                  note: expForm.note.trim() || null,
+                  date: expForm.date,
+                });
+                setExpSaving(false);
+                if (error) return toast.error(error.message);
+                toast.success("Dépense enregistrée");
+                setExpOpen(false);
+                setExpForm({ ...expForm, amount: "", note: "" });
+                loadExpenses();
+              }}
+              className="bg-gradient-primary"
+            >
+              {expSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

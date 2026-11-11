@@ -38,6 +38,8 @@ import {
   RefreshCw,
   Monitor,
   Mic,
+  StopCircle,
+  Star,
 } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
@@ -75,7 +77,15 @@ type Product = {
   unit?: string;
   sku: string | null;
   barcode: string | null;
+  expiry_date?: string | null;
+  is_favorite?: boolean;
 };
+
+type CustomerLite = { id: string; name: string; phone: string | null; loyalty_points: number };
+
+const CLIENT_QR_PREFIX = "BOUTIKBF-CLIENT:";
+const POINTS_PER_1000F = 1; // 1 point par 100 F
+const POINTS_VALUE = 10; // 100 points valent 1 000 F
 
 /** Prix effectif : promo si active à la date du jour. */
 function effectivePrice(p: Product): number {
@@ -138,6 +148,7 @@ function PosCore({ mode }: { mode: PosMode }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [favOnly, setFavOnly] = useState(false);
   const [q, setQ] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [payment, setPayment] = useState("cash");
@@ -147,6 +158,7 @@ function PosCore({ mode }: { mode: PosMode }) {
     id: string;
     name: string;
     phone: string | null;
+    loyalty_points?: number;
   } | null>(null);
   // vente au poids (kg, g, tonne, litre…)
   const [weighFor, setWeighFor] = useState<{
@@ -157,6 +169,13 @@ function PosCore({ mode }: { mode: PosMode }) {
   } | null>(null);
   const [weightQty, setWeightQty] = useState("");
   const [displayLogo, setDisplayLogo] = useState<string | null>(null);
+  const [customersLite, setCustomersLite] = useState<CustomerLite[]>([]);
+  const [redeem, setRedeem] = useState(false);
+  const [shift, setShift] = useState<{ id: string; opened_at: string; float: number } | null>(null);
+  const [shiftOpenDlg, setShiftOpenDlg] = useState(false);
+  const [shiftCloseDlg, setShiftCloseDlg] = useState(false);
+  const [shiftFloat, setShiftFloat] = useState("0");
+  const [shiftCounted, setShiftCounted] = useState("");
   const [custOpen, setCustOpen] = useState(false);
   const [custQ, setCustQ] = useState("");
   const [custResults, setCustResults] = useState<
@@ -204,7 +223,7 @@ function PosCore({ mode }: { mode: PosMode }) {
         supabase
           .from("products")
           .select(
-            "id,name,sale_price,promo_price,promo_start,promo_end,stock,unit,sku,barcode,category_id,categories(name)",
+            "id,name,sale_price,promo_price,promo_start,promo_end,stock,unit,sku,barcode,expiry_date,is_favorite,category_id,categories(name)",
           )
           .eq("shop_id", current.id)
           .eq("is_active", true),
@@ -244,6 +263,21 @@ function PosCore({ mode }: { mode: PosMode }) {
     setHeld(loadHeld(current.id));
     listPendingSales(current.id).then((p) => setPending(p.length));
     resolveLogoUrl(current.logo_url).then(setDisplayLogo);
+    supabase
+      .from("customers")
+      .select("id,name,phone,loyalty_points")
+      .eq("shop_id", current.id)
+      .then(({ data }) => setCustomersLite((data ?? []) as CustomerLite[]));
+    supabase
+      .from("cash_shifts")
+      .select("id,opened_at,float")
+      .eq("shop_id", current.id)
+      .is("closed_at", null)
+      .order("opened_at", { ascending: false })
+      .limit(1)
+      .then(({ data }) =>
+        setShift((data?.[0] as { id: string; opened_at: string; float: number }) ?? null),
+      );
   }, [current?.id]);
 
   useEffect(() => {
@@ -270,6 +304,17 @@ function PosCore({ mode }: { mode: PosMode }) {
 
   const onScan = (code: string) => {
     const c = code.trim();
+    // Carte fidélité client (QR) → identification automatique
+    if (c.toUpperCase().startsWith(CLIENT_QR_PREFIX)) {
+      const id = c.slice(CLIENT_QR_PREFIX.length).trim();
+      const cust = customersLite.find((x) => x.id === id);
+      if (cust) {
+        setCustomer(cust);
+        setRedeem(false);
+        toast.success(`Client reconnu : ${cust.name} (${cust.loyalty_points} pts)`);
+      } else toast.error("Carte fidélité inconnue de cette boutique");
+      return;
+    }
     const match = products.find((p) => p.barcode === c || p.sku === c);
     if (match) {
       if (match.stock <= 0) return toast.error(`${match.name} : rupture de stock`);
@@ -293,8 +338,10 @@ function PosCore({ mode }: { mode: PosMode }) {
             .includes(q.toLowerCase()),
         )
         .filter((p) => (selectedCategory ? p.category_id === selectedCategory : true))
+        .filter((p) => (favOnly ? p.is_favorite : true))
+        .sort((a, b) => Number(b.is_favorite ?? false) - Number(a.is_favorite ?? false))
         .slice(0, 30),
-    [products, q, selectedCategory],
+    [products, q, selectedCategory, favOnly],
   );
 
   const grouped = useMemo(() => {
@@ -311,7 +358,15 @@ function PosCore({ mode }: { mode: PosMode }) {
   const isWeighed = (unit: string) =>
     ["kg", "g", "tonne", "t", "l", "litre", "dl"].includes((unit || "").trim().toLowerCase());
 
+  const isExpired = (p: Product) =>
+    !!p.expiry_date && new Date(p.expiry_date).getTime() < Date.now();
+
   const add = (p: Product) => {
+    if (
+      isExpired(p) &&
+      !confirm(`⚠️ « ${p.name} » est périmé depuis le ${p.expiry_date}.\nVendre quand même ?`)
+    )
+      return;
     const priced = { ...p, sale_price: effectivePrice(p) };
     if (isWeighed(p.unit ?? "")) {
       setWeighFor({ id: p.id, name: p.name, unit: p.unit ?? "kg", price: priced.sale_price });
@@ -353,11 +408,15 @@ function PosCore({ mode }: { mode: PosMode }) {
   const subtotal = cart.reduce((a, i) => a + i.sale_price * i.qty, 0);
   const cur = current?.currency ?? "XOF";
 
-  // — remise —
+  // — remise (+ points fidélité utilisés) —
   const discountNum = Math.max(0, Number(discount || 0));
-  const discountValue = discountPct
+  const baseDiscount = discountPct
     ? Math.round((subtotal * Math.min(100, discountNum)) / 100)
-    : Math.min(discountNum, subtotal);
+    : discountNum;
+  const canRedeem = !!customer && (customer.loyalty_points ?? 0) >= 100;
+  const redeemValue =
+    redeem && canRedeem ? Math.min(1000, Math.max(0, subtotal - baseDiscount)) : 0;
+  const discountValue = Math.min(baseDiscount + redeemValue, subtotal);
   const total = Math.max(0, subtotal - discountValue);
 
   // — monnaie & mixte —
@@ -461,6 +520,38 @@ function PosCore({ mode }: { mode: PosMode }) {
     const next = held.filter((x) => x.id !== id);
     setHeld(next);
     if (current) saveHeld(current.id, next);
+  };
+
+  const openShift = async () => {
+    if (!current) return;
+    const { data, error } = await supabase
+      .from("cash_shifts")
+      .insert({ shop_id: current.id, float: Number(shiftFloat) || 0 })
+      .select("id,opened_at,float")
+      .single();
+    if (error) return toast.error(error.message);
+    setShift(data as { id: string; opened_at: string; float: number });
+    setShiftOpenDlg(false);
+    toast.success("Caisse ouverte — bonne journée !");
+  };
+
+  const closeShift = async () => {
+    if (!shift) return;
+    const { error } = await supabase
+      .from("cash_shifts")
+      .update({ closed_at: new Date().toISOString(), counted: Number(shiftCounted) || null })
+      .eq("id", shift.id);
+    if (error) return toast.error(error.message);
+    setShift(null);
+    setShiftCloseDlg(false);
+    setShiftCounted("");
+    toast.success("Caisse clôturée 🎉");
+  };
+
+  const toggleFav = async (p: Product) => {
+    const nv = !p.is_favorite;
+    setProducts((ps) => ps.map((x) => (x.id === p.id ? { ...x, is_favorite: nv } : x)));
+    await supabase.from("products").update({ is_favorite: nv }).eq("id", p.id);
   };
 
   // — diffusion vers l'écran client (fenêtre /display ouverte sur l'autre écran) —
@@ -585,6 +676,17 @@ function PosCore({ mode }: { mode: PosMode }) {
             .eq("id", customer.id);
       }
 
+      // fidélité : 1 point par 100 F gagnés, moins les points utilisés
+      if (customer) {
+        const delta = Math.floor(total / 100) - (redeemValue > 0 ? 100 : 0);
+        if (delta !== 0) {
+          await supabase
+            .from("customers")
+            .update({ loyalty_points: Math.max(0, (customer.loyalty_points ?? 0) + delta) })
+            .eq("id", customer.id);
+        }
+      }
+
       toast.success(`Vente ${ref} enregistrée — ${fmtMoney(total, cur)}`);
       setDone({
         ref,
@@ -603,11 +705,28 @@ function PosCore({ mode }: { mode: PosMode }) {
       setMixCash("");
       setDiscount("");
       setDiscountPct(false);
+      setRedeem(false);
       setCustomer(null);
+      // recharger les points client en mémoire
+      setCustomersLite((cs) =>
+        cs.map((x) =>
+          x.id === customer?.id
+            ? {
+                ...x,
+                loyalty_points: Math.max(
+                  0,
+                  (x.loyalty_points ?? 0) + Math.floor(total / 100) - (redeemValue > 0 ? 100 : 0),
+                ),
+              }
+            : x,
+        ),
+      );
       // reload stock
       const { data } = await supabase
         .from("products")
-        .select("id,name,sale_price,promo_price,promo_start,promo_end,stock,unit,sku,barcode")
+        .select(
+          "id,name,sale_price,promo_price,promo_start,promo_end,stock,unit,sku,barcode,expiry_date,is_favorite",
+        )
         .eq("shop_id", current.id)
         .eq("is_active", true);
       setProducts((data ?? []) as Product[]);
@@ -621,6 +740,9 @@ function PosCore({ mode }: { mode: PosMode }) {
             mode === "employee" ? null : ((await supabase.auth.getUser()).data.user?.id ?? null),
           employee_id: mode === "employee" ? (getEmployeeSession()?.employeeId ?? null) : null,
           customer_id: customer?.id ?? null,
+          customer_points_delta: customer
+            ? Math.floor(total / 100) - (redeemValue > 0 ? 100 : 0)
+            : undefined,
           created_at: createdAt,
           subtotal,
           total,
@@ -851,6 +973,20 @@ function PosCore({ mode }: { mode: PosMode }) {
         description="Vente rapide au comptoir"
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            {!shift ? (
+              <Button variant="outline" size="sm" onClick={() => setShiftOpenDlg(true)}>
+                <PlayCircle className="mr-1.5 h-4 w-4 text-success" /> Ouvrir la caisse
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" onClick={() => setShiftCloseDlg(true)}>
+                <StopCircle className="mr-1.5 h-4 w-4 text-destructive" /> Clôturer (
+                {new Date(shift.opened_at).toLocaleTimeString("fr-FR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}{" "}
+                · fond {fmtMoney(shift.float, cur)})
+              </Button>
+            )}
             {!online && (
               <Badge variant="destructive">
                 <WifiOff className="mr-1 h-3 w-3" /> Hors-ligne
@@ -937,6 +1073,15 @@ function PosCore({ mode }: { mode: PosMode }) {
             <div className="flex gap-2">
               <Button
                 type="button"
+                variant={favOnly ? "default" : "outline"}
+                className="h-11 gap-1.5 flex-1 sm:flex-none"
+                onClick={() => setFavOnly((v) => !v)}
+                title="Afficher uniquement mes produits favoris"
+              >
+                <Star className="h-4 w-4" /> <span className="hidden sm:inline">Favoris</span>
+              </Button>
+              <Button
+                type="button"
                 variant="outline"
                 className="h-11 gap-1.5 flex-1 sm:flex-none"
                 onClick={() => {
@@ -996,6 +1141,19 @@ function PosCore({ mode }: { mode: PosMode }) {
                           </Badge>
                         ) : null}
                       </div>
+                      <button
+                        type="button"
+                        title={p.is_favorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFav(p);
+                        }}
+                        className="absolute left-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-white/70 backdrop-blur"
+                      >
+                        <Star
+                          className={`h-4 w-4 ${p.is_favorite ? "fill-amber-400 text-amber-400" : "text-slate-300"}`}
+                        />
+                      </button>
                       <div className="mb-2 grid h-12 w-12 place-items-center rounded-lg bg-gradient-primary/20">
                         <ShoppingCart className="h-5 w-5 text-primary" />
                       </div>
@@ -1112,21 +1270,35 @@ function PosCore({ mode }: { mode: PosMode }) {
             {/* Client au comptoir */}
             <div className="flex items-center justify-between gap-2">
               {customer ? (
-                <Badge variant="secondary" className="max-w-[220px] gap-1.5 py-1 text-xs">
-                  <UserRound className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{customer.name}</span>
-                  <button
-                    type="button"
-                    className="grid h-4 w-4 place-items-center rounded-full hover:bg-destructive/20"
-                    title="Retirer le client"
-                    onClick={() => {
-                      setCustomer(null);
-                      if (payment === "credit") setPayment("cash");
-                    }}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
+                <div className="flex min-w-0 flex-col gap-1">
+                  <Badge variant="secondary" className="max-w-[220px] gap-1.5 py-1 text-xs">
+                    <UserRound className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">{customer.name}</span>
+                    <button
+                      type="button"
+                      className="grid h-4 w-4 place-items-center rounded-full hover:bg-destructive/20"
+                      title="Retirer le client"
+                      onClick={() => {
+                        setCustomer(null);
+                        setRedeem(false);
+                        if (payment === "credit") setPayment("cash");
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                  {canRedeem && (
+                    <label className="flex cursor-pointer items-center gap-1.5 text-xs text-amber-600">
+                      <input
+                        type="checkbox"
+                        checked={redeem}
+                        onChange={(e) => setRedeem(e.target.checked)}
+                        className="h-3.5 w-3.5 accent-amber-500"
+                      />
+                      Utiliser 100 pts = −1 000 F ({customer.loyalty_points ?? 0} pts)
+                    </label>
+                  )}
+                </div>
               ) : (
                 <span className="text-xs text-muted-foreground">Client comptoir</span>
               )}
@@ -1525,6 +1697,71 @@ function PosCore({ mode }: { mode: PosMode }) {
             </Button>
             <Button onClick={confirmWeight} className="bg-gradient-primary shadow-elegant">
               Ajouter au ticket
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ouverture de caisse (shift) */}
+      <Dialog open={shiftOpenDlg} onOpenChange={setShiftOpenDlg}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">Ouvrir la caisse</DialogTitle>
+            <DialogDescription>
+              Combine d'ouverture : combien d'espèces y a-t-il dans le tiroir ?
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            type="number"
+            min="0"
+            value={shiftFloat}
+            onChange={(e) => setShiftFloat(e.target.value)}
+            className="h-12 text-xl font-bold"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShiftOpenDlg(false)}>
+              Annuler
+            </Button>
+            <Button onClick={openShift} className="bg-gradient-primary">
+              <PlayCircle className="mr-1.5 h-4 w-4" /> Ouvrir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fermeture de caisse (shift) */}
+      <Dialog open={shiftCloseDlg} onOpenChange={setShiftCloseDlg}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">Clôturer la caisse</DialogTitle>
+            <DialogDescription>
+              Compte les espèces du tiroir. Le fond d'ouverture était de{" "}
+              <b>{fmtMoney(shift?.float ?? 0, cur)}</b> (caisse ouverte à{" "}
+              {shift
+                ? new Date(shift.opened_at).toLocaleTimeString("fr-FR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "—"}
+              ).
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            type="number"
+            min="0"
+            placeholder="Espèces comptées…"
+            value={shiftCounted}
+            onChange={(e) => setShiftCounted(e.target.value)}
+            className="h-12 text-xl font-bold"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShiftCloseDlg(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={closeShift}>
+              <StopCircle className="mr-1.5 h-4 w-4" /> Clôturer
             </Button>
           </DialogFooter>
         </DialogContent>

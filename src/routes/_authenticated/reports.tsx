@@ -31,6 +31,7 @@ import {
   AlertTriangle,
   Lightbulb,
   Printer,
+  Clock,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -457,6 +458,8 @@ function ReportsPage() {
         onChanged={() => setRefreshKey((k) => k + 1)}
       />
 
+      <TimeHeatmap sales={sales} currency={cur} />
+
       <p className="mt-6 text-xs text-muted-foreground">
         💡 Astuce : tous les boutons « Télécharger » créent un fichier Excel que vous pouvez envoyer
         à votre comptable ou ouvrir sur votre téléphone.
@@ -773,6 +776,19 @@ function AiAdvisor({
   onChanged: () => void;
 }) {
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [custs, setCusts] = useState<
+    { id: string; name: string; phone: string | null; birthdate: string | null }[]
+  >([]);
+
+  useEffect(() => {
+    if (!shopId) return;
+    supabase
+      .from("customers")
+      .select("id,name,phone,birthdate")
+      .eq("shop_id", shopId)
+      .not("birthdate", "is", null)
+      .then(({ data }) => setCusts((data ?? []) as typeof custs));
+  }, [shopId]);
 
   const advice = useMemo<Advice[]>(() => {
     if (!shopId) return [];
@@ -870,7 +886,88 @@ function AiAdvisor({
         });
       });
 
-    // 4. Péremption proche → promo immédiate
+    // 4. Prévision des ventes 7 jours (moyenne mobile, tendance)
+    const dayKey = (d: Date) => d.toISOString().slice(0, 10);
+    const revByDay = new Map<string, number>();
+    sales.forEach((s) => {
+      const k = dayKey(new Date(s.created_at));
+      revByDay.set(k, (revByDay.get(k) ?? 0) + Number(s.total));
+    });
+    const days = (n: number) => {
+      const arr: number[] = [];
+      for (let i = 1; i <= n; i++) {
+        const d = new Date(now - i * 86_400_000);
+        arr.push(revByDay.get(dayKey(d)) ?? 0);
+      }
+      return arr;
+    };
+    const last7 = days(7);
+    const prev7 = days(14).slice(7);
+    const sum = (a: number[]) => a.reduce((x, y) => x + y, 0);
+    const s7 = sum(last7);
+    const sp7 = sum(prev7);
+    if (s7 > 0 || sp7 > 0) {
+      const trendPct = sp7 === 0 ? 0 : Math.round(((s7 - sp7) / sp7) * 100);
+      const forecast =
+        Math.round(
+          (s7 *
+            (trendPct >= 0
+              ? 1 + Math.min(trendPct, 40) / 200
+              : 1 + Math.max(trendPct, -40) / 200)) /
+            100,
+        ) * 100;
+      list.push({
+        key: "prevision",
+        kind: "hebo",
+        title: `Prévision 7 jours : ≈ ${fmtMoney(forecast, currency)}`,
+        detail: `Semaine écoulée : ${fmtMoney(s7, currency)} (${trendPct >= 0 ? "+" : ""}${trendPct} % vs précédente). ${
+          trendPct < -15
+            ? "Baisse marquée — pense à une promo ou à vérifier la concurrence."
+            : trendPct > 15
+              ? "Forte croissance — anticipe le réappro sur tes meilleures ventes."
+              : "Tendance stable."
+        }`,
+      });
+    }
+
+    // 5. Anniversaires dans les 7 prochains jours
+    const bday = custs
+      .map((c) => {
+        if (!c.birthdate) return null;
+        const b = new Date(c.birthdate);
+        const thisYear = new Date(now);
+        let next = new Date(thisYear.getFullYear(), b.getMonth(), b.getDate());
+        if (next.getTime() < new Date(thisYear.toDateString()).getTime())
+          next = new Date(thisYear.getFullYear() + 1, b.getMonth(), b.getDate());
+        const dd = Math.ceil((next.getTime() - thisYear.getTime()) / 86_400_000);
+        return dd <= 7 ? { c, dd, date: next } : null;
+      })
+      .filter(Boolean) as { c: (typeof custs)[number]; dd: number; date: Date }[];
+    bday.slice(0, 3).forEach(({ c, dd, date }) => {
+      list.push({
+        key: `bday-${c.id}`,
+        kind: "hebo",
+        title: `🎂 Anniversaire : ${c.name} ${dd === 0 ? "c'est aujourd'hui !" : `dans ${dd} j`}`,
+        detail: `Souhaite-lui un bon anniversaire par WhatsApp — ça fidélise plus qu'une promo.`,
+        action: {
+          label: "Message d'anniversaire",
+          run: async () => {
+            const msg = `🎂 Bonjour ${c.name}, joyeux anniversaire de la part de ${"ta boutique"} ! Un petit geste de fidélité t'attend 🎉`;
+            const digits = (c.phone ?? "").replace(/\D/g, "");
+            const full = digits.length === 8 ? `226${digits}` : digits;
+            window.open(
+              full
+                ? `https://wa.me/${full}?text=${encodeURIComponent(msg)}`
+                : `https://wa.me/?text=${encodeURIComponent(msg)}`,
+              "_blank",
+            );
+          },
+        },
+      });
+      void date;
+    });
+
+    // 6. Péremption proche → promo immédiate
     products
       .filter((p) => p.expiry_date && p.stock > 0)
       .filter((p) => {
@@ -905,7 +1002,7 @@ function AiAdvisor({
       });
 
     return list;
-  }, [products, items, sales, shopId, currency, onChanged]);
+  }, [products, items, sales, shopId, currency, onChanged, custs]);
 
   const apply = async (a: Advice) => {
     if (!a.action) return;
@@ -971,6 +1068,67 @@ function AiAdvisor({
             Pas encore assez de données pour des conseils — enregistre des ventes et l'assistant
             analysera tout ça.
           </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ---------- Répartition des ventes par heure ---------- */
+
+function TimeHeatmap({ sales, currency }: { sales: Sale[]; currency: string }) {
+  const { byHour, max } = useMemo(() => {
+    const h = new Array(24).fill(0) as number[];
+    sales.forEach((s) => (h[new Date(s.created_at).getHours()] += Number(s.total)));
+    return { byHour: h, max: Math.max(...h, 1) };
+  }, [sales]);
+
+  const peak = byHour.indexOf(Math.max(...byHour));
+  const quietIdx = (() => {
+    const active = byHour.map((v, i) => [v, i] as const).filter(([v]) => v > 0);
+    if (active.length < 3) return -1;
+    const sorted = [...active].sort((a, b) => a[0] - b[0]);
+    return sorted[0][1];
+  })();
+
+  return (
+    <Card className="mt-8">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Clock className="h-4 w-4 text-primary" />
+          Répartition des ventes par heure
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {sales.length === 0 ? (
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            Pas encore de ventes sur la période.
+          </p>
+        ) : (
+          <>
+            <div className="flex h-32 items-end gap-1">
+              {byHour.map((v, h) => (
+                <div key={h} className="flex flex-1 flex-col items-center gap-1">
+                  <div
+                    className={`w-full rounded-t ${h === peak ? "bg-primary" : "bg-primary/25"}`}
+                    style={{ height: `${Math.max(2, (v / max) * 100)}%` }}
+                    title={`${h}h — ${fmtMoney(v, currency)}`}
+                  />
+                  {h % 3 === 0 && <span className="text-[9px] text-muted-foreground">{h}h</span>}
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              💡 Pic à <b>{peak} h</b>
+              {quietIdx >= 0 && (
+                <>
+                  {" "}
+                  · heure la plus calme : <b>{quietIdx} h</b>
+                </>
+              )}{" "}
+              — planifie tes ruptures, livraires fournisseurs et promos creuses en fonction.
+            </p>
+          </>
         )}
       </CardContent>
     </Card>

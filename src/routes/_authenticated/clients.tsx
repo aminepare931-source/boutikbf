@@ -37,6 +37,7 @@ import {
   Receipt,
   HandCoins,
   Star,
+  QrCode,
 } from "lucide-react";
 import { fmtMoney, fmtDate, fmtNumber } from "@/lib/format";
 import { downloadCsv } from "@/lib/export-csv";
@@ -53,6 +54,7 @@ type C = {
   phone: string | null;
   email: string | null;
   address: string | null;
+  birthdate: string | null;
   loyalty_points: number;
   credit_balance: number;
   created_at: string;
@@ -81,7 +83,13 @@ function ClientsPage() {
   const [onlyDebtors, setOnlyDebtors] = useState(false);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<C | null>(null);
-  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "" });
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+    birthdate: "",
+  });
 
   // fiche client
   const [detail, setDetail] = useState<C | null>(null);
@@ -136,7 +144,7 @@ function ClientsPage() {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name: "", phone: "", email: "", address: "" });
+    setForm({ name: "", phone: "", email: "", address: "", birthdate: "" });
     setOpen(true);
   };
   const openEdit = (c: C) => {
@@ -146,6 +154,7 @@ function ClientsPage() {
       phone: c.phone ?? "",
       email: c.email ?? "",
       address: c.address ?? "",
+      birthdate: c.birthdate ?? "",
     });
     setOpen(true);
   };
@@ -383,6 +392,21 @@ function ClientsPage() {
                           className="flex justify-end gap-1"
                           onClick={(e) => e.stopPropagation()}
                         >
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            title="Carte fidélité QR"
+                            onClick={() =>
+                              window.open(
+                                `/f/${current?.id}/${c.id}`,
+                                "_blank",
+                                "width=420,height=760",
+                              )
+                            }
+                          >
+                            <QrCode className="h-4 w-4 text-primary" />
+                          </Button>
                           {Number(c.credit_balance) > 0 && (
                             <Button
                               variant="ghost"
@@ -468,6 +492,17 @@ function ClientsPage() {
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
               />
             </div>
+            <div className="space-y-2">
+              <Label>Date de naissance (optionnelle)</Label>
+              <Input
+                type="date"
+                value={form.birthdate}
+                onChange={(e) => setForm({ ...form, birthdate: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                🎂 L'assistant IA te rappellera les anniversaires proches pour envoyer un message.
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>
@@ -490,6 +525,7 @@ function ClientsPage() {
                 <DialogDescription>
                   {[detail.phone, detail.email, detail.address].filter(Boolean).join(" · ") ||
                     "Coordonnées non renseignées"}
+                  {detail.birthdate ? ` · 🎂 ${fmtDate(detail.birthdate)}` : ""}
                   {" · client depuis le "}
                   {fmtDate(detail.created_at)}
                 </DialogDescription>
@@ -599,6 +635,14 @@ function ClientsPage() {
               </div>
 
               <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    window.open(`/f/${current?.id}/${detail.id}`, "_blank", "width=420,height=760")
+                  }
+                >
+                  <QrCode className="mr-1.5 h-4 w-4" /> Carte fidélité
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => {

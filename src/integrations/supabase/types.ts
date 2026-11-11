@@ -41,6 +41,47 @@ export type Database = {
         }
         Relationships: []
       }
+      cash_shifts: {
+        Row: {
+          closed_at: string | null
+          counted: number | null
+          float: number
+          id: string
+          note: string | null
+          opened_at: string
+          opened_by: string | null
+          shop_id: string
+        }
+        Insert: {
+          closed_at?: string | null
+          counted?: number | null
+          float?: number
+          id?: string
+          note?: string | null
+          opened_at?: string
+          opened_by?: string | null
+          shop_id: string
+        }
+        Update: {
+          closed_at?: string | null
+          counted?: number | null
+          float?: number
+          id?: string
+          note?: string | null
+          opened_at?: string
+          opened_by?: string | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_shifts_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -95,6 +136,7 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          birthdate: string | null
           created_at: string
           credit_balance: number
           email: string | null
@@ -107,6 +149,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          birthdate?: string | null
           created_at?: string
           credit_balance?: number
           email?: string | null
@@ -119,6 +162,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          birthdate?: string | null
           created_at?: string
           credit_balance?: number
           email?: string | null
@@ -301,6 +345,47 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          created_by: string | null
+          date: string
+          id: string
+          note: string | null
+          shop_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          note?: string | null
+          shop_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          note?: string | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       imported_data: {
         Row: {
           category_column: string | null
@@ -368,6 +453,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          is_favorite: boolean
           name: string
           promo_end: string | null
           promo_price: number | null
@@ -395,6 +481,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_favorite?: boolean
           name: string
           promo_end?: string | null
           promo_price?: number | null
@@ -422,6 +509,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          is_favorite?: boolean
           name?: string
           promo_end?: string | null
           promo_price?: number | null
@@ -1146,6 +1234,10 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: never; Returns: boolean }
+      loyalty_card: {
+        Args: { p_customer_id: string; p_shop_id: string }
+        Returns: Json
+      }
       receive_purchase: {
         Args: {
           p_lines: Json
