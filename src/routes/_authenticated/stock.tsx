@@ -41,6 +41,7 @@ import {
   Plus,
   X,
   Check,
+  CalendarClock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { fmtDate, fmtNumber } from "@/lib/format";
@@ -57,6 +58,8 @@ type P = {
   stock_min: number | null;
   unit: string;
   sku: string | null;
+  expiry_date?: string | null;
+  batch_label?: string | null;
 };
 
 type StockCount = {
@@ -109,7 +112,7 @@ function StockPage() {
     if (!current) return;
     const { data } = await supabase
       .from("products")
-      .select("id,name,stock,stock_min,unit,sku")
+      .select("id,name,stock,stock_min,unit,sku,expiry_date,batch_label")
       .eq("shop_id", current.id)
       .order("stock", { ascending: true });
     setItems((data ?? []) as P[]);
@@ -172,6 +175,12 @@ function StockPage() {
 
   const lowStock = items.filter((p) => p.stock < (p.stock_min ?? 5));
   const outStock = items.filter((p) => p.stock <= 0);
+  const daysTo = (d?: string | null) =>
+    d ? Math.ceil((new Date(d).getTime() - Date.now()) / 86_400_000) : Infinity;
+  const expiringSoon = items
+    .filter((p) => p.stock > 0 && p.expiry_date && daysTo(p.expiry_date) <= 60)
+    .sort((a, b) => daysTo(a.expiry_date) - daysTo(b.expiry_date));
+  const expired = expiringSoon.filter((p) => daysTo(p.expiry_date) < 0);
   const otherShops = shops.filter((s) => s.id !== current?.id);
 
   return (
@@ -205,7 +214,7 @@ function StockPage() {
           </div>
         }
       />
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <StatCard label="Produits en stock" value={String(items.length)} icon={Package} />
         <StatCard
           label="Stock faible"
@@ -219,7 +228,52 @@ function StockPage() {
           icon={AlertTriangle}
           tone="destructive"
         />
+        <StatCard
+          label="Péremption ≤ 60 j"
+          value={String(expiringSoon.length)}
+          icon={CalendarClock}
+          tone={expired.length > 0 ? "destructive" : "warning"}
+        />
       </div>
+
+      {expiringSoon.length > 0 && (
+        <Card className="mt-4 border-warning/40 shadow-soft">
+          <CardContent className="p-4">
+            <h3 className="mb-1 flex items-center gap-2 font-display font-semibold">
+              <CalendarClock className="h-4 w-4 text-warning" />
+              Péremptions proches
+            </h3>
+            <p className="mb-3 text-xs text-muted-foreground">
+              {expired.length > 0
+                ? `${expired.length} produit(s) déjà périmé(s) — à retirer de la vente.`
+                : "Pense à faire une promo pour écouler avant la date."}
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {expiringSoon.slice(0, 12).map((p) => {
+                const d = daysTo(p.expiry_date);
+                return (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <span className="truncate font-medium">{p.name}</span>
+                      {p.batch_label && (
+                        <span className="ml-1.5 text-xs text-muted-foreground">
+                          lot {p.batch_label}
+                        </span>
+                      )}
+                    </div>
+                    <Badge variant={d < 0 ? "destructive" : d <= 30 ? "destructive" : "secondary"}>
+                      {d < 0 ? `périmé depuis ${-d} j` : `dans ${d} j`}
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="mt-6 shadow-soft">
         <CardContent className="p-0">

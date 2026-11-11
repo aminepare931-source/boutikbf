@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShops, resolveLogoUrl } from "@/lib/shop-store";
 import { PageHeader } from "@/components/page-parts";
@@ -37,6 +37,7 @@ import {
   X,
   RefreshCw,
   Monitor,
+  Mic,
 } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
@@ -67,11 +68,27 @@ type Product = {
   category_id?: string | null;
   category?: string;
   sale_price: number;
+  promo_price?: number | null;
+  promo_start?: string | null;
+  promo_end?: string | null;
   stock: number;
   unit?: string;
   sku: string | null;
   barcode: string | null;
 };
+
+/** Prix effectif : promo si active à la date du jour. */
+function effectivePrice(p: Product): number {
+  if (!p.promo_price || p.promo_price <= 0 || p.promo_price >= p.sale_price) return p.sale_price;
+  const today = new Date().toISOString().slice(0, 10);
+  if (p.promo_start && today < p.promo_start) return p.sale_price;
+  if (p.promo_end && today > p.promo_end) return p.sale_price;
+  return p.promo_price;
+}
+
+function isPromoActive(p: Product): boolean {
+  return effectivePrice(p) < p.sale_price;
+}
 type CartItem = Product & { qty: number };
 
 type HeldTicket = { id: string; at: string; cart: { id: string; name: string; qty: number }[] };
@@ -186,7 +203,9 @@ function PosCore({ mode }: { mode: PosMode }) {
       const [productRes, categoryRes] = await Promise.all([
         supabase
           .from("products")
-          .select("id,name,sale_price,stock,unit,sku,barcode,category_id,categories(name)")
+          .select(
+            "id,name,sale_price,promo_price,promo_start,promo_end,stock,unit,sku,barcode,category_id,categories(name)",
+          )
           .eq("shop_id", current.id)
           .eq("is_active", true),
         supabase
@@ -293,15 +312,16 @@ function PosCore({ mode }: { mode: PosMode }) {
     ["kg", "g", "tonne", "t", "l", "litre", "dl"].includes((unit || "").trim().toLowerCase());
 
   const add = (p: Product) => {
+    const priced = { ...p, sale_price: effectivePrice(p) };
     if (isWeighed(p.unit ?? "")) {
-      setWeighFor({ id: p.id, name: p.name, unit: p.unit ?? "kg", price: p.sale_price });
+      setWeighFor({ id: p.id, name: p.name, unit: p.unit ?? "kg", price: priced.sale_price });
       setWeightQty("");
       return;
     }
     setCart((c) => {
       const ex = c.find((i) => i.id === p.id);
       if (ex) return c.map((i) => (i.id === p.id ? { ...i, qty: i.qty + 1 } : i));
-      return [...c, { ...p, qty: 1 }];
+      return [...c, { ...priced, qty: 1 }];
     });
   };
 
@@ -317,7 +337,7 @@ function PosCore({ mode }: { mode: PosMode }) {
         );
       const prod = products.find((x) => x.id === weighFor.id);
       if (!prod) return c;
-      return [...c, { ...prod, qty: Math.round(qty * 1000) / 1000 }];
+      return [...c, { ...prod, sale_price: weighFor.price, qty: Math.round(qty * 1000) / 1000 }];
     });
     setWeighFor(null);
     setWeightQty("");
@@ -587,7 +607,7 @@ function PosCore({ mode }: { mode: PosMode }) {
       // reload stock
       const { data } = await supabase
         .from("products")
-        .select("id,name,sale_price,stock,unit,sku,barcode")
+        .select("id,name,sale_price,promo_price,promo_start,promo_end,stock,unit,sku,barcode")
         .eq("shop_id", current.id)
         .eq("is_active", true);
       setProducts((data ?? []) as Product[]);
@@ -695,6 +715,86 @@ function PosCore({ mode }: { mode: PosMode }) {
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
+  const [listening, setListening] = useState(false);
+  const recRef = useRef<{ stop: () => void } | null>(null);
+
+  const toggleVoice = () => {
+    type SRAlt = { transcript: string };
+
+    type SREvent = { results: ArrayLike<ArrayLike<SRAlt>> };
+
+    type SRInstance = {
+      lang: string;
+      interimResults: boolean;
+      maxAlternatives: number;
+      start: () => void;
+      stop: () => void;
+      onresult: ((e: SREvent) => void) | null;
+      onend: (() => void) | null;
+      onerror: (() => void) | null;
+    };
+    const SR =
+      (
+        window as unknown as {
+          SpeechRecognition?: new () => SRInstance;
+          webkitSpeechRecognition?: new () => SRInstance;
+        }
+      ).SpeechRecognition ||
+      (window as unknown as { webkitSpeechRecognition?: new () => SRInstance })
+        .webkitSpeechRecognition;
+    if (!SR) return toast.error("Reconnaissance vocale non supportée ici — essaie Chrome/Android.");
+    if (listening) {
+      recRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const rec = new SR();
+    rec.lang = "fr-FR";
+    rec.interimResults = false;
+    rec.maxAlternatives = 3;
+    rec.onresult = (e) => {
+      const alts: string[] = Array.from(e.results[0]).map((a) => String(a.transcript));
+      const norm = (s: string) =>
+        s
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase();
+      for (const t of alts) {
+        const words = norm(t)
+          .split(/\s+/)
+          .filter((w) => w.length > 2);
+        let best: Product | null = null;
+        let bestScore = 0;
+        for (const p of products) {
+          const pn = norm(p.name);
+          const score = words.filter((w) => pn.includes(w)).length;
+          if (score > bestScore) {
+            bestScore = score;
+            best = p;
+          }
+        }
+        if (best && bestScore > 0) {
+          if (best.stock <= 0) {
+            toast.error(`${best.name} : rupture de stock`);
+            return;
+          }
+          add(best);
+          toast.success(`🎤 Voix : ajouté « ${best.name} »`);
+          return;
+        }
+      }
+      toast.info(`🎤 « ${alts[0]} » — aucun produit reconnu`);
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => {
+      setListening(false);
+      toast.error("Micro indisponible ou refusé");
+    };
+    recRef.current = rec;
+    setListening(true);
+    rec.start();
+  };
+
   // — douchettes code-barres USB/Bluetooth (émulation clavier) —
   // Ces appareils « tapent » le code très vite puis Entrée. On les capte même
   // si aucun champ n'est focusé (typique des scanners gun et PDA Android).
@@ -800,9 +900,21 @@ function PosCore({ mode }: { mode: PosMode }) {
                 onChange={(e) => setQ(e.target.value)}
                 onKeyDown={onSearchEnter}
                 placeholder="Rechercher un produit…"
-                className="pl-9 h-11 text-base"
+                className="pl-9 pr-11 h-11 text-base"
                 autoFocus
               />
+              <button
+                type="button"
+                onClick={toggleVoice}
+                title="Ajouter un produit à la voix"
+                className={`absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full transition ${
+                  listening
+                    ? "animate-pulse bg-destructive text-destructive-foreground"
+                    : "bg-secondary text-muted-foreground hover:bg-primary/15 hover:text-primary"
+                }`}
+              >
+                <Mic className="h-4 w-4" />
+              </button>
             </div>
             <div className="min-w-[220px]">
               <Select
@@ -889,14 +1001,24 @@ function PosCore({ mode }: { mode: PosMode }) {
                       </div>
                       <div className="line-clamp-2 font-medium">{p.name}</div>
                       <div className="mt-1 font-display text-lg font-bold text-primary">
-                        {fmtMoney(p.sale_price, cur)}
+                        {fmtMoney(effectivePrice(p), cur)}
                         {isWeighed(p.unit ?? "") && (
                           <span className="text-xs font-medium text-muted-foreground">
                             {" "}
                             / {p.unit}
                           </span>
                         )}
+                        {isPromoActive(p) && (
+                          <span className="ml-1.5 align-middle rounded bg-destructive px-1.5 py-0.5 text-[9px] font-bold uppercase text-destructive-foreground">
+                            Promo
+                          </span>
+                        )}
                       </div>
+                      {isPromoActive(p) && (
+                        <div className="text-xs text-muted-foreground line-through">
+                          {fmtMoney(p.sale_price, cur)}
+                        </div>
+                      )}
                     </button>
                   ))}
                 </div>

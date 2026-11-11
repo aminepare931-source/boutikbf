@@ -357,17 +357,21 @@ export type Database = {
       products: {
         Row: {
           barcode: string | null
+          batch_label: string | null
           brand: string | null
           category_id: string | null
           cost_price: number
           created_at: string
           description: string | null
+          expiry_date: string | null
           extra: Json
           id: string
           image_url: string | null
           is_active: boolean
           name: string
+          promo_end: string | null
           promo_price: number | null
+          promo_start: string | null
           sale_price: number
           search_vector: unknown
           shop_id: string
@@ -380,17 +384,21 @@ export type Database = {
         }
         Insert: {
           barcode?: string | null
+          batch_label?: string | null
           brand?: string | null
           category_id?: string | null
           cost_price?: number
           created_at?: string
           description?: string | null
+          expiry_date?: string | null
           extra?: Json
           id?: string
           image_url?: string | null
           is_active?: boolean
           name: string
+          promo_end?: string | null
           promo_price?: number | null
+          promo_start?: string | null
           sale_price?: number
           search_vector?: unknown
           shop_id: string
@@ -403,17 +411,21 @@ export type Database = {
         }
         Update: {
           barcode?: string | null
+          batch_label?: string | null
           brand?: string | null
           category_id?: string | null
           cost_price?: number
           created_at?: string
           description?: string | null
+          expiry_date?: string | null
           extra?: Json
           id?: string
           image_url?: string | null
           is_active?: boolean
           name?: string
+          promo_end?: string | null
           promo_price?: number | null
+          promo_start?: string | null
           sale_price?: number
           search_vector?: unknown
           shop_id?: string

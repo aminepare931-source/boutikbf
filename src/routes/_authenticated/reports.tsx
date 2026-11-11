@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useShops } from "@/lib/shop-store";
 import { PageHeader, StatCard } from "@/components/page-parts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -79,11 +80,13 @@ type Product = {
   stock_min: number;
   unit: string;
   is_active: boolean;
+  expiry_date?: string | null;
 };
 
 function ReportsPage() {
   const { current } = useShops();
   const [range, setRange] = useState<Range>("30");
+  const [refreshKey, setRefreshKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [sales, setSales] = useState<Sale[]>([]);
   const [items, setItems] = useState<SaleItem[]>([]);
@@ -109,7 +112,7 @@ function ReportsPage() {
           .order("created_at", { ascending: false }),
         supabase
           .from("products")
-          .select("id,name,sku,sale_price,cost_price,stock,stock_min,unit,is_active")
+          .select("id,name,sku,sale_price,cost_price,stock,stock_min,unit,is_active,expiry_date")
           .eq("shop_id", current.id),
       ]);
       const saleRows = (s.data ?? []) as Sale[];
@@ -129,7 +132,7 @@ function ReportsPage() {
       }
       setLoading(false);
     })();
-  }, [current?.id, fromDate]);
+  }, [current?.id, fromDate, refreshKey]);
 
   const cur = current?.currency ?? "XOF";
 
@@ -445,6 +448,15 @@ function ReportsPage() {
 
       <ZReport currency={cur} />
 
+      <AiAdvisor
+        products={products}
+        items={items}
+        sales={sales}
+        currency={cur}
+        shopId={current?.id}
+        onChanged={() => setRefreshKey((k) => k + 1)}
+      />
+
       <p className="mt-6 text-xs text-muted-foreground">
         💡 Astuce : tous les boutons « Télécharger » créent un fichier Excel que vous pouvez envoyer
         à votre comptable ou ouvrir sur votre téléphone.
@@ -725,6 +737,240 @@ ${[...byCashier.entries()]
               )}
             </div>
           </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ---------- Assistant IA : conseils statistiques 100 % locaux ---------- */
+
+type Advice = {
+  key: string;
+  kind: "prix" | "dormant" | "perime" | "hebo";
+  title: string;
+  detail: string;
+  action?: { label: string; run: () => Promise<void> };
+};
+
+function round50(n: number) {
+  return Math.max(50, Math.round(n / 50) * 50);
+}
+
+function AiAdvisor({
+  products,
+  items,
+  sales,
+  currency,
+  shopId,
+  onChanged,
+}: {
+  products: Product[];
+  items: SaleItem[];
+  sales: Sale[];
+  currency: string;
+  shopId?: string;
+  onChanged: () => void;
+}) {
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+
+  const advice = useMemo<Advice[]>(() => {
+    if (!shopId) return [];
+    const list: Advice[] = [];
+    const now = Date.now();
+    const weekAgo = now - 7 * 86_400_000;
+    const twoWeekAgo = now - 14 * 86_400_000;
+
+    // 1. Résumé hebdomadaire
+    const thisWeek = sales.filter((s) => new Date(s.created_at).getTime() >= weekAgo);
+    const lastWeek = sales.filter((s) => {
+      const t = new Date(s.created_at).getTime();
+      return t >= twoWeekAgo && t < weekAgo;
+    });
+    const rev = (arr: Sale[]) => arr.reduce((a, s) => a + Number(s.total), 0);
+    const tw = rev(thisWeek);
+    const lw = rev(lastWeek);
+    const delta = lw === 0 ? (tw > 0 ? 100 : 0) : Math.round(((tw - lw) / lw) * 100);
+    const soldIds = new Map<string, number>();
+    const saleIdsThisWeek = new Set(thisWeek.map((s) => s.id));
+    items.forEach((i) => {
+      if (saleIdsThisWeek.has(i.sale_id) && i.product_id)
+        soldIds.set(i.product_id, (soldIds.get(i.product_id) ?? 0) + Number(i.quantity));
+    });
+    const top = [...soldIds.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+    list.push({
+      key: "hebo",
+      kind: "hebo",
+      title: `Cette semaine : ${fmtMoney(tw, currency)} (${thisWeek.length} ventes)`,
+      detail:
+        (lw > 0 || tw > 0 ? `${delta >= 0 ? "📈 +" : "📉 "}${delta} % vs semaine dernière. ` : "") +
+        (top.length
+          ? "Top : " +
+            top
+              .map(([id, q]) => `${products.find((p) => p.id === id)?.name ?? "?"} (×${q})`)
+              .join(", ")
+          : "Aucune vente cette semaine."),
+    });
+
+    // 2. Marges faibles → suggestion de prix
+    products
+      .filter((p) => p.is_active && p.cost_price > 0 && p.sale_price > 0)
+      .filter((p) => (p.sale_price - p.cost_price) / p.sale_price < 0.1)
+      .slice(0, 4)
+      .forEach((p) => {
+        const suggested = round50(p.cost_price * 1.25);
+        if (suggested <= p.sale_price) return;
+        list.push({
+          key: `prix-${p.id}`,
+          kind: "prix",
+          title: `« ${p.name} » : marge trop faible`,
+          detail: `Tu vends ${fmtMoney(p.sale_price, currency)} un produit qui coûte ${fmtMoney(p.cost_price, currency)} (${Math.round(((p.sale_price - p.cost_price) / p.sale_price) * 100)} % de marge). Prix conseillé : ${fmtMoney(suggested, currency)} (+${Math.round(((suggested - p.sale_price) / p.sale_price) * 100)} %).`,
+          action: {
+            label: `Passer à ${fmtMoney(suggested, currency)}`,
+            run: async () => {
+              const { error } = await supabase
+                .from("products")
+                .update({ sale_price: suggested })
+                .eq("id", p.id);
+              if (error) throw error;
+              onChanged();
+            },
+          },
+        });
+      });
+
+    // 3. Stocks dormants (aucune vente sur la période chargée) → promo
+    const soldEver = new Set(items.map((i) => i.product_id).filter(Boolean) as string[]);
+    products
+      .filter((p) => p.is_active && p.stock > 0 && !soldEver.has(p.id))
+      .slice(0, 3)
+      .forEach((p) => {
+        const promo = round50(p.sale_price * 0.85);
+        const end = new Date(now + 14 * 86_400_000).toISOString().slice(0, 10);
+        list.push({
+          key: `dormant-${p.id}`,
+          kind: "dormant",
+          title: `« ${p.name} » ne se vend pas`,
+          detail: `${p.stock} ${p.unit} en stock sans aucune vente sur la période. Suggestion : promo de liquidation à ${fmtMoney(promo, currency)} pendant 14 jours.`,
+          action: {
+            label: "Mettre en promo -15 %",
+            run: async () => {
+              const { error } = await supabase
+                .from("products")
+                .update({
+                  promo_price: promo,
+                  promo_start: new Date().toISOString().slice(0, 10),
+                  promo_end: end,
+                })
+                .eq("id", p.id);
+              if (error) throw error;
+              onChanged();
+            },
+          },
+        });
+      });
+
+    // 4. Péremption proche → promo immédiate
+    products
+      .filter((p) => p.expiry_date && p.stock > 0)
+      .filter((p) => {
+        const d = Math.ceil((new Date(p.expiry_date!).getTime() - now) / 86_400_000);
+        return d <= 30;
+      })
+      .slice(0, 3)
+      .forEach((p) => {
+        const promo = round50(p.sale_price * 0.7);
+        const d = Math.ceil((new Date(p.expiry_date!).getTime() - now) / 86_400_000);
+        list.push({
+          key: `perime-${p.id}`,
+          kind: "perime",
+          title: `« ${p.name} » périme ${d < 0 ? `déjà (${d} j)` : `dans ${d} j`}`,
+          detail: `Il reste ${p.stock} ${p.unit}. Vise une promo forte (${fmtMoney(promo, currency)}) pour tout écouler avant la date.`,
+          action: {
+            label: "Promo -30 %",
+            run: async () => {
+              const { error } = await supabase
+                .from("products")
+                .update({
+                  promo_price: promo,
+                  promo_start: new Date().toISOString().slice(0, 10),
+                  promo_end: p.expiry_date,
+                })
+                .eq("id", p.id);
+              if (error) throw error;
+              onChanged();
+            },
+          },
+        });
+      });
+
+    return list;
+  }, [products, items, sales, shopId, currency, onChanged]);
+
+  const apply = async (a: Advice) => {
+    if (!a.action) return;
+    setBusyKey(a.key);
+    try {
+      await a.action.run();
+      toast.success("Conseil appliqué");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const iconFor = (k: Advice["kind"]) =>
+    k === "hebo" ? (
+      <TrendingUp className="h-4 w-4 shrink-0 text-primary" />
+    ) : k === "prix" ? (
+      <Wallet className="h-4 w-4 shrink-0 text-warning" />
+    ) : k === "dormant" ? (
+      <Package className="h-4 w-4 shrink-0 text-muted-foreground" />
+    ) : (
+      <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" />
+    );
+
+  return (
+    <Card className="mt-8 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Lightbulb className="h-4 w-4 text-primary" />
+          Assistant IA — conseils personnalisés
+          <Badge variant="secondary" className="ml-1 text-[10px]">
+            hors-ligne, sans abonnement
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {advice.map((a) => (
+          <div
+            key={a.key}
+            className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-3"
+          >
+            {iconFor(a.kind)}
+            <div className="min-w-[200px] flex-1">
+              <div className="text-sm font-semibold">{a.title}</div>
+              <div className="text-xs text-muted-foreground">{a.detail}</div>
+            </div>
+            {a.action && (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busyKey === a.key}
+                onClick={() => apply(a)}
+              >
+                {busyKey === a.key ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+                {a.action.label}
+              </Button>
+            )}
+          </div>
+        ))}
+        {advice.length === 0 && (
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            Pas encore assez de données pour des conseils — enregistre des ventes et l'assistant
+            analysera tout ça.
+          </p>
         )}
       </CardContent>
     </Card>

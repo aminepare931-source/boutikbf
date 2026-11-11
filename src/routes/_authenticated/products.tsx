@@ -95,6 +95,11 @@ type Product = {
   description?: string | null;
   brand?: string | null;
   image_url?: string | null;
+  expiry_date?: string | null;
+  batch_label?: string | null;
+  promo_price?: number | null;
+  promo_start?: string | null;
+  promo_end?: string | null;
   extra?: { supplier?: string; weight?: string; color?: string; size?: string } | null;
 };
 
@@ -148,6 +153,11 @@ function ProductsPage() {
     size: "",
     description: "",
     image_url: "",
+    expiry_date: "",
+    batch_label: "",
+    promo_price: 0,
+    promo_start: "",
+    promo_end: "",
   });
 
   const emptyForm = {
@@ -166,6 +176,11 @@ function ProductsPage() {
     size: "",
     description: "",
     image_url: "",
+    expiry_date: "",
+    batch_label: "",
+    promo_price: 0,
+    promo_start: "",
+    promo_end: "",
   };
 
   // Détecter le paramètre barcode dans l'URL et ouvrir le formulaire
@@ -209,7 +224,7 @@ function ProductsPage() {
       supabase
         .from("products")
         .select(
-          "id,name,category_id,sku,barcode,cost_price,sale_price,stock,unit,is_active,description,brand,image_url,extra,categories(name)",
+          "id,name,category_id,sku,barcode,cost_price,sale_price,stock,unit,is_active,description,brand,image_url,expiry_date,batch_label,promo_price,promo_start,promo_end,extra,categories(name)",
         )
         .eq("shop_id", current.id)
         .order("created_at", { ascending: false }),
@@ -266,6 +281,11 @@ function ProductsPage() {
       size: p.extra?.size ?? "",
       description: p.description ?? "",
       image_url: p.image_url ?? "",
+      expiry_date: p.expiry_date ?? "",
+      batch_label: p.batch_label ?? "",
+      promo_price: p.promo_price ?? 0,
+      promo_start: p.promo_start ?? "",
+      promo_end: p.promo_end ?? "",
     });
     setOpen(true);
   };
@@ -336,6 +356,11 @@ function ProductsPage() {
       description: form.description.trim() || null,
       brand: form.brand.trim() || null,
       image_url: form.image_url || null,
+      expiry_date: form.expiry_date || null,
+      batch_label: form.batch_label.trim() || null,
+      promo_price: Number(form.promo_price) > 0 ? Number(form.promo_price) : null,
+      promo_start: form.promo_start || null,
+      promo_end: form.promo_end || null,
       extra: {
         supplier: form.supplier.trim() || undefined,
         weight: form.weight.trim() || undefined,
@@ -1488,6 +1513,64 @@ function ProductsPage() {
                 placeholder="Description du produit…"
               />
             </div>
+
+            <div className="col-span-2 -mb-1 mt-1 border-t border-border pt-3 text-xs font-bold uppercase tracking-wider text-muted-foreground md:col-span-3">
+              Péremption & promotion
+            </div>
+            <div className="space-y-1.5">
+              <Label>Date de péremption</Label>
+              <Input
+                type="date"
+                value={form.expiry_date}
+                onChange={(e) => setForm({ ...form, expiry_date: e.target.value })}
+                className="h-10"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>N° de lot</Label>
+              <Input
+                value={form.batch_label}
+                onChange={(e) => setForm({ ...form, batch_label: e.target.value })}
+                placeholder="Ex : LOT-2026-A"
+                className="h-10"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Prix promo (vide = pas de promo)</Label>
+              <Input
+                type="number"
+                min="0"
+                value={form.promo_price || ""}
+                onChange={(e) => setForm({ ...form, promo_price: +e.target.value })}
+                placeholder="Ex : 700"
+                className="h-10"
+              />
+            </div>
+            <div className="col-span-2 grid grid-cols-2 gap-2 md:col-span-3">
+              <div className="space-y-1.5">
+                <Label>Promo du</Label>
+                <Input
+                  type="date"
+                  value={form.promo_start}
+                  onChange={(e) => setForm({ ...form, promo_start: e.target.value })}
+                  className="h-10"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>au</Label>
+                <Input
+                  type="date"
+                  value={form.promo_end}
+                  onChange={(e) => setForm({ ...form, promo_end: e.target.value })}
+                  className="h-10"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground md:col-span-3">
+              💡 La promo s'applique automatiquement à la caisse pendant la période (et un badge «
+              Promo » barré du prix normal s'affiche). La date de péremption alimente les alertes de
+              la page Stock.
+            </p>
           </div>
           <DialogFooter className="m-0 shrink-0 border-t border-border px-6 py-4">
             <Button variant="ghost" onClick={() => setOpen(false)}>
