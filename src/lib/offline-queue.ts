@@ -6,6 +6,7 @@ export type PendingSale = {
   ref: string; // référence unique V-... (idempotence au rejeu)
   shop_id: string;
   cashier_id: string | null;
+  employee_id?: string | null;
   created_at: string;
   subtotal: number;
   total: number;
@@ -106,6 +107,7 @@ export async function replayPendingSales(): Promise<{ done: number; left: number
             .insert({
               shop_id: sale.shop_id,
               cashier_id: sale.cashier_id,
+              employee_id: sale.employee_id ?? null,
               subtotal: sale.subtotal,
               total: sale.total,
               payment_method: sale.payment_method,
