@@ -18,6 +18,7 @@ import { Route as ConditionsRouteImport } from './routes/conditions'
 import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CookiesRouteImport } from './routes/cookies'
+import { Route as DisplayRouteImport } from './routes/display'
 import { Route as EmployeeRouteImport } from './routes/employee'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as RemoteScanRouteImport } from './routes/remote-scan'
@@ -32,6 +33,7 @@ import { Route as AuthenticatedPosRouteImport } from './routes/_authenticated/po
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedSalesRouteImport } from './routes/_authenticated/sales'
+import { Route as AuthenticatedScannerTestRouteImport } from './routes/_authenticated/scanner-test'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedStockRouteImport } from './routes/_authenticated/stock'
 import { Route as AuthenticatedSuppliersRouteImport } from './routes/_authenticated/suppliers'
@@ -92,6 +94,11 @@ const ContactRoute = ContactRouteImport.update({
 const CookiesRoute = CookiesRouteImport.update({
   id: '/cookies',
   path: '/cookies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DisplayRoute = DisplayRouteImport.update({
+  id: '/display',
+  path: '/display',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmployeeRoute = EmployeeRouteImport.update({
@@ -164,6 +171,12 @@ const AuthenticatedSalesRoute = AuthenticatedSalesRouteImport.update({
   path: '/sales',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedScannerTestRoute =
+  AuthenticatedScannerTestRouteImport.update({
+    id: '/scanner-test',
+    path: '/scanner-test',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -259,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
   '/cookies': typeof CookiesRoute
+  '/display': typeof DisplayRoute
   '/employee': typeof EmployeeRouteWithChildren
   '/mentions-legales': typeof MentionsLegalesRoute
   '/remote-scan': typeof RemoteScanRoute
@@ -273,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/products': typeof AuthenticatedProductsRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/sales': typeof AuthenticatedSalesRoute
+  '/scanner-test': typeof AuthenticatedScannerTestRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/stock': typeof AuthenticatedStockRoute
   '/suppliers': typeof AuthenticatedSuppliersRoute
@@ -300,6 +315,7 @@ export interface FileRoutesByTo {
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
   '/cookies': typeof CookiesRoute
+  '/display': typeof DisplayRoute
   '/employee': typeof EmployeeRouteWithChildren
   '/mentions-legales': typeof MentionsLegalesRoute
   '/remote-scan': typeof RemoteScanRoute
@@ -313,6 +329,7 @@ export interface FileRoutesByTo {
   '/products': typeof AuthenticatedProductsRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/sales': typeof AuthenticatedSalesRoute
+  '/scanner-test': typeof AuthenticatedScannerTestRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/stock': typeof AuthenticatedStockRoute
   '/suppliers': typeof AuthenticatedSuppliersRoute
@@ -342,6 +359,7 @@ export interface FileRoutesById {
   '/confidentialite': typeof ConfidentialiteRoute
   '/contact': typeof ContactRoute
   '/cookies': typeof CookiesRoute
+  '/display': typeof DisplayRoute
   '/employee': typeof EmployeeRouteWithChildren
   '/mentions-legales': typeof MentionsLegalesRoute
   '/remote-scan': typeof RemoteScanRoute
@@ -356,6 +374,7 @@ export interface FileRoutesById {
   '/_authenticated/products': typeof AuthenticatedProductsRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/sales': typeof AuthenticatedSalesRoute
+  '/_authenticated/scanner-test': typeof AuthenticatedScannerTestRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/stock': typeof AuthenticatedStockRoute
   '/_authenticated/suppliers': typeof AuthenticatedSuppliersRoute
@@ -385,6 +404,7 @@ export interface FileRouteTypes {
     | '/confidentialite'
     | '/contact'
     | '/cookies'
+    | '/display'
     | '/employee'
     | '/mentions-legales'
     | '/remote-scan'
@@ -399,6 +419,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/reports'
     | '/sales'
+    | '/scanner-test'
     | '/settings'
     | '/stock'
     | '/suppliers'
@@ -426,6 +447,7 @@ export interface FileRouteTypes {
     | '/confidentialite'
     | '/contact'
     | '/cookies'
+    | '/display'
     | '/employee'
     | '/mentions-legales'
     | '/remote-scan'
@@ -439,6 +461,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/reports'
     | '/sales'
+    | '/scanner-test'
     | '/settings'
     | '/stock'
     | '/suppliers'
@@ -467,6 +490,7 @@ export interface FileRouteTypes {
     | '/confidentialite'
     | '/contact'
     | '/cookies'
+    | '/display'
     | '/employee'
     | '/mentions-legales'
     | '/remote-scan'
@@ -481,6 +505,7 @@ export interface FileRouteTypes {
     | '/_authenticated/products'
     | '/_authenticated/reports'
     | '/_authenticated/sales'
+    | '/_authenticated/scanner-test'
     | '/_authenticated/settings'
     | '/_authenticated/stock'
     | '/_authenticated/suppliers'
@@ -510,6 +535,7 @@ export interface RootRouteChildren {
   ConfidentialiteRoute: typeof ConfidentialiteRoute
   ContactRoute: typeof ContactRoute
   CookiesRoute: typeof CookiesRoute
+  DisplayRoute: typeof DisplayRoute
   EmployeeRoute: typeof EmployeeRouteWithChildren
   MentionsLegalesRoute: typeof MentionsLegalesRoute
   RemoteScanRoute: typeof RemoteScanRoute
@@ -580,6 +606,13 @@ declare module '@tanstack/react-router' {
       path: '/cookies'
       fullPath: '/cookies'
       preLoaderRoute: typeof CookiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/display': {
+      id: '/display'
+      path: '/display'
+      fullPath: '/display'
+      preLoaderRoute: typeof DisplayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/employee': {
@@ -678,6 +711,13 @@ declare module '@tanstack/react-router' {
       path: '/sales'
       fullPath: '/sales'
       preLoaderRoute: typeof AuthenticatedSalesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/scanner-test': {
+      id: '/_authenticated/scanner-test'
+      path: '/scanner-test'
+      fullPath: '/scanner-test'
+      preLoaderRoute: typeof AuthenticatedScannerTestRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
@@ -812,6 +852,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSalesRoute: typeof AuthenticatedSalesRoute
+  AuthenticatedScannerTestRoute: typeof AuthenticatedScannerTestRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStockRoute: typeof AuthenticatedStockRoute
   AuthenticatedSuppliersRoute: typeof AuthenticatedSuppliersRoute
@@ -827,6 +868,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProductsRoute: AuthenticatedProductsRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSalesRoute: AuthenticatedSalesRoute,
+  AuthenticatedScannerTestRoute: AuthenticatedScannerTestRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStockRoute: AuthenticatedStockRoute,
   AuthenticatedSuppliersRoute: AuthenticatedSuppliersRoute,
@@ -893,6 +935,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfidentialiteRoute: ConfidentialiteRoute,
   ContactRoute: ContactRoute,
   CookiesRoute: CookiesRoute,
+  DisplayRoute: DisplayRoute,
   EmployeeRoute: EmployeeRouteWithChildren,
   MentionsLegalesRoute: MentionsLegalesRoute,
   RemoteScanRoute: RemoteScanRoute,

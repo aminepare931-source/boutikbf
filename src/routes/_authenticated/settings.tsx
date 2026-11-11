@@ -31,6 +31,7 @@ import {
   ShieldCheck,
   Database,
   Download,
+  ScanLine,
 } from "lucide-react";
 import {
   Dialog,
@@ -480,6 +481,13 @@ function SettingsPage() {
                 <Download className="mr-2 h-4 w-4" />
               )}
               Télécharger ma sauvegarde complète
+            </Button>
+            <Button
+              variant="outline"
+              className="ml-2"
+              onClick={() => window.open("/scanner-test", "_blank")}
+            >
+              <ScanLine className="mr-2 h-4 w-4" /> Tester ma douchette
             </Button>
             <p className="mt-2 text-xs text-muted-foreground">
               💡 À faire une fois par mois : tes données t'appartiennent, même si tu quittes

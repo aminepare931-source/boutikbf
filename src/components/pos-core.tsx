@@ -36,6 +36,7 @@ import {
   HandCoins,
   X,
   RefreshCw,
+  Monitor,
 } from "lucide-react";
 import { fmtMoney } from "@/lib/format";
 import { toast } from "sonner";
@@ -67,6 +68,7 @@ type Product = {
   category?: string;
   sale_price: number;
   stock: number;
+  unit?: string;
   sku: string | null;
   barcode: string | null;
 };
@@ -129,6 +131,15 @@ function PosCore({ mode }: { mode: PosMode }) {
     name: string;
     phone: string | null;
   } | null>(null);
+  // vente au poids (kg, g, tonne, litre…)
+  const [weighFor, setWeighFor] = useState<{
+    id: string;
+    name: string;
+    unit: string;
+    price: number;
+  } | null>(null);
+  const [weightQty, setWeightQty] = useState("");
+  const [displayLogo, setDisplayLogo] = useState<string | null>(null);
   const [custOpen, setCustOpen] = useState(false);
   const [custQ, setCustQ] = useState("");
   const [custResults, setCustResults] = useState<
@@ -175,7 +186,7 @@ function PosCore({ mode }: { mode: PosMode }) {
       const [productRes, categoryRes] = await Promise.all([
         supabase
           .from("products")
-          .select("id,name,sale_price,stock,sku,barcode,category_id,categories(name)")
+          .select("id,name,sale_price,stock,unit,sku,barcode,category_id,categories(name)")
           .eq("shop_id", current.id)
           .eq("is_active", true),
         supabase
@@ -213,6 +224,7 @@ function PosCore({ mode }: { mode: PosMode }) {
     loadData();
     setHeld(loadHeld(current.id));
     listPendingSales(current.id).then((p) => setPending(p.length));
+    resolveLogoUrl(current.logo_url).then(setDisplayLogo);
   }, [current?.id]);
 
   useEffect(() => {
@@ -277,12 +289,38 @@ function PosCore({ mode }: { mode: PosMode }) {
     return Array.from(groups.entries());
   }, [filtered]);
 
+  const isWeighed = (unit: string) =>
+    ["kg", "g", "tonne", "t", "l", "litre", "dl"].includes((unit || "").trim().toLowerCase());
+
   const add = (p: Product) => {
+    if (isWeighed(p.unit ?? "")) {
+      setWeighFor({ id: p.id, name: p.name, unit: p.unit ?? "kg", price: p.sale_price });
+      setWeightQty("");
+      return;
+    }
     setCart((c) => {
       const ex = c.find((i) => i.id === p.id);
       if (ex) return c.map((i) => (i.id === p.id ? { ...i, qty: i.qty + 1 } : i));
       return [...c, { ...p, qty: 1 }];
     });
+  };
+
+  const confirmWeight = () => {
+    if (!weighFor) return;
+    const qty = Number(weightQty);
+    if (!qty || qty <= 0) return toast.error("Quantité invalide");
+    setCart((c) => {
+      const ex = c.find((i) => i.id === weighFor.id);
+      if (ex)
+        return c.map((i) =>
+          i.id === weighFor.id ? { ...i, qty: Math.round((i.qty + qty) * 1000) / 1000 } : i,
+        );
+      const prod = products.find((x) => x.id === weighFor.id);
+      if (!prod) return c;
+      return [...c, { ...prod, qty: Math.round(qty * 1000) / 1000 }];
+    });
+    setWeighFor(null);
+    setWeightQty("");
   };
   const inc = (id: string) =>
     setCart((c) => c.map((i) => (i.id === id ? { ...i, qty: i.qty + 1 } : i)));
@@ -405,6 +443,36 @@ function PosCore({ mode }: { mode: PosMode }) {
     if (current) saveHeld(current.id, next);
   };
 
+  // — diffusion vers l'écran client (fenêtre /display ouverte sur l'autre écran) —
+  useEffect(() => {
+    if (typeof window === "undefined" || !("BroadcastChannel" in window)) return;
+    const ch = new BroadcastChannel("boutikbf-display");
+    const payload = {
+      shopName: current?.name ?? "Boutique",
+      logoUrl: displayLogo,
+      currency: cur,
+      lines: cart.map((i) => ({
+        name: i.name,
+        qty: isWeighed(i.unit ?? "") ? `${i.qty}${i.unit ?? ""}` : i.qty,
+        total: Math.round(i.sale_price * i.qty),
+      })),
+      subtotal,
+      discount: discountValue,
+      total,
+      message: done ? "Merci de votre visite !" : null,
+      change: done?.change ?? (change || 0),
+      ts: Date.now(),
+    };
+    ch.postMessage(payload);
+    // secours si BroadcastChannel indisponible (vieux navigateurs de la 2ᵉ fenêtre)
+    try {
+      localStorage.setItem("boutikbf-display-data", JSON.stringify(payload));
+    } catch {
+      /* quota privé */
+    }
+    return () => ch.close();
+  }, [cart, subtotal, discountValue, total, change, done, current?.name, cur]);
+
   const checkout = async () => {
     if (!current || cart.length === 0 || !mixValid || !creditValid) return;
     setProcessing(true);
@@ -519,7 +587,7 @@ function PosCore({ mode }: { mode: PosMode }) {
       // reload stock
       const { data } = await supabase
         .from("products")
-        .select("id,name,sale_price,stock,sku,barcode")
+        .select("id,name,sale_price,stock,unit,sku,barcode")
         .eq("shop_id", current.id)
         .eq("is_active", true);
       setProducts((data ?? []) as Product[]);
@@ -709,6 +777,14 @@ function PosCore({ mode }: { mode: PosMode }) {
             <Button variant="outline" size="sm" onClick={() => setHeldOpen(true)}>
               <PauseCircle className="mr-1.5 h-4 w-4" /> En attente ({held.length})
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              title="Ouvrir l'affichage client sur le 2ᵉ écran"
+              onClick={() => window.open("/display", "client-display", "width=900,height=700")}
+            >
+              <Monitor className="mr-1.5 h-4 w-4" /> Écran client
+            </Button>
           </div>
         }
       />
@@ -814,6 +890,12 @@ function PosCore({ mode }: { mode: PosMode }) {
                       <div className="line-clamp-2 font-medium">{p.name}</div>
                       <div className="mt-1 font-display text-lg font-bold text-primary">
                         {fmtMoney(p.sale_price, cur)}
+                        {isWeighed(p.unit ?? "") && (
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {" "}
+                            / {p.unit}
+                          </span>
+                        )}
                       </div>
                     </button>
                   ))}
@@ -858,27 +940,39 @@ function PosCore({ mode }: { mode: PosMode }) {
                       <div className="truncate text-sm font-medium">{i.name}</div>
                       <div className="text-xs text-muted-foreground">
                         {fmtMoney(i.sale_price, cur)}
+                        {isWeighed(i.unit ?? "") ? ` / ${i.unit}` : ""}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-7 w-7"
-                        onClick={() => dec(i.id)}
+                    {isWeighed(i.unit ?? "") ? (
+                      <button
+                        type="button"
+                        className="rounded-lg border border-border px-2 py-1 text-sm font-semibold hover:bg-secondary"
+                        title="Ajuster le poids"
+                        onClick={() => add({ ...i, qty: 1 } as Product)}
                       >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="w-6 text-center text-sm font-semibold">{i.qty}</span>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-7 w-7"
-                        onClick={() => inc(i.id)}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    </div>
+                        {i.qty} {i.unit}
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-7 w-7"
+                          onClick={() => dec(i.id)}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="w-6 text-center text-sm font-semibold">{i.qty}</span>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-7 w-7"
+                          onClick={() => inc(i.id)}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
                     <Button
                       size="icon"
                       variant="ghost"
@@ -1259,6 +1353,58 @@ function PosCore({ mode }: { mode: PosMode }) {
               </Button>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pesée (vente au poids) */}
+      <Dialog open={!!weighFor} onOpenChange={(o) => !o && setWeighFor(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">{weighFor?.name}</DialogTitle>
+            <DialogDescription>
+              Saisis la quantité pesée — prix :{" "}
+              <b>
+                {fmtMoney(weighFor?.price ?? 0, cur)} / {weighFor?.unit}
+              </b>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                step="0.001"
+                min="0"
+                autoFocus
+                value={weightQty}
+                onChange={(e) => setWeightQty(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && confirmWeight()}
+                placeholder={`0,000 ${weighFor?.unit ?? ""}`}
+                className="h-14 text-2xl font-bold text-center"
+              />
+              <span className="text-lg font-semibold text-muted-foreground">{weighFor?.unit}</span>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2">
+              {[0.1, 0.25, 0.5, 1, 2].map((v) => (
+                <Button key={v} size="sm" variant="outline" onClick={() => setWeightQty(String(v))}>
+                  {v} {weighFor?.unit}
+                </Button>
+              ))}
+            </div>
+            <div className="rounded-xl bg-secondary/40 p-3 text-center">
+              <span className="text-sm text-muted-foreground">À encaisser : </span>
+              <span className="font-display text-xl font-bold text-primary">
+                {fmtMoney(Math.round((Number(weightQty) || 0) * (weighFor?.price ?? 0)), cur)}
+              </span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setWeighFor(null)}>
+              Annuler
+            </Button>
+            <Button onClick={confirmWeight} className="bg-gradient-primary shadow-elegant">
+              Ajouter au ticket
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
