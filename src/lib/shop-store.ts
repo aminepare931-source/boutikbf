@@ -17,6 +17,7 @@ export type Shop = {
   shop_keywords?: string[] | null;
   plan?: string;
   trial_ends_at?: string | null;
+  settings?: unknown;
   is_suspended?: boolean;
   created_at?: string;
 };

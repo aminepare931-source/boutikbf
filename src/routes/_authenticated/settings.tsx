@@ -40,6 +40,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ShopPreferencesPanel } from "@/components/shop-preferences-panel";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Paramètres — BoutikBF" }] }),
@@ -525,6 +526,13 @@ function SettingsPage() {
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Console de réglages boutique (30 options) */}
+      <div className="mt-8 space-y-6">
+        <div className="border-t border-border/50 pt-8">
+          <ShopPreferencesPanel />
+        </div>
       </div>
 
       {/* Subscription Plans full-width comparison section */}
