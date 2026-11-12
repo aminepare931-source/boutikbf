@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Loader2,
@@ -63,7 +63,13 @@ import {
 } from "@/lib/superadmin";
 import { fmtDate, fmtMoney, fmtNumber } from "@/lib/format";
 
-export const Route = createFileRoute("/superadmin/shops")({ component: ShopsPage });
+export const Route = createFileRoute("/superadmin/shops")({
+  // ?manage=<id> ouvre directement la fenêtre de gestion d'une boutique
+  validateSearch: (s: Record<string, unknown>): { manage?: string } => ({
+    manage: typeof s.manage === "string" ? s.manage : undefined,
+  }),
+  component: ShopsPage,
+});
 
 function planBadge(s: AdminShop) {
   if (s.is_suspended) return <Badge variant="destructive">Suspendue</Badge>;
@@ -80,6 +86,8 @@ function ShopsPage() {
   const [q, setQ] = useState("");
   const [planFilter, setPlanFilter] = useState("all");
   const [selected, setSelected] = useState<AdminShop | null>(null);
+  const navigate = useNavigate();
+  const { manage } = Route.useSearch();
 
   const {
     data: shops = [],
@@ -104,6 +112,13 @@ function ShopsPage() {
       );
     });
   }, [shops, q, planFilter]);
+
+  useEffect(() => {
+    if (!manage || shops.length === 0) return;
+    const found = shops.find((x) => x.id === manage);
+    if (found) setSelected(found);
+    navigate({ to: "/superadmin/shops", search: {}, replace: true });
+  }, [manage, shops, navigate]);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["sa-shops"] });
 
@@ -295,6 +310,13 @@ function ShopDialog({
             {shop.owner_email} · {shop.members_count} membre(s) · {fmtNumber(shop.products_count)}{" "}
             produits
           </DialogDescription>
+          <Link
+            to="/superadmin/shop/$shopId"
+            params={{ shopId: shop.id }}
+            className="mt-1 inline-flex w-fit items-center rounded-full border border-border px-3 py-1.5 text-sm font-medium text-primary hover:bg-muted"
+          >
+            Voir la fiche complète : toutes les données
+          </Link>
         </DialogHeader>
 
         {isLoading || !d ? (
@@ -340,7 +362,7 @@ function ShopDialog({
                   sub={
                     d.sales.last_sale &&
                     Date.now() - new Date(d.sales.last_sale).getTime() > 14 * 86_400_000
-                      ? "⚠ inactive depuis 14 j"
+                      ? "inactive depuis 14 j"
                       : undefined
                   }
                 />
@@ -857,7 +879,7 @@ function PaymentsTab({
           sub={
             data.summary.last_paid_at &&
             Date.now() - new Date(data.summary.last_paid_at).getTime() > 35 * 86_400_000
-              ? "⚠ aucun paiement depuis 1 mois"
+              ? "aucun paiement depuis 1 mois"
               : undefined
           }
         />

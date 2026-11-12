@@ -52,6 +52,7 @@ import { Route as SuperadminAdminsRouteImport } from './routes/superadmin/admins
 import { Route as SuperadminShopsRouteImport } from './routes/superadmin/shops'
 import { Route as SuperadminUsersRouteImport } from './routes/superadmin/users'
 import { Route as FShopIdCustomerIdRouteImport } from './routes/f.$shopId.$customerId'
+import { Route as SuperadminShopShopIdRouteImport } from './routes/superadmin/shop.$shopId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -268,6 +269,11 @@ const FShopIdCustomerIdRoute = FShopIdCustomerIdRouteImport.update({
   path: '/f/$shopId/$customerId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SuperadminShopShopIdRoute = SuperadminShopShopIdRouteImport.update({
+  id: '/shop/$shopId',
+  path: '/shop/$shopId',
+  getParentRoute: () => SuperadminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -312,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/superadmin/users': typeof SuperadminUsersRoute
   '/superadmin/': typeof SuperadminIndexRoute
   '/f/$shopId/$customerId': typeof FShopIdCustomerIdRoute
+  '/superadmin/shop/$shopId': typeof SuperadminShopShopIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -355,6 +362,7 @@ export interface FileRoutesByTo {
   '/superadmin/users': typeof SuperadminUsersRoute
   '/superadmin': typeof SuperadminIndexRoute
   '/f/$shopId/$customerId': typeof FShopIdCustomerIdRoute
+  '/superadmin/shop/$shopId': typeof SuperadminShopShopIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -401,6 +409,7 @@ export interface FileRoutesById {
   '/superadmin/users': typeof SuperadminUsersRoute
   '/superadmin/': typeof SuperadminIndexRoute
   '/f/$shopId/$customerId': typeof FShopIdCustomerIdRoute
+  '/superadmin/shop/$shopId': typeof SuperadminShopShopIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -447,6 +456,7 @@ export interface FileRouteTypes {
     | '/superadmin/users'
     | '/superadmin/'
     | '/f/$shopId/$customerId'
+    | '/superadmin/shop/$shopId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -490,6 +500,7 @@ export interface FileRouteTypes {
     | '/superadmin/users'
     | '/superadmin'
     | '/f/$shopId/$customerId'
+    | '/superadmin/shop/$shopId'
   id:
     | '__root__'
     | '/'
@@ -535,6 +546,7 @@ export interface FileRouteTypes {
     | '/superadmin/users'
     | '/superadmin/'
     | '/f/$shopId/$customerId'
+    | '/superadmin/shop/$shopId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -859,6 +871,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FShopIdCustomerIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/superadmin/shop/$shopId': {
+      id: '/superadmin/shop/$shopId'
+      path: '/shop/$shopId'
+      fullPath: '/superadmin/shop/$shopId'
+      preLoaderRoute: typeof SuperadminShopShopIdRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
   }
 }
 
@@ -932,6 +951,7 @@ interface SuperadminRouteChildren {
   SuperadminShopsRoute: typeof SuperadminShopsRoute
   SuperadminUsersRoute: typeof SuperadminUsersRoute
   SuperadminIndexRoute: typeof SuperadminIndexRoute
+  SuperadminShopShopIdRoute: typeof SuperadminShopShopIdRoute
 }
 
 const SuperadminRouteChildren: SuperadminRouteChildren = {
@@ -939,6 +959,7 @@ const SuperadminRouteChildren: SuperadminRouteChildren = {
   SuperadminShopsRoute: SuperadminShopsRoute,
   SuperadminUsersRoute: SuperadminUsersRoute,
   SuperadminIndexRoute: SuperadminIndexRoute,
+  SuperadminShopShopIdRoute: SuperadminShopShopIdRoute,
 }
 
 const SuperadminRouteWithChildren = SuperadminRoute._addFileChildren(

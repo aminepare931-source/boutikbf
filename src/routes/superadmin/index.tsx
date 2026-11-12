@@ -199,7 +199,13 @@ function ActionList({
             {rows.map((r) => (
               <li key={r.id} className="flex items-center justify-between gap-3 py-3">
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold">{r.name}</div>
+                  <Link
+                    to="/superadmin/shop/$shopId"
+                    params={{ shopId: r.id }}
+                    className="block truncate text-sm font-semibold hover:text-primary hover:underline"
+                  >
+                    {r.name}
+                  </Link>
                   <div className="truncate text-xs text-muted-foreground">{line(r)}</div>
                 </div>
                 <ContactButton row={r} message={message(r)} />
@@ -574,7 +580,15 @@ function Dashboard() {
                     {data.top_shops.map((s, i) => (
                       <tr key={s.id} className="border-b border-border/60 last:border-0">
                         <td className="py-2.5 pr-3 text-muted-foreground">{i + 1}</td>
-                        <td className="py-2.5 pr-3 font-semibold">{s.name}</td>
+                        <td className="py-2.5 pr-3 font-semibold">
+                          <Link
+                            to="/superadmin/shop/$shopId"
+                            params={{ shopId: s.id }}
+                            className="hover:text-primary hover:underline"
+                          >
+                            {s.name}
+                          </Link>
+                        </td>
                         <td className="py-2.5 pr-3 text-muted-foreground">
                           {PLAN_LABELS[s.plan ?? ""] ?? s.plan}
                         </td>

@@ -235,3 +235,212 @@ export type ShopPayments = {
   const full = digits.length === 8 ? `226${digits}` : digits;
   return `https://wa.me/${full}?text=${encodeURIComponent(message)}`;
 }
+
+/* ---------- Fiche complète d'une boutique ---------- */
+
+export type ShopDetail = {
+  shop: Record<string, unknown> & {
+    id: string;
+    name: string;
+    slug: string;
+    plan: string;
+    created_at: string;
+    trial_ends_at: string | null;
+    is_suspended: boolean;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+    country: string | null;
+    currency: string | null;
+    shop_type: string | null;
+    shop_keywords: string[] | null;
+  };
+  owner: {
+    id: string;
+    email: string | null;
+    full_name: string | null;
+    phone: string | null;
+    created_at: string;
+    last_sign_in_at: string | null;
+    banned_until: string | null;
+  } | null;
+  notes: string | null;
+  money: {
+    sales_all: number;
+    volume_all: number;
+    sales_today: number;
+    volume_today: number;
+    sales_7d: number;
+    volume_7d: number;
+    sales_30d: number;
+    volume_30d: number;
+    avg_basket_30d: number;
+    discount_all: number;
+    tax_all: number;
+    first_sale: string | null;
+    last_sale: string | null;
+    cancelled: number;
+  };
+  margin: { margin_all: number; margin_30d: number };
+  stock: {
+    products_total: number;
+    products_active: number;
+    out_of_stock: number;
+    low_stock: number;
+    stock_cost_value: number;
+    stock_retail_value: number;
+  };
+  counts: {
+    categories: number;
+    customers: number;
+    customers_credit: number;
+    loyalty_points: number;
+    suppliers: number;
+    suppliers_balance: number;
+    members: number;
+    employees: number;
+    employees_active: number;
+    movements: number;
+    messages: number;
+    imports: number;
+  };
+  series: { day: string; sales: number; volume: number }[];
+  by_payment: { method: string; sales: number; volume: number }[];
+  top_products: { name: string; qty: number; revenue: number }[];
+  by_seller: { name: string; sales: number; volume: number }[];
+  members: {
+    id: string;
+    user_id: string;
+    role: string;
+    created_at: string;
+    email: string | null;
+    full_name: string | null;
+    last_sign_in_at: string | null;
+  }[];
+  employees: {
+    id: string;
+    name: string;
+    phone: string | null;
+    role: string;
+    is_active: boolean;
+    created_at: string;
+    sales: number;
+    volume: number;
+  }[];
+  categories: {
+    id: string;
+    name: string;
+    description: string | null;
+    is_auto_generated: boolean | null;
+    products: number;
+  }[];
+  products: {
+    id: string;
+    name: string;
+    sku: string | null;
+    barcode: string | null;
+    brand: string | null;
+    category: string | null;
+    cost_price: number;
+    sale_price: number;
+    promo_price: number | null;
+    stock: number;
+    stock_min: number | null;
+    unit: string | null;
+    is_active: boolean;
+    created_at: string;
+  }[];
+  customers: {
+    id: string;
+    name: string;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+    loyalty_points: number;
+    credit_balance: number;
+    notes: string | null;
+    created_at: string;
+    purchases: number;
+    spent: number;
+  }[];
+  suppliers: {
+    id: string;
+    name: string;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+    balance: number;
+    notes: string | null;
+    created_at: string;
+  }[];
+  sales: {
+    id: string;
+    reference: string | null;
+    created_at: string;
+    subtotal: number;
+    tax: number;
+    discount: number;
+    total: number;
+    payment_method: string;
+    status: string;
+    customer: string | null;
+    seller: string | null;
+    items: { name: string; quantity: number; unit_price: number; total: number }[];
+  }[];
+  movements: {
+    id: string;
+    created_at: string;
+    type: string;
+    quantity: number;
+    reason: string | null;
+    product: string | null;
+  }[];
+  messages: {
+    id: string;
+    employee_name: string;
+    employee_role: string;
+    message: string;
+    created_at: string;
+  }[];
+  imports: {
+    id: string;
+    file_name: string;
+    category_column: string | null;
+    created_at: string;
+    columns_count: number;
+    rows_count: number;
+  }[];
+  audit: {
+    id: number;
+    action: string;
+    details: Record<string, unknown> | null;
+    created_at: string;
+    admin_email: string | null;
+  }[];
+};
+
+export const PAYMENT_LABELS: Record<string, string> = {
+  cash: "Espèces",
+  mobile: "Mobile Money",
+  card: "Carte",
+};
+
+export const ROLE_LABELS: Record<string, string> = {
+  super_admin: "Super admin",
+  admin: "Administrateur",
+  manager: "Gérant",
+  accountant: "Comptable",
+  cashier: "Caissier",
+  stock_keeper: "Magasinier",
+  purchaser: "Acheteur",
+  sales: "Vendeur",
+  marketing: "Marketing",
+  employee: "Employé",
+  delivery: "Livreur",
+};
+
+export const MOVEMENT_LABELS: Record<string, string> = {
+  in: "Entrée",
+  out: "Sortie",
+  adjust: "Ajustement",
+};
