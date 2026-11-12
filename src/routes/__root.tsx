@@ -1,6 +1,7 @@
 import { clearShopCaches } from "@/lib/shop-store";
 import { replayPendingSales } from "@/lib/offline-queue";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { I18nProvider } from "@/lib/i18n";
 import {
   Outlet,
   Link,
@@ -172,9 +173,11 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <NavProgressBar />
-        <Outlet />
-        <Toaster richColors position="top-right" />
+        <I18nProvider>
+          <NavProgressBar />
+          <Outlet />
+          <Toaster richColors position="top-right" />
+        </I18nProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

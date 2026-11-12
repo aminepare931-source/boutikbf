@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
+import { useI18n } from "@/lib/i18n";
+import { LangSwitcher } from "@/components/lang-switcher";
 import { CookieNotice } from "@/components/legal/cookie-notice";
 import { PosSimulator } from "@/components/landing/pos-simulator";
 import {
@@ -152,6 +154,7 @@ function NavMenu({
 
 function Header() {
   const [open, setOpen] = useState(false);
+  const { t } = useI18n();
   const link = "rounded-full px-4 py-2 text-[15px] font-medium text-bk-ink hover:text-bk";
   return (
     <header className="sticky top-3 z-40 mx-auto w-[calc(100%-1.5rem)] max-w-[1400px] sm:w-[calc(100%-3rem)]">
@@ -167,15 +170,15 @@ function Header() {
           >
             Accueil
           </a>
-          <NavMenu label="Fonctionnalités" items={FEATURE_LINKS} />
+          <NavMenu label={t.navFeatures} items={FEATURE_LINKS} />
           <a href="#logiciel" className={link}>
-            Le logiciel
+            {t.navSoftware}
           </a>
           <a href="#tarifs" className={link}>
-            Tarifs
+            {t.navPricing}
           </a>
           <Link to="/contact" className={link}>
-            FAQ
+            {t.navFaq}
           </Link>
           <NavMenu
             label="Ressources"
@@ -188,19 +191,12 @@ function Header() {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <span
-            className="flex items-center gap-2 rounded-full border border-bk/10 bg-white px-3 py-1.5 text-sm font-semibold text-bk-ink shadow-sm"
-            title="Langue : français"
-          >
-            <BurkinaFlag className="h-4 w-6" />
-            FR
-            <ChevronDown className="h-4 w-4 text-bk-ink/60" />
-          </span>
+          <LangSwitcher />
           <Link to="/auth" className="px-2 text-[15px] font-medium text-bk-ink hover:text-bk">
-            Se connecter
+            {t.login}
           </Link>
           <Link to="/auth" className={btnPrimary}>
-            Essayer gratuitement
+            {t.freeTrial}
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -226,28 +222,31 @@ function Header() {
               Accueil
             </a>
             <a href="#fonctionnalites" className="rounded-xl px-4 py-3 hover:bg-bk-mint">
-              Fonctionnalités
+              {t.navFeatures}
             </a>
             <a href="#logiciel" className="rounded-xl px-4 py-3 hover:bg-bk-mint">
-              Le logiciel
+              {t.navSoftware}
             </a>
             <a href="#tarifs" className="rounded-xl px-4 py-3 hover:bg-bk-mint">
-              Tarifs
+              {t.navPricing}
             </a>
             <Link to="/contact" className="rounded-xl px-4 py-3 hover:bg-bk-mint">
-              FAQ
+              {t.navFaq}
             </Link>
             <Link to="/a-propos" className="rounded-xl px-4 py-3 hover:bg-bk-mint">
               Ressources
             </Link>
             <Link to="/auth" className="rounded-xl px-4 py-3 hover:bg-bk-mint">
-              Se connecter
+              {t.login}
             </Link>
             <Link to="/auth" className={`${btnPrimary} mt-2`}>
-              Essayer gratuitement
+              {t.freeTrial}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </nav>
+          <div className="mt-3 flex justify-center border-t border-bk/5 pt-3">
+            <LangSwitcher />
+          </div>
         </div>
       )}
     </header>
@@ -257,6 +256,7 @@ function Header() {
 /* ---------- sections ---------- */
 
 function Hero() {
+  const { t, lang } = useI18n();
   const points = [
     { icon: ShoppingCart, text: "Caisse (POS)\nintelligente" },
     { icon: Boxes, text: "Gestion de\nstock en temps réel" },
@@ -277,40 +277,49 @@ function Hero() {
         <div className="relative z-10">
           <span className="inline-flex items-center gap-2.5 rounded-2xl bg-bk-mint px-4 py-2 text-sm font-semibold text-bk-ink">
             <Rocket className="h-5 w-5 text-bk" />
-            Le standard n°1 de gestion de commerces au Burkina
+            {lang === "fr" ? "Le standard n°1 de gestion de commerces au Burkina" : t.badge}
             <BurkinaFlag className="h-4 w-6" />
           </span>
           <h1 className="mt-7 font-jakarta text-[2.6rem] font-extrabold leading-[1.02] tracking-tight text-bk-ink sm:text-6xl xl:text-[4.4rem]">
-            Votre boutique.
-            <br />
-            Votre stock. Vos ventes.
-            <br />
-            <span className="relative inline-block text-bk">
-              Tout sous contrôle.
-              <svg
-                viewBox="0 0 300 14"
-                preserveAspectRatio="none"
-                className="absolute -bottom-3 left-[18%] h-3 w-[62%]"
-                aria-hidden="true"
-              >
-                <path
-                  d="M2 10c60-9 160-10 296-3"
-                  fill="none"
-                  stroke="#0b7a42"
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </span>
+            {lang === "fr" ? (
+              <>
+                Votre boutique.
+                <br />
+                Votre stock. Vos ventes.
+                <br />
+                <span className="relative inline-block text-bk">
+                  Tout sous contrôle.
+                  <svg
+                    viewBox="0 0 300 14"
+                    preserveAspectRatio="none"
+                    className="absolute -bottom-3 left-[18%] h-3 w-[62%]"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M2 10c60-9 160-10 296-3"
+                      fill="none"
+                      stroke="#0b7a42"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+              </>
+            ) : (
+              <>
+                {t.heroTitlePre}
+                <span className="relative inline-block text-bk">{t.heroTitleHighlight}</span>
+              </>
+            )}
           </h1>
           <p className="mt-9 max-w-xl text-lg leading-relaxed text-bk-ink/80">
-            BoutikBF est un logiciel de gestion de commerce simple et puissant pour gérer votre
-            boutique, suivre vos ventes, contrôler votre stock et développer votre activité au
-            Burkina Faso.
+            {lang === "fr"
+              ? "BoutikBF est un logiciel de gestion de commerce simple et puissant pour gérer votre boutique, suivre vos ventes, contrôler votre stock et développer votre activité au Burkina Faso."
+              : t.heroDesc}
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link to="/auth" className={`${btnPrimary} px-8 py-4 text-base`}>
-              Essayer BoutikBF gratuitement
+              {lang === "fr" ? "Essayer BoutikBF gratuitement" : t.btnTryFree}
               <ArrowRight className="h-5 w-5" />
             </Link>
             <a
@@ -320,7 +329,7 @@ function Hero() {
               <span className="grid h-14 w-14 place-items-center rounded-full border border-bk/15 bg-white shadow-md transition group-hover:bg-bk-mint">
                 <Play className="h-5 w-5 fill-bk-ink" />
               </span>
-              Voir la démo
+              {lang === "fr" ? "Voir la démo" : t.btnTestSim}
             </a>
           </div>
           <ul className="mt-9 grid grid-cols-2 gap-y-5 sm:grid-cols-4 sm:gap-y-0">
@@ -414,6 +423,7 @@ function PhotoTiles() {
 }
 
 function Features() {
+  const { t, lang } = useI18n();
   const items = [
     {
       icon: ShoppingCart,
@@ -461,12 +471,19 @@ function Features() {
         <div className="text-center lg:text-left">
           <span className={pill}>Nos fonctionnalités</span>
           <h2 className={`${h2} mt-5`}>
-            Une solution complète pour
-            <br className="hidden sm:block" /> une gestion sans stress
+            {lang === "fr" ? (
+              <>
+                Une solution complète pour
+                <br className="hidden sm:block" /> une gestion sans stress
+              </>
+            ) : (
+              t.featuresTitle
+            )}
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-bk-ink/75 lg:mx-0">
-            Gérez votre commerce plus efficacement avec des outils conçus pour répondre aux besoins
-            des commerçants africains.
+            {lang === "fr"
+              ? "Gérez votre commerce plus efficacement avec des outils conçus pour répondre aux besoins des commerçants africains."
+              : t.featuresSub}
           </p>
         </div>
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -641,6 +658,7 @@ function Confiance() {
 }
 
 function Temoignages() {
+  const { t, lang } = useI18n();
   const scroller = useRef<HTMLDivElement>(null);
   const items = [
     {
@@ -668,9 +686,13 @@ function Temoignages() {
     <section id="avis" className="mx-auto max-w-[1400px] px-5 pb-20 sm:px-8">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h2 className={h2}>La confiance de nos commerçants</h2>
+          <h2 className={h2}>
+            {lang === "fr" ? "La confiance de nos commerçants" : t.testimonialTitle}
+          </h2>
           <p className="mt-2 text-bk-ink/75">
-            Découvrez ce que disent de BoutikBF nos utilisateurs.
+            {lang === "fr"
+              ? "Découvrez ce que disent de BoutikBF nos utilisateurs."
+              : t.testimonialSub}
           </p>
         </div>
         <div className="flex gap-2">
@@ -719,6 +741,7 @@ function Temoignages() {
 }
 
 function Tarifs() {
+  const { t, lang } = useI18n();
   const plans = [
     {
       name: "Starter",
@@ -757,9 +780,11 @@ function Tarifs() {
       <div className="mx-auto grid max-w-[1400px] items-center gap-10 lg:grid-cols-[0.7fr_1.3fr]">
         <div>
           <span className={pill}>Des offres adaptées</span>
-          <h2 className={`${h2} mt-5`}>Choisissez l'offre qui vous convient</h2>
+          <h2 className={`${h2} mt-5`}>
+            {lang === "fr" ? "Choisissez l'offre qui vous convient" : t.pricingTitle}
+          </h2>
           <p className="mt-4 max-w-sm text-bk-ink/75">
-            Commencez gratuitement et évoluez selon vos besoins.
+            {lang === "fr" ? "Commencez gratuitement et évoluez selon vos besoins." : t.pricingSub}
           </p>
         </div>
         <div className="grid items-end gap-5 pt-6 md:grid-cols-3">
@@ -902,6 +927,9 @@ function Footer() {
                 </li>
               ))}
             </ul>
+            <div className="scale-95">
+              <LangSwitcher compact />
+            </div>
             <Link
               to="/auth"
               className="hidden rounded-full bg-bk px-6 py-3 text-[15px] font-semibold text-white ring-1 ring-white/20 hover:bg-bk-dark sm:inline-flex sm:items-center sm:gap-2"
