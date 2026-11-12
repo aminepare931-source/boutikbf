@@ -1017,7 +1017,7 @@ function ReorderDialog({
   const sendWhatsApp = () => {
     if (selected.length === 0) return toast.error("Sélectionne au moins un produit");
     const lines = [
-      `📦 *Commande réappro — ${shopName}*`,
+      `*Commande réappro — ${shopName}*`,
       `Date : ${new Date().toLocaleDateString("fr-FR")}`,
       "",
       ...selected.map(
@@ -1043,7 +1043,7 @@ function ReorderDialog({
         </DialogHeader>
         {low.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            Aucun produit en stock faible — tout va bien 👌
+            Aucun produit en stock faible — tout va bien
           </p>
         ) : (
           <div className="space-y-3">

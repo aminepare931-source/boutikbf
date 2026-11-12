@@ -94,7 +94,7 @@ function SuppliersPage() {
       ? await supabase.from("suppliers").update(p).eq("id", editing.id)
       : await supabase.from("suppliers").insert(p);
     if (error) return toast.error(error.message);
-    toast.success(editing ? "Fournisseur modifié" : "Fournisseur ajouté ✅");
+    toast.success(editing ? "Fournisseur modifié" : "Fournisseur ajouté");
     setOpen(false);
     load();
   };
@@ -151,7 +151,7 @@ function SuppliersPage() {
           value={fmtMoney(totalDette, current?.currency)}
           icon={Wallet}
           tone={totalDette > 0 ? "warning" : "success"}
-          delta={totalDette === 0 ? "aucune dette 🎉" : undefined}
+          delta={totalDette === 0 ? "aucune dette" : undefined}
         />
         <StatCard
           label="Fournisseurs crédités"
@@ -162,7 +162,7 @@ function SuppliersPage() {
 
       {items.length > 0 && totalDette > 0 && (
         <div className="mb-4 rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm">
-          💰 Vous devez au total <b>{fmtMoney(totalDette, current?.currency)}</b> à vos
+          Vous devez au total <b>{fmtMoney(totalDette, current?.currency)}</b> à vos
           fournisseurs.
         </div>
       )}

@@ -959,7 +959,7 @@ function ProductsPage() {
                   </div>
                   {!Object.values(colMapping).includes("name") && (
                     <p className="mt-2 text-amber-600 font-medium">
-                      ⚠ Vous devez associer une colonne au "Nom du produit"
+                      Vous devez associer une colonne au "Nom du produit"
                     </p>
                   )}
                 </div>
@@ -1567,7 +1567,7 @@ function ProductsPage() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground md:col-span-3">
-              💡 La promo s'applique automatiquement à la caisse pendant la période (et un badge «
+              La promo s'applique automatiquement à la caisse pendant la période (et un badge «
               Promo » barré du prix normal s'affiche). La date de péremption alimente les alertes de
               la page Stock.
             </p>

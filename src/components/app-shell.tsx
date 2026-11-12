@@ -822,7 +822,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </div>
 
                 <h1 className="font-display text-2xl md:text-3xl font-black tracking-tight text-foreground">
-                  Période d&apos;essai de 15 jours expirée ⌛
+                  Période d&apos;essai de 15 jours expirée
                 </h1>
                 <p className="mt-3 text-sm text-muted-foreground max-w-xl leading-relaxed font-medium">
                   L&apos;accès aux fonctionnalités de{" "}
@@ -871,7 +871,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       </li>
                       <li className="flex items-start gap-2 text-xs font-semibold text-foreground/90">
                         <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                        <span>🤖 Assistant de prix & Rapports hebdo IA</span>
+                        <span>Assistant de prix & Rapports hebdo IA</span>
                       </li>
                     </ul>
 
@@ -921,7 +921,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       </li>
                       <li className="flex items-start gap-2 text-xs font-semibold text-foreground/90">
                         <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                        <span>🤖 IA approvisionnement, marges & Chatbot 24/7</span>
+                        <span>IA approvisionnement, marges & Chatbot 24/7</span>
                       </li>
                     </ul>
 
@@ -1005,7 +1005,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <AlertTriangle className="h-6 w-6 animate-pulse" />
             </div>
             <DialogTitle className="font-display text-xl font-bold tracking-tight text-foreground">
-              Paiements en ligne indisponibles 💳
+              Paiements en ligne indisponibles
             </DialogTitle>
             <DialogDescription className="text-sm font-medium text-muted-foreground/90 mt-1">
               Les paiements électroniques directs par carte et mobile money sont temporairement

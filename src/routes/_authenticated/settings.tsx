@@ -73,8 +73,8 @@ const PLANS = [
     aiFeatures: {
       title: "IA d'Assistance",
       items: [
-        "🤖 Assistant IA de suggestion de prix de vente locaux",
-        "🤖 Résumé hebdomadaire automatique par IA (ventes & marges)",
+        "Assistant IA de suggestion de prix de vente locaux",
+        "Résumé hebdomadaire automatique par IA (ventes & marges)",
       ],
     },
   },
@@ -106,9 +106,9 @@ const PLANS = [
     aiFeatures: {
       title: "IA d'Assistance",
       items: [
-        "🤖 IA prédictive d'approvisionnement pour anticiper les ruptures",
-        "🤖 Conseil d'ajustement de prix stratégique & marges par l'IA",
-        "🤖 Chatbot IA conseiller d'affaires disponible 24h/24 & 7j/7",
+        "IA prédictive d'approvisionnement pour anticiper les ruptures",
+        "Conseil d'ajustement de prix stratégique & marges par l'IA",
+        "Chatbot IA conseiller d'affaires disponible 24h/24 & 7j/7",
       ],
     },
   },
@@ -140,9 +140,9 @@ const PLANS = [
     aiFeatures: {
       title: "IA d'Assistance",
       items: [
-        "🤖 Modèle d'IA sur-mesure entraîné sur vos propres données",
-        "🤖 Rapports prévisionnels stratégiques annuels par l'IA",
-        "🤖 Détection automatisée des anomalies et fraudes de caisse",
+        "Modèle d'IA sur-mesure entraîné sur vos propres données",
+        "Rapports prévisionnels stratégiques annuels par l'IA",
+        "Détection automatisée des anomalies et fraudes de caisse",
       ],
     },
   },
@@ -212,7 +212,7 @@ function SettingsPage() {
     const { error } = await supabase.auth.updateUser({ password: newPwd });
     setPwdSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("Mot de passe changé ✅");
+    toast.success("Mot de passe changé");
     setNewPwd("");
     setConfirmPwd("");
   };
@@ -490,7 +490,7 @@ function SettingsPage() {
               <ScanLine className="mr-2 h-4 w-4" /> Tester ma douchette
             </Button>
             <p className="mt-2 text-xs text-muted-foreground">
-              💡 À faire une fois par mois : tes données t'appartiennent, même si tu quittes
+              À faire une fois par mois : tes données t'appartiennent, même si tu quittes
               BoutikBF.
             </p>
           </CardContent>
@@ -667,7 +667,7 @@ function SettingsPage() {
               <AlertTriangle className="h-6 w-6 animate-pulse" />
             </div>
             <DialogTitle className="font-display text-xl font-bold tracking-tight text-foreground">
-              Paiements en ligne indisponibles 💳
+              Paiements en ligne indisponibles
             </DialogTitle>
             <DialogDescription className="text-sm font-medium text-muted-foreground/90 mt-1">
               Les paiements électroniques directs par carte et mobile money sont temporairement

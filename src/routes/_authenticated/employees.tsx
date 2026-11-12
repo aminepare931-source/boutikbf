@@ -635,10 +635,10 @@ function EmployeesPage() {
                         {Object.entries(employeeStats.paymentMethods).map(([method, count]) => (
                           <Badge key={method} variant="secondary" className="text-sm px-3 py-1.5">
                             {method === "cash"
-                              ? "💵 Espèces"
+                              ? "Espèces"
                               : method === "mobile"
-                                ? "📱 Mobile Money"
-                                : "💳 Carte"}
+                                ? "Mobile Money"
+                                : "Carte"}
                             <span className="ml-2 font-bold">{count}</span>
                           </Badge>
                         ))}
@@ -684,7 +684,7 @@ function EmployeesPage() {
               {/* Avertissement */}
               <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
                 <p className="text-xs text-muted-foreground">
-                  ⚠️ Le PIN est stocké de façon chiffrée : il ne peut plus être relu après sa
+                  Le PIN est stocké de façon chiffrée : il ne peut plus être relu après sa
                   création. En cas d'oubli, générez-en un nouveau avec « Nouveau PIN ».
                 </p>
               </div>
@@ -698,7 +698,7 @@ function EmployeesPage() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display text-lg sm:text-xl">
-              {step === 4 ? "🎉 C'est fait !" : `Ajouter — étape ${step}/3`}
+              {step === 4 ? "C'est fait !" : `Ajouter — étape ${step}/3`}
             </DialogTitle>
           </DialogHeader>
 

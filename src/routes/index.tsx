@@ -40,10 +40,6 @@ import pilotezDevices from "@/assets/mock/pilotez-devices.jpg";
 import mobileMoney from "@/assets/mock/mobile-money.jpg";
 import ctaMan from "@/assets/mock/cta-man.jpg";
 import ctaPos from "@/assets/mock/cta-pos.jpg";
-import av1 from "@/assets/mock/av1.jpg";
-import av2 from "@/assets/mock/av2.jpg";
-import av3 from "@/assets/mock/av3.jpg";
-import av4 from "@/assets/mock/av4.jpg";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -632,8 +628,7 @@ function Confiance() {
             Depuis que j'utilise BoutikBF, ma gestion est beaucoup plus simple et mes ventes ont
             augmenté.
           </blockquote>
-          <figcaption className="mt-5 flex items-center gap-3">
-            <img src={av4} alt="" className="h-12 w-12 rounded-full object-cover" loading="lazy" />
+          <figcaption className="mt-5">
             <span className="text-sm">
               <strong className="block font-bold text-bk-ink">Fatimata Ouédraogo</strong>
               <span className="text-bk-ink/65">Propriétaire de boutique</span>
@@ -649,19 +644,16 @@ function Temoignages() {
   const scroller = useRef<HTMLDivElement>(null);
   const items = [
     {
-      img: av1,
       name: "Assita Traoré",
       role: "Propriétaire de boutique",
       text: "Depuis que j'utilise BoutikBF, ma gestion est beaucoup plus simple et mes ventes ont augmenté !",
     },
     {
-      img: av2,
       name: "Issa Ouédraogo",
       role: "Gérant de commerce",
       text: "Un logiciel très facile à utiliser. Le support est vraiment réactif. Merci BoutikBF !",
     },
     {
-      img: av3,
       name: "Fatou Sawadogo",
       role: "Commerçante",
       text: "Enfin une solution adaptée à nos réalités au Burkina. Je recommande vivement !",
@@ -709,17 +701,9 @@ function Temoignages() {
             key={t.name}
             className="w-[85%] shrink-0 snap-start rounded-3xl border border-bk-ink/5 bg-white p-6 shadow-[0_8px_28px_rgba(10,59,37,0.07)] sm:w-[46%] lg:w-[calc((100%-2.5rem)/3)]"
           >
-            <div className="flex gap-4">
-              <img
-                src={t.img}
-                alt=""
-                className="h-14 w-14 shrink-0 rounded-full object-cover"
-                loading="lazy"
-              />
-              <blockquote className="text-[15px] leading-relaxed text-bk-ink/85">
-                « {t.text} »
-              </blockquote>
-            </div>
+            <blockquote className="text-[15px] leading-relaxed text-bk-ink/85">
+              « {t.text} »
+            </blockquote>
             <figcaption className="mt-4 flex items-end justify-between gap-3">
               <span className="text-sm">
                 <strong className="block font-bold text-bk-ink">{t.name}</strong>
@@ -951,14 +935,6 @@ function Footer() {
               </Link>
             </li>
           </ul>
-          <p className="flex items-center gap-2">
-            Fait avec{" "}
-            <span className="text-red-500" aria-label="amour">
-              ♥
-            </span>{" "}
-            au Burkina Faso
-            <BurkinaFlag className="h-4 w-6" />
-          </p>
         </div>
       </div>
     </footer>

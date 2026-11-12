@@ -203,7 +203,7 @@ function ClientsPage() {
     if (error) return toast.error(error.message);
     toast.success(
       newBal === 0
-        ? `Créance de ${detail.name} entièrement réglée ✅`
+        ? `Créance de ${detail.name} entièrement réglée`
         : `Remboursement enregistré — reste ${fmtMoney(newBal, current.currency)}`,
     );
     setDetail({ ...detail, credit_balance: newBal });
@@ -271,7 +271,7 @@ function ClientsPage() {
         <StatCard
           label="Créances totales"
           value={fmtMoney(totalCredit, cur)}
-          delta={debtors.length ? `${debtors.length} client(s) débiteur(s)` : "tout est réglé 🎉"}
+          delta={debtors.length ? `${debtors.length} client(s) débiteur(s)` : "tout est réglé"}
           icon={Wallet}
           tone={totalCredit > 0 ? "warning" : "success"}
         />
@@ -417,7 +417,7 @@ function ClientsPage() {
                                 window.open(
                                   waLinkFor(
                                     c.phone,
-                                    `Bonjour ${c.name}, petit rappel de ${current?.name ?? "BoutikBF"} : il vous reste ${fmtMoney(c.credit_balance, cur)} à régler. Merci 🙏`,
+                                    `Bonjour ${c.name}, petit rappel de ${current?.name ?? "BoutikBF"} : il vous reste ${fmtMoney(c.credit_balance, cur)} à régler. Merci`,
                                   ),
                                   "_blank",
                                 )
@@ -500,7 +500,7 @@ function ClientsPage() {
                 onChange={(e) => setForm({ ...form, birthdate: e.target.value })}
               />
               <p className="text-xs text-muted-foreground">
-                🎂 L'assistant IA te rappellera les anniversaires proches pour envoyer un message.
+                L'assistant IA te rappellera les anniversaires proches pour envoyer un message.
               </p>
             </div>
           </div>
@@ -525,7 +525,7 @@ function ClientsPage() {
                 <DialogDescription>
                   {[detail.phone, detail.email, detail.address].filter(Boolean).join(" · ") ||
                     "Coordonnées non renseignées"}
-                  {detail.birthdate ? ` · 🎂 ${fmtDate(detail.birthdate)}` : ""}
+                  {detail.birthdate ? ` · ${fmtDate(detail.birthdate)}` : ""}
                   {" · client depuis le "}
                   {fmtDate(detail.created_at)}
                 </DialogDescription>
@@ -565,7 +565,7 @@ function ClientsPage() {
                         window.open(
                           waLinkFor(
                             detail.phone,
-                            `Bonjour ${detail.name}, rappel de ${current?.name ?? "BoutikBF"} : solde à régler ${fmtMoney(detail.credit_balance, cur)}. Merci 🙏`,
+                            `Bonjour ${detail.name}, rappel de ${current?.name ?? "BoutikBF"} : solde à régler ${fmtMoney(detail.credit_balance, cur)}. Merci`,
                           ),
                           "_blank",
                         )

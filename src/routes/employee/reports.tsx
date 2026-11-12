@@ -304,10 +304,10 @@ function EmployeeReports() {
                     <div className="text-2xl font-bold text-foreground">{pct}%</div>
                     <div className="text-xs text-muted-foreground mt-1">
                       {method === "cash"
-                        ? "💵 Espèces"
+                        ? "Espèces"
                         : method === "mobile"
-                          ? "📱 Mobile Money"
-                          : "💳 Carte"}
+                          ? "Mobile Money"
+                          : "Carte"}
                     </div>
                     <div className="text-xs text-muted-foreground">{count} transaction(s)</div>
                   </div>

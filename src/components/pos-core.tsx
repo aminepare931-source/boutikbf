@@ -128,7 +128,7 @@ function receiptWhatsAppText(
   change?: number,
 ): string {
   const lines = [
-    `🧾 *${shopName}*`,
+    `*${shopName}*`,
     `Ticket ${ref}`,
     "",
     ...items.map((i) => `${i.name} ×${i.qty} : ${fmtMoney(i.total, currency)}`),
@@ -137,7 +137,7 @@ function receiptWhatsAppText(
     paymentLine,
     ...(change && change > 0 ? [`Monnaie rendue : ${fmtMoney(change, currency)}`] : []),
     "",
-    "Merci de votre visite 🇧🇫",
+    "Merci de votre visite",
   ];
   return lines.join("\n");
 }
@@ -364,7 +364,7 @@ function PosCore({ mode }: { mode: PosMode }) {
   const add = (p: Product) => {
     if (
       isExpired(p) &&
-      !confirm(`⚠️ « ${p.name} » est périmé depuis le ${p.expiry_date}.\nVendre quand même ?`)
+      !confirm(`« ${p.name} » est périmé depuis le ${p.expiry_date}.\nVendre quand même ?`)
     )
       return;
     const priced = { ...p, sale_price: effectivePrice(p) };
@@ -545,7 +545,7 @@ function PosCore({ mode }: { mode: PosMode }) {
     setShift(null);
     setShiftCloseDlg(false);
     setShiftCounted("");
-    toast.success("Caisse clôturée 🎉");
+    toast.success("Caisse clôturée");
   };
 
   const toggleFav = async (p: Product) => {
@@ -901,11 +901,11 @@ function PosCore({ mode }: { mode: PosMode }) {
             return;
           }
           add(best);
-          toast.success(`🎤 Voix : ajouté « ${best.name} »`);
+          toast.success(`Voix : ajouté « ${best.name} »`);
           return;
         }
       }
-      toast.info(`🎤 « ${alts[0]} » — aucun produit reconnu`);
+      toast.info(`« ${alts[0]} » — aucun produit reconnu`);
     };
     rec.onend = () => setListening(false);
     rec.onerror = () => {

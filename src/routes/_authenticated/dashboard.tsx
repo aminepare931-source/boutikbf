@@ -215,14 +215,14 @@ function Dashboard() {
                   .filter((s) => s.payment_method === "cash")
                   .reduce((a, s) => a + Number(s.total), 0);
                 const msg = [
-                  `🏪 *${current.name} — Rapport du jour*`,
+                  `*${current.name} — Rapport du jour*`,
                   new Date().toLocaleString("fr-FR"),
                   "",
                   `Ventes : ${rows.length}`,
                   `CA du jour : ${fmtMoney(tot, cur)}`,
                   `Dont espèces : ${fmtMoney(cash, cur)}`,
                   "",
-                  `Bonne continuation 🇧🇫`,
+                  `Bonne continuation`,
                 ].join("\n");
                 window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
               }}

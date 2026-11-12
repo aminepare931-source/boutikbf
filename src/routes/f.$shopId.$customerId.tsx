@@ -4,7 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLogoUrl } from "@/lib/shop-store";
 import { fmtMoney, fmtNumber } from "@/lib/format";
-import { Loader2, Printer, Star } from "lucide-react";
+import { Loader2, Printer, Search, Star, Store } from "lucide-react";
 
 export const Route = createFileRoute("/f/$shopId/$customerId")({
   ssr: false,
@@ -49,7 +49,7 @@ function LoyaltyCardPage() {
     return (
       <div className="grid min-h-screen place-items-center bg-slate-950 p-6 text-center text-white">
         <div>
-          <div className="text-5xl">🔍</div>
+          <Search className="mx-auto h-12 w-12 text-white/50" aria-hidden="true" />
           <p className="mt-3 text-lg font-semibold">{error}</p>
           <p className="mt-1 text-sm text-white/50">Demande à la boutique de revérifier le lien.</p>
         </div>
@@ -74,7 +74,7 @@ function LoyaltyCardPage() {
             {logo ? (
               <img src={logo} alt="" className="mx-auto mb-2 h-14 w-auto" />
             ) : (
-              <div className="mb-2 text-4xl">🏪</div>
+              <Store className="mx-auto mb-2 h-10 w-10" aria-hidden="true" />
             )}
             <div className="text-lg font-black tracking-wide">{card.shop_name}</div>
             <div className="text-xs uppercase tracking-widest text-white/80">Carte fidélité</div>

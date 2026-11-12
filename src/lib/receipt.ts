@@ -99,8 +99,8 @@ export function buildReceiptHtml(d: ReceiptData): string {
 <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js" integrity="sha384-qovJwSBbRDPP5cEjCp8S0UP66wrvnjaa60XMOGzTNanrThcrGfXfnZkvgY8N1KT3" crossorigin="anonymous"><\/script>
 </head><body>
 <div class="toolbar noprint">
-  <button class="btn" onclick="window.print()">🖨️ Imprimer</button>
-  <button class="btn green" id="dlpdf">⬇️ Télécharger PDF</button>
+  <button class="btn" onclick="window.print()">Imprimer</button>
+  <button class="btn green" id="dlpdf">Télécharger PDF</button>
   <button class="btn alt" onclick="window.close()">Fermer</button>
 </div>
 <script>
@@ -133,7 +133,7 @@ export function buildReceiptHtml(d: ReceiptData): string {
         var filename = (document.title || 'document').replace(/[^a-z0-9\-_.]+/gi,'_') + '.pdf';
         pdf.save(filename);
       } catch (e) { alert('Erreur PDF: ' + (e && e.message ? e.message : e)); }
-      finally { btn.disabled = false; btn.textContent = '⬇️ Télécharger PDF'; }
+      finally { btn.disabled = false; btn.textContent = 'Télécharger PDF'; }
     });
   })();
 <\/script>
@@ -167,7 +167,7 @@ export function buildReceiptHtml(d: ReceiptData): string {
     ${d.sale.change ? `<tr><td>Monnaie rendue</td><td style="text-align:right">${fmtMoney(d.sale.change, cur)}</td></tr>` : ""}
   </table>
   <div class="barcode">${barcodeSvg(d.sale.reference)}</div>
-  <div class="thanks">Merci pour votre achat 🇧🇫<br>Généré par BoutikBF</div>
+  <div class="thanks">Merci pour votre achat<br>Généré par BoutikBF</div>
 </div>
 </body></html>`;
 }
@@ -231,7 +231,7 @@ export function openLabels(
   button{background:#ce1126;color:#fff;border:0;padding:8px 14px;border-radius:6px;cursor:pointer;font-weight:600}
   @media print{ .tb{display:none} }
 </style></head><body>
-<div class="tb"><button onclick="window.print()">🖨️ Imprimer les étiquettes</button></div>
+<div class="tb"><button onclick="window.print()">Imprimer les étiquettes</button></div>
 <div class="grid">${labels}</div>
 </body></html>`;
   const w = window.open("", "_blank");

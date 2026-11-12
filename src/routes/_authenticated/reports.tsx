@@ -426,7 +426,7 @@ function ReportsPage() {
             </div>
             {lowStock.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                Tout va bien, aucun produit en rupture 👌
+                Tout va bien, aucun produit en rupture
               </p>
             ) : (
               <ul className="max-h-56 space-y-1 overflow-auto text-sm">
@@ -461,7 +461,7 @@ function ReportsPage() {
       <TimeHeatmap sales={sales} currency={cur} />
 
       <p className="mt-6 text-xs text-muted-foreground">
-        💡 Astuce : tous les boutons « Télécharger » créent un fichier Excel que vous pouvez envoyer
+        Astuce : tous les boutons « Télécharger » créent un fichier Excel que vous pouvez envoyer
         à votre comptable ou ouvrir sur votre téléphone.
       </p>
     </div>
@@ -590,7 +590,7 @@ function ZReport({ currency }: { currency: string }) {
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>Rapport de caisse ${day}</title>
 <style>body{font-family:sans-serif;max-width:640px;margin:20px auto;color:#111}h1{font-size:18px}table{width:100%;border-collapse:collapse;margin:12px 0}td,th{padding:6px 4px;border-bottom:1px solid #ddd;text-align:left;font-size:14px}td.r,th.r{text-align:right}.tot{font-weight:700;border-top:2px solid #111}.noprint{margin-bottom:12px}@media print{.noprint{display:none}}</style>
 </head><body>
-<div class="noprint"><button onclick="window.print()" style="background:#ce1126;color:#fff;border:0;padding:8px 14px;border-radius:6px;font-weight:600;cursor:pointer">🖨️ Imprimer</button></div>
+<div class="noprint"><button onclick="window.print()" style="background:#ce1126;color:#fff;border:0;padding:8px 14px;border-radius:6px;font-weight:600;cursor:pointer">Imprimer</button></div>
 <h1>${current.name} — Rapport de caisse (Z)</h1>
 <p>Journée du <b>${day}</b> · ${rows.length} vente(s) · ${fmtNumber(rows.reduce((a, s) => a + Number(s.total), 0))} ${currency}</p>
 <table><tr><th>Mode</th><th class="r">Ventes</th><th class="r">Montant</th></tr>
@@ -734,7 +734,7 @@ ${[...byCashier.entries()]
                     {fmtMoney(diff, currency)}
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    {diff === 0 ? "Caisse juste ✅" : "À vérifier avant fermeture"}
+                    {diff === 0 ? "Caisse juste" : "À vérifier avant fermeture"}
                   </div>
                 </div>
               )}
@@ -819,7 +819,7 @@ function AiAdvisor({
       kind: "hebo",
       title: `Cette semaine : ${fmtMoney(tw, currency)} (${thisWeek.length} ventes)`,
       detail:
-        (lw > 0 || tw > 0 ? `${delta >= 0 ? "📈 +" : "📉 "}${delta} % vs semaine dernière. ` : "") +
+        (lw > 0 || tw > 0 ? `${delta >= 0 ? "+" : ""}${delta} % vs semaine dernière. ` : "") +
         (top.length
           ? "Top : " +
             top
@@ -947,12 +947,12 @@ function AiAdvisor({
       list.push({
         key: `bday-${c.id}`,
         kind: "hebo",
-        title: `🎂 Anniversaire : ${c.name} ${dd === 0 ? "c'est aujourd'hui !" : `dans ${dd} j`}`,
+        title: `Anniversaire : ${c.name} ${dd === 0 ? "c'est aujourd'hui !" : `dans ${dd} j`}`,
         detail: `Souhaite-lui un bon anniversaire par WhatsApp — ça fidélise plus qu'une promo.`,
         action: {
           label: "Message d'anniversaire",
           run: async () => {
-            const msg = `🎂 Bonjour ${c.name}, joyeux anniversaire de la part de ${"ta boutique"} ! Un petit geste de fidélité t'attend 🎉`;
+            const msg = `Bonjour ${c.name}, joyeux anniversaire de la part de ${"ta boutique"} ! Un petit geste de fidélité t'attend`;
             const digits = (c.phone ?? "").replace(/\D/g, "");
             const full = digits.length === 8 ? `226${digits}` : digits;
             window.open(
@@ -1119,7 +1119,7 @@ function TimeHeatmap({ sales, currency }: { sales: Sale[]; currency: string }) {
               ))}
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
-              💡 Pic à <b>{peak} h</b>
+              Pic à <b>{peak} h</b>
               {quietIdx >= 0 && (
                 <>
                   {" "}

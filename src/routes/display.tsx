@@ -1,3 +1,4 @@
+import { ShoppingCart } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
@@ -70,7 +71,7 @@ function DisplayPage() {
       <main className="flex flex-1 flex-col p-6">
         {!data || data.lines.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-            <div className="text-7xl">🛒</div>
+            <ShoppingCart className="mx-auto h-20 w-20 text-emerald-400" aria-hidden="true" />
             <p className="text-2xl font-semibold text-white/70">Bienvenue !</p>
             <p className="text-sm text-white/40">
               Les articles de la caisse en cours s'afficheront ici automatiquement.
@@ -112,7 +113,7 @@ function DisplayPage() {
               ) : null}
               {data.message ? (
                 <div className="mt-4 text-center text-2xl font-bold text-emerald-300">
-                  {data.message} 🇧🇫
+                  {data.message}
                 </div>
               ) : null}
             </div>

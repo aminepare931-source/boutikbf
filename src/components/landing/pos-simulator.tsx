@@ -3,13 +3,19 @@ import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   Check,
+  Hammer,
   Loader2,
   Minus,
   Plus,
   RotateCcw,
   ScanBarcode,
   Search,
+  SprayCan,
+  Sparkles,
+  CupSoda,
   Trash2,
+  Wheat,
+  type LucideIcon,
 } from "lucide-react";
 
 /* ---------- données de démonstration ---------- */
@@ -23,7 +29,6 @@ interface Product {
   price: number;
   cat: Cat;
   stock: number;
-  emoji: string;
 }
 
 const CATS: ("Tout" | Cat)[] = [
@@ -43,7 +48,6 @@ const PRODUCTS: Product[] = [
     price: 3500,
     cat: "Alimentation",
     stock: 24,
-    emoji: "🍚",
   },
   {
     id: "huile",
@@ -52,7 +56,6 @@ const PRODUCTS: Product[] = [
     price: 1200,
     cat: "Alimentation",
     stock: 40,
-    emoji: "🛢️",
   },
   {
     id: "sucre",
@@ -61,7 +64,6 @@ const PRODUCTS: Product[] = [
     price: 850,
     cat: "Alimentation",
     stock: 6,
-    emoji: "🍬",
   },
   {
     id: "pates",
@@ -70,7 +72,6 @@ const PRODUCTS: Product[] = [
     price: 500,
     cat: "Alimentation",
     stock: 35,
-    emoji: "🍝",
   },
   {
     id: "lait",
@@ -79,7 +80,6 @@ const PRODUCTS: Product[] = [
     price: 2800,
     cat: "Alimentation",
     stock: 12,
-    emoji: "🥛",
   },
   {
     id: "tomate",
@@ -88,7 +88,6 @@ const PRODUCTS: Product[] = [
     price: 600,
     cat: "Alimentation",
     stock: 3,
-    emoji: "🍅",
   },
   {
     id: "eau",
@@ -97,7 +96,6 @@ const PRODUCTS: Product[] = [
     price: 500,
     cat: "Boissons",
     stock: 60,
-    emoji: "💧",
   },
   {
     id: "bissap",
@@ -106,7 +104,6 @@ const PRODUCTS: Product[] = [
     price: 400,
     cat: "Boissons",
     stock: 18,
-    emoji: "🍹",
   },
   {
     id: "soda",
@@ -115,7 +112,6 @@ const PRODUCTS: Product[] = [
     price: 400,
     cat: "Boissons",
     stock: 48,
-    emoji: "🥤",
   },
   {
     id: "ciment",
@@ -124,7 +120,6 @@ const PRODUCTS: Product[] = [
     price: 5500,
     cat: "Quincaillerie",
     stock: 30,
-    emoji: "🧱",
   },
   {
     id: "fer",
@@ -133,7 +128,6 @@ const PRODUCTS: Product[] = [
     price: 3200,
     cat: "Quincaillerie",
     stock: 22,
-    emoji: "🔩",
   },
   {
     id: "clous",
@@ -142,7 +136,6 @@ const PRODUCTS: Product[] = [
     price: 1000,
     cat: "Quincaillerie",
     stock: 4,
-    emoji: "🔨",
   },
   {
     id: "savon",
@@ -151,7 +144,6 @@ const PRODUCTS: Product[] = [
     price: 1000,
     cat: "Entretien",
     stock: 26,
-    emoji: "🧼",
   },
   {
     id: "javel",
@@ -160,7 +152,6 @@ const PRODUCTS: Product[] = [
     price: 600,
     cat: "Entretien",
     stock: 15,
-    emoji: "🧴",
   },
   {
     id: "lessive",
@@ -169,7 +160,6 @@ const PRODUCTS: Product[] = [
     price: 1500,
     cat: "Entretien",
     stock: 9,
-    emoji: "🫧",
   },
   {
     id: "dents",
@@ -178,7 +168,6 @@ const PRODUCTS: Product[] = [
     price: 800,
     cat: "Hygiène",
     stock: 20,
-    emoji: "🪥",
   },
   {
     id: "papier",
@@ -187,9 +176,21 @@ const PRODUCTS: Product[] = [
     price: 1000,
     cat: "Hygiène",
     stock: 14,
-    emoji: "🧻",
   },
 ];
+
+const CAT_ICONS: Record<Cat, LucideIcon> = {
+  Alimentation: Wheat,
+  Boissons: CupSoda,
+  Quincaillerie: Hammer,
+  Entretien: SprayCan,
+  Hygiène: Sparkles,
+};
+
+function CategoryIcon({ cat, className = "h-6 w-6" }: { cat: Cat; className?: string }) {
+  const Icon = CAT_ICONS[cat];
+  return <Icon className={className} />;
+}
 
 const CUSTOMERS = [
   { id: "passage", name: "Client de passage" },
@@ -517,10 +518,10 @@ export function PosSimulator() {
                         }`}
                       >
                         <span
-                          className="grid h-12 w-12 place-items-center rounded-xl bg-bk-mint text-2xl"
+                          className="grid h-12 w-12 place-items-center rounded-xl bg-bk-mint text-bk"
                           aria-hidden="true"
                         >
-                          {p.emoji}
+                          <CategoryIcon cat={p.cat} />
                         </span>
                         <span className="mt-2 text-sm font-bold leading-tight text-bk-ink">
                           {p.name}
@@ -618,10 +619,10 @@ export function PosSimulator() {
                           className="flex items-center gap-3 rounded-2xl bg-bk-mint/40 p-2.5"
                         >
                           <span
-                            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-xl"
+                            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-bk"
                             aria-hidden="true"
                           >
-                            {l.p.emoji}
+                            <CategoryIcon cat={l.p.cat} className="h-5 w-5" />
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-sm font-bold text-bk-ink">

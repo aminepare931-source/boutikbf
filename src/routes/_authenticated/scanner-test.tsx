@@ -164,7 +164,7 @@ function ScannerTestPage() {
             </div>
           )}
           <p className="mt-4 text-xs text-muted-foreground">
-            💡 Astuce : si la détection auto ne marche pas mais que le champ oui, ta douchette est
+            Astuce : si la détection auto ne marche pas mais que le champ oui, ta douchette est
             en mode « clavier lent » — dans la caisse, garde simplement le champ recherche actif (il
             est sélectionné automatiquement à l'ouverture).
           </p>

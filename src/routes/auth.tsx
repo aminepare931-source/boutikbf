@@ -163,7 +163,7 @@ function AuthPage() {
     });
     setLoading(false);
     if (error) return toast.error(error.message);
-    toast.success("Compte créé avec succès ! Bienvenue sur BoutikBF 🎉");
+    toast.success("Compte créé avec succès ! Bienvenue sur BoutikBF");
     navigate({ to: "/dashboard" });
   };
 
@@ -355,7 +355,7 @@ function AuthPage() {
                 className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-xs font-semibold backdrop-blur-md shadow-inner"
               >
                 <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                🇧🇫 Fait au Burkina Faso
+                Fait au Burkina Faso
               </motion.div>
               <motion.h2
                 initial={{ opacity: 0, y: 20 }}
@@ -493,7 +493,7 @@ function AuthPage() {
 
                 {isIframe && (
                   <p className="text-center text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20 leading-relaxed shadow-sm">
-                    ⚠️ <strong>Note pour l'aperçu AI Studio :</strong> Google bloque les connexions
+                    <strong>Note pour l'aperçu AI Studio :</strong> Google bloque les connexions
                     dans les fenêtres intégrées (iframes). Si le bouton ci-dessus ne répond pas ou
                     affiche une erreur, veuillez{" "}
                     <a
