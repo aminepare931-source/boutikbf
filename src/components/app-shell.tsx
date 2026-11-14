@@ -1,3 +1,5 @@
+import { setExportsAllowed } from "@/lib/export-csv";
+import { can, fmtPrice, planLimitMessage, PRICES } from "@/lib/plans";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import {
@@ -123,6 +125,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     : 15;
   const isExpired = isTrial && !!trialEndsAt && trialEndsAt.getTime() <= Date.now();
   const isSuspended = !!current?.is_suspended;
+  const [billing, setBilling] = useState<"month" | "year">("month");
+  // Les exports analytiques (CSV) sont réservés au Pro ; la sauvegarde reste libre.
+  useEffect(() => {
+    setExportsAllowed(can(current, "exports"));
+  }, [current]);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedPlanDetails, setSelectedPlanDetails] = useState<{
@@ -133,11 +140,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const handlePayPlan = (planId: string) => {
     if (!current) return;
+    const per = billing === "year" ? "par an (2 mois offerts)" : "par mois";
     let name = "Formule Essentiel";
-    let price = "5 000 F CFA";
+    let price = `${fmtPrice(PRICES.essentiel[billing])} CFA ${per}`;
     if (planId === "pro") {
       name = "Formule Pro";
-      price = "10 000 F CFA";
+      price = `${fmtPrice(PRICES.pro[billing])} CFA ${per}`;
     } else if (planId === "sur-mesure") {
       name = "Formule Sur Mesure";
       price = "Tarif sur devis";
@@ -201,7 +209,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       .single();
     if (error) {
       setCreating(false);
-      toast.error(error.message);
+      toast.error(planLimitMessage(error) ?? error.message);
       return;
     }
     // Also add owner as admin member
@@ -832,7 +840,30 @@ export function AppShell({ children }: { children: ReactNode }) {
                   restaurées instantanément.
                 </p>
 
-                <div className="mt-10 grid gap-6 md:grid-cols-2 w-full max-w-3xl">
+                <div
+                  className="mt-8 inline-flex rounded-full border border-border bg-card p-1 text-xs font-bold"
+                  role="group"
+                  aria-label="Période de facturation"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setBilling("month")}
+                    aria-pressed={billing === "month"}
+                    className={`rounded-full px-4 py-2 transition ${billing === "month" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                  >
+                    Mensuel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBilling("year")}
+                    aria-pressed={billing === "year"}
+                    className={`rounded-full px-4 py-2 transition ${billing === "year" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                  >
+                    Annuel : 2 mois offerts
+                  </button>
+                </div>
+
+                <div className="mt-6 grid gap-6 md:grid-cols-2 w-full max-w-3xl">
                   {/* Essentiel Card */}
                   <div className="relative overflow-hidden flex flex-col rounded-2xl border border-border bg-card p-6 text-left hover:border-emerald-500/30 hover:shadow-lg transition-all duration-300">
                     <div className="flex justify-between items-start">
@@ -851,27 +882,29 @@ export function AppShell({ children }: { children: ReactNode }) {
 
                     <div className="mt-4 flex items-baseline gap-1 border-b border-border pb-4">
                       <span className="font-display text-2xl md:text-3xl font-black text-foreground">
-                        5 000 F CFA
+                        {fmtPrice(PRICES.essentiel[billing])} CFA
                       </span>
-                      <span className="text-xs text-muted-foreground">/ mois</span>
+                      <span className="text-xs text-muted-foreground">
+                        / {billing === "year" ? "an" : "mois"}
+                      </span>
                     </div>
 
                     <ul className="mt-5 space-y-3 flex-1">
                       <li className="flex items-start gap-2 text-xs font-semibold text-foreground/90">
                         <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                        <span>Caisse tactile POS intuitive & fluide</span>
+                        <span>Caisse tactile, Mobile Money et reçus</span>
                       </li>
                       <li className="flex items-start gap-2 text-xs font-semibold text-foreground/90">
                         <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                        <span>Catalogue et stock jusqu&apos;à 150 articles</span>
+                        <span>Catalogue et stock jusqu&apos;à 500 articles</span>
                       </li>
                       <li className="flex items-start gap-2 text-xs font-semibold text-foreground/90">
                         <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                        <span>Alertes automatiques de stock bas</span>
+                        <span>Alertes de stock bas et rapport du jour WhatsApp</span>
                       </li>
                       <li className="flex items-start gap-2 text-xs font-semibold text-foreground/90">
                         <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                        <span>Assistant de prix & Rapports hebdo IA</span>
+                        <span>1 boutique, 2 employés, historique de 90 jours</span>
                       </li>
                     </ul>
 
@@ -879,7 +912,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       onClick={() => handlePayPlan("essentiel")}
                       className="mt-6 w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs rounded-xl shadow-md transition-all active:scale-[0.98] cursor-pointer"
                     >
-                      Activer la Formule Essentiel (5 000 F)
+                      Activer la Formule Essentiel ({fmtPrice(PRICES.essentiel[billing])})
                     </Button>
                   </div>
 
@@ -899,21 +932,25 @@ export function AppShell({ children }: { children: ReactNode }) {
 
                     <div className="mt-4 flex items-baseline gap-1 border-b border-border pb-4">
                       <span className="font-display text-2xl md:text-3xl font-black bg-gradient-to-r from-emerald-600 to-amber-500 bg-clip-text text-transparent">
-                        10 000 F CFA
+                        {fmtPrice(PRICES.pro[billing])} CFA
                       </span>
-                      <span className="text-xs text-muted-foreground">/ mois</span>
+                      <span className="text-xs text-muted-foreground">
+                        / {billing === "year" ? "an" : "mois"}
+                      </span>
                     </div>
 
                     <ul className="mt-5 space-y-3 flex-1">
                       <li className="flex items-start gap-2 text-xs font-semibold text-foreground/90">
                         <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
                         <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                          Articles & ventes 100% illimités
+                          Articles illimités, historique et exports complets
                         </span>
                       </li>
                       <li className="flex items-start gap-2 text-xs font-semibold text-foreground/90">
                         <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                        <span>Multi-boutiques & dépôts (jusqu&apos;à 3)</span>
+                        <span>
+                          3 boutiques (la suivante : {fmtPrice(PRICES.extraShop)} par mois)
+                        </span>
                       </li>
                       <li className="flex items-start gap-2 text-xs font-semibold text-foreground/90">
                         <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
@@ -921,7 +958,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       </li>
                       <li className="flex items-start gap-2 text-xs font-semibold text-foreground/90">
                         <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                        <span>IA approvisionnement, marges & Chatbot 24/7</span>
+                        <span>Contrôle de caisse, bénéfice net et prévisions de stock</span>
                       </li>
                     </ul>
 
@@ -929,7 +966,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       onClick={() => handlePayPlan("pro")}
                       className="mt-6 w-full h-11 bg-gradient-to-r from-emerald-600 to-amber-500 hover:from-emerald-700 hover:to-amber-600 text-white font-black text-xs rounded-xl shadow-md transition-all active:scale-[0.98] cursor-pointer"
                     >
-                      Activer la Formule Pro (10 000 F)
+                      Activer la Formule Pro ({fmtPrice(PRICES.pro[billing])})
                     </Button>
                   </div>
                 </div>

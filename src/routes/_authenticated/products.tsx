@@ -1,3 +1,4 @@
+import { planLimitMessage } from "@/lib/plans";
 import { createFileRoute, useNavigate, useSearch, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -371,7 +372,7 @@ function ProductsPage() {
     const { error } = editing
       ? await supabase.from("products").update(payload).eq("id", editing.id)
       : await supabase.from("products").insert(payload);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(planLimitMessage(error) ?? error.message);
     toast.success(editing ? "Produit mis à jour" : "Produit ajouté");
     setOpen(false);
     load();
@@ -398,7 +399,7 @@ function ProductsPage() {
   const remove = async (id: string) => {
     if (!confirm("Supprimer ce produit ?")) return;
     const { error } = await supabase.from("products").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(planLimitMessage(error) ?? error.message);
     toast.success("Supprimé");
     load();
   };
@@ -663,7 +664,7 @@ function ProductsPage() {
         const { error, data } = await supabase.from("products").insert(chunk).select("id");
         if (error) {
           console.error("Erreur import:", error);
-          toast.error(`Erreur ligne ${i + 1}: ${error.message}`);
+          toast.error(planLimitMessage(error) ?? `Erreur ligne ${i + 1}: ${error.message}`);
           break;
         }
         inserted += data?.length ?? 0;
@@ -701,7 +702,7 @@ function ProductsPage() {
     }));
     const { error } = await supabase.from("products").insert(payload);
     setSheetSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(planLimitMessage(error) ?? error.message);
     toast.success(`${valid.length} produits enregistrés`);
     setSheetOpen(false);
     load();

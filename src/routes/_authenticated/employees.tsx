@@ -1,3 +1,4 @@
+import { planLimitMessage, usePlan } from "@/lib/plans";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,16 +79,9 @@ const ROLES: { value: Role; label: string; desc: string }[] = [
   },
 ];
 
-// Limites selon le plan
-const PLAN_LIMITS: Record<string, number> = {
-  essentiel: 3,
-  essentiel_paid: 5,
-  pro: 10,
-  "sur-mesure": 999,
-};
-
 function EmployeesPage() {
   const { current } = useShops();
+  const { limits: tierLimits } = usePlan();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -174,7 +168,7 @@ function EmployeesPage() {
       p_role: d.role,
     });
     if (error || !data?.pin) {
-      toast.error(error?.message ?? "Erreur lors de l'ajout");
+      toast.error(planLimitMessage(error) ?? error?.message ?? "Erreur lors de l'ajout");
       return null;
     }
     toast.success(`${d.name} a été ajouté(e) à l'équipe`);
@@ -218,7 +212,7 @@ function EmployeesPage() {
       .eq("id", emp.id);
 
     if (error) {
-      toast.error("Erreur lors de la mise à jour");
+      toast.error(planLimitMessage(error) ?? "Erreur lors de la mise à jour");
     } else {
       toast.success(emp.is_active ? "Employé désactivé" : "Employé activé");
       loadEmployees();
@@ -344,7 +338,8 @@ function EmployeesPage() {
     });
   };
 
-  const planLimit = PLAN_LIMITS[current?.plan ?? "essentiel"] ?? 3;
+  // Limite selon la formule (Essentiel : 2, Pro : 10, Sur mesure : illimité), aussi appliquée en base
+  const planLimit = tierLimits.employees ?? Infinity;
   const activeCount = employees.filter((e) => e.is_active).length;
   const atLimit = activeCount >= planLimit;
 
@@ -360,7 +355,7 @@ function EmployeesPage() {
               className="text-xs"
               title="Places d'employés incluses dans votre formule"
             >
-              {activeCount} / {planLimit} places
+              {activeCount} / {Number.isFinite(planLimit) ? planLimit : "illimité"} places
             </Badge>
             <Button
               onClick={openWizard}
@@ -376,8 +371,9 @@ function EmployeesPage() {
 
       {atLimit && (
         <div className="mb-4 rounded-xl border border-warning/30 bg-warning/5 p-3 text-sm">
-          Tu as atteint la limite d'employés de ta formule ({planLimit}). Contacte BoutikBF pour
-          passer à une formule supérieure et débloquer plus de places.
+          Tu as atteint la limite d'employés de ta formule ({planLimit}). Passe à la formule Pro (10
+          employés) ou contacte BoutikBF pour passer à une formule supérieure et débloquer plus de
+          places.
         </div>
       )}
 
@@ -684,8 +680,8 @@ function EmployeesPage() {
               {/* Avertissement */}
               <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
                 <p className="text-xs text-muted-foreground">
-                  Le PIN est stocké de façon chiffrée : il ne peut plus être relu après sa
-                  création. En cas d'oubli, générez-en un nouveau avec « Nouveau PIN ».
+                  Le PIN est stocké de façon chiffrée : il ne peut plus être relu après sa création.
+                  En cas d'oubli, générez-en un nouveau avec « Nouveau PIN ».
                 </p>
               </div>
             </div>

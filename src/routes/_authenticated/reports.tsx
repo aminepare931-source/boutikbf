@@ -1,3 +1,4 @@
+import { usePlan } from "@/lib/plans";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,6 +87,8 @@ type Product = {
 
 function ReportsPage() {
   const { current } = useShops();
+  const { can: canUsePlan } = usePlan();
+  const longHistory = canUsePlan("long_history");
   const [range, setRange] = useState<Range>("30");
   const [refreshKey, setRefreshKey] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -229,7 +232,9 @@ function ReportsPage() {
                 <SelectItem value="7">7 derniers jours</SelectItem>
                 <SelectItem value="30">30 derniers jours</SelectItem>
                 <SelectItem value="90">3 derniers mois</SelectItem>
-                <SelectItem value="365">Cette année</SelectItem>
+                <SelectItem value="365" disabled={!longHistory}>
+                  Cette année{longHistory ? "" : " (Pro)"}
+                </SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" onClick={exportSalesCsv}>
@@ -461,8 +466,8 @@ function ReportsPage() {
       <TimeHeatmap sales={sales} currency={cur} />
 
       <p className="mt-6 text-xs text-muted-foreground">
-        Astuce : tous les boutons « Télécharger » créent un fichier Excel que vous pouvez envoyer
-        à votre comptable ou ouvrir sur votre téléphone.
+        Astuce : tous les boutons « Télécharger » créent un fichier Excel que vous pouvez envoyer à
+        votre comptable ou ouvrir sur votre téléphone.
       </p>
     </div>
   );
@@ -776,6 +781,8 @@ function AiAdvisor({
   onChanged: () => void;
 }) {
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const { can: canUse } = usePlan();
+  const canForecast = canUse("forecast");
   const [custs, setCusts] = useState<
     { id: string; name: string; phone: string | null; birthdate: string | null }[]
   >([]);
@@ -906,7 +913,7 @@ function AiAdvisor({
     const sum = (a: number[]) => a.reduce((x, y) => x + y, 0);
     const s7 = sum(last7);
     const sp7 = sum(prev7);
-    if (s7 > 0 || sp7 > 0) {
+    if (canForecast && (s7 > 0 || sp7 > 0)) {
       const trendPct = sp7 === 0 ? 0 : Math.round(((s7 - sp7) / sp7) * 100);
       const forecast =
         Math.round(
@@ -1002,7 +1009,7 @@ function AiAdvisor({
       });
 
     return list;
-  }, [products, items, sales, shopId, currency, onChanged, custs]);
+  }, [products, items, sales, shopId, currency, onChanged, custs, canForecast]);
 
   const apply = async (a: Advice) => {
     if (!a.action) return;

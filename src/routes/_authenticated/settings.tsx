@@ -52,6 +52,7 @@ const PLANS = [
     name: "Formule Essentiel",
     price: "5 000 F CFA",
     period: "/ mois",
+    yearly: "ou 50 000 F CFA par an (2 mois offerts)",
     description: "Parfait pour structurer et automatiser votre commerce de quartier.",
     badge: "Populaire",
     category1: {
@@ -60,14 +61,15 @@ const PLANS = [
         "Caisse tactile POS intuitive & fluide",
         "Encaissement Express (Espèces, Mobile Money)",
         "Reçus et factures numériques instantanés",
+        "1 boutique et 2 employés de caisse",
       ],
     },
     category2: {
       title: "Stocks & Inventaire",
       items: [
-        "Catalogue jusqu'à 150 articles",
+        "Catalogue jusqu'à 500 articles",
         "Alertes de stock bas en temps réel",
-        "Saisie simplifiée des dépenses",
+        "Historique et rapports sur 90 jours",
       ],
     },
     aiFeatures: {
@@ -83,12 +85,13 @@ const PLANS = [
     name: "Formule Pro",
     price: "10 000 F CFA",
     period: "/ mois",
+    yearly: "ou 100 000 F CFA par an (2 mois offerts)",
     description: "La solution de gestion complète pour les boutiques en forte croissance.",
     badge: "Recommandé",
     category1: {
       title: "Ventes & Opérations Avancées",
       items: [
-        "Nombre d'articles et ventes 100% illimités",
+        "Articles illimités, historique et rapports sans limite",
         "Caisse tactile POS avancée multi-terminaux",
         "Factures professionnelles avec votre logo",
         "Gestion des clients & relances d'impayés",
@@ -97,16 +100,18 @@ const PLANS = [
     category2: {
       title: "Gestion d'Équipe & Analyses",
       items: [
-        "Suivi de stock en temps réel & Multi-boutiques (jusqu'à 3)",
+        "Multi-boutiques : jusqu'à 3 (la suivante : 5 000 F CFA par mois)",
         "Rapports de vente graphiques (Mes Chiffres)",
         "Gestion d'équipe (jusqu'à 10 employés/caissiers)",
         "Exports comptables complets au format CSV",
+        "Contrôle de caisse, dépenses et bénéfice net",
       ],
     },
     aiFeatures: {
       title: "IA d'Assistance",
       items: [
         "IA prédictive d'approvisionnement pour anticiper les ruptures",
+        "Prévisions de ventes à 7 jours",
         "Conseil d'ajustement de prix stratégique & marges par l'IA",
         "Chatbot IA conseiller d'affaires disponible 24h/24 & 7j/7",
       ],
@@ -117,7 +122,8 @@ const PLANS = [
     name: "Formule Sur Mesure",
     price: "Sur Mesure",
     period: "",
-    description: "Pour les supermarchés, grossistes, franchises et réseaux de distribution.",
+    description:
+      "Pour les supermarchés, grossistes, franchises et réseaux de distribution (à partir de 4 boutiques).",
     badge: "Entreprise",
     category1: {
       title: "Multi-sites & Logistique",
@@ -229,16 +235,41 @@ function SettingsPage() {
         supabase.from("stock_movements").select("*").eq("shop_id", current.id).limit(100000),
       ]);
       const d = new Date().toISOString().slice(0, 10);
-      downloadCsv(`boutique-produits-${d}.csv`, (products.data ?? []) as Record<string, unknown>[]);
-      downloadCsv(`boutique-ventes-${d}.csv`, (sales.data ?? []) as Record<string, unknown>[]);
-      downloadCsv(`boutique-clients-${d}.csv`, (customers.data ?? []) as Record<string, unknown>[]);
+      downloadCsv(
+        `boutique-produits-${d}.csv`,
+        (products.data ?? []) as Record<string, unknown>[],
+        undefined,
+        {
+          always: true,
+        },
+      );
+      downloadCsv(
+        `boutique-ventes-${d}.csv`,
+        (sales.data ?? []) as Record<string, unknown>[],
+        undefined,
+        {
+          always: true,
+        },
+      );
+      downloadCsv(
+        `boutique-clients-${d}.csv`,
+        (customers.data ?? []) as Record<string, unknown>[],
+        undefined,
+        {
+          always: true,
+        },
+      );
       downloadCsv(
         `boutique-fournisseurs-${d}.csv`,
         (suppliers.data ?? []) as Record<string, unknown>[],
+        undefined,
+        { always: true },
       );
       downloadCsv(
         `boutique-mouvements-stock-${d}.csv`,
         (movs.data ?? []) as Record<string, unknown>[],
+        undefined,
+        { always: true },
       );
       toast.success("Sauvegarde téléchargée (5 fichiers CSV)");
     } catch (e) {
@@ -490,8 +521,7 @@ function SettingsPage() {
               <ScanLine className="mr-2 h-4 w-4" /> Tester ma douchette
             </Button>
             <p className="mt-2 text-xs text-muted-foreground">
-              À faire une fois par mois : tes données t'appartiennent, même si tu quittes
-              BoutikBF.
+              À faire une fois par mois : tes données t'appartiennent, même si tu quittes BoutikBF.
             </p>
           </CardContent>
         </Card>
@@ -571,6 +601,11 @@ function SettingsPage() {
                       </span>
                     )}
                   </div>
+                  {"yearly" in plan && plan.yearly && (
+                    <p className="mt-1 text-xs font-semibold text-muted-foreground">
+                      {plan.yearly}
+                    </p>
+                  )}
                 </CardHeader>
 
                 <CardContent className="flex-1 flex flex-col space-y-5">

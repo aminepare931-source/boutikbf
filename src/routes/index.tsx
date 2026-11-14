@@ -1,3 +1,4 @@
+import { fmtPrice, PRICES } from "@/lib/plan-catalog";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
@@ -742,32 +743,47 @@ function Temoignages() {
 
 function Tarifs() {
   const { t, lang } = useI18n();
+  const [yearly, setYearly] = useState(false);
   const plans = [
     {
-      name: "Starter",
-      desc: "Parfait pour les petites boutiques",
-      price: "0 FCFA",
-      unit: "/ mois",
-      features: ["Caisse simple", "Gestion de stock", "Rapports de base"],
-      cta: "Commencer gratuitement",
+      name: "Essentiel",
+      desc: "Pour une boutique qui démarre",
+      prices: PRICES.essentiel,
+      features: [
+        "Caisse tactile, Mobile Money et reçus",
+        "Jusqu'à 500 articles",
+        "1 boutique et 2 employés de caisse",
+        "Alertes de stock bas et rapport du jour par WhatsApp",
+        "Historique et rapports sur 90 jours",
+      ],
+      cta: "Essayer 15 jours gratuitement",
       to: "/auth" as const,
     },
     {
       name: "Pro",
-      desc: "Idéal pour les boutiques en croissance",
-      price: "9 900 FCFA",
-      unit: "/ mois",
-      features: ["Toutes les fonctionnalités Starter", "Rapports avancés", "Support prioritaire"],
-      cta: "Essayer Pro",
+      desc: "Pour les boutiques qui grandissent",
+      prices: PRICES.pro,
+      features: [
+        "Tout l'Essentiel, sans limite d'articles",
+        "Jusqu'à 3 boutiques et 10 employés",
+        "Contrôle de caisse, dépenses et bénéfice net",
+        "Prévisions de ventes et exports complets",
+        "Historique et rapports sans limite",
+      ],
+      cta: "Essayer Pro 15 jours gratuitement",
       to: "/auth" as const,
       popular: true,
     },
     {
-      name: "Entreprise",
-      desc: "Pour les grandes structures",
-      price: "Sur devis",
-      unit: "",
-      features: ["Accompagnement dédié", "Fonctionnalités sur mesure"],
+      name: "Sur mesure",
+      desc: "Pour les réseaux et les grossistes",
+      prices: null,
+      features: [
+        "À partir de 4 boutiques",
+        "Articles et employés illimités",
+        "Accompagnement dédié et formation",
+        "Fonctions sur mesure",
+      ],
       cta: "Nous contacter",
       to: "/contact" as const,
     },
@@ -777,55 +793,94 @@ function Tarifs() {
       id="tarifs"
       className="bg-gradient-to-b from-white to-bk-mint/60 px-5 pb-20 pt-4 sm:px-8"
     >
-      <div className="mx-auto grid max-w-[1400px] items-center gap-10 lg:grid-cols-[0.7fr_1.3fr]">
-        <div>
+      <div className="mx-auto grid max-w-[1400px] items-start gap-10 lg:grid-cols-[0.7fr_1.3fr]">
+        <div className="lg:pt-10">
           <span className={pill}>Des offres adaptées</span>
           <h2 className={`${h2} mt-5`}>
             {lang === "fr" ? "Choisissez l'offre qui vous convient" : t.pricingTitle}
           </h2>
           <p className="mt-4 max-w-sm text-bk-ink/75">
-            {lang === "fr" ? "Commencez gratuitement et évoluez selon vos besoins." : t.pricingSub}
+            {lang === "fr"
+              ? "15 jours d'essai gratuit avec toutes les fonctions du Pro, sans carte bancaire."
+              : t.pricingSub}
           </p>
-        </div>
-        <div className="grid items-end gap-5 pt-6 md:grid-cols-3">
-          {plans.map((p) => (
-            <div
-              key={p.name}
-              className={`relative rounded-3xl bg-white p-6 ${
-                p.popular
-                  ? "border-2 border-bk shadow-[0_18px_50px_rgba(11,122,66,0.22)] md:-translate-y-3 md:pb-8"
-                  : "border border-bk-ink/5 shadow-[0_8px_28px_rgba(10,59,37,0.07)]"
-              }`}
+          <div
+            className="mt-6 inline-flex rounded-full border border-bk-ink/10 bg-white p-1 text-sm font-semibold"
+            role="group"
+            aria-label="Période de facturation"
+          >
+            <button
+              type="button"
+              onClick={() => setYearly(false)}
+              aria-pressed={!yearly}
+              className={`rounded-full px-4 py-2 transition ${!yearly ? "bg-bk text-white" : "text-bk-ink/70"}`}
             >
-              {p.popular && (
-                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-bk px-4 py-1 text-xs font-bold text-white">
-                  Plus populaire
-                </span>
-              )}
-              <h3 className="font-jakarta text-xl font-extrabold text-bk-ink">{p.name}</h3>
-              <p className="mt-1 text-sm text-bk-ink/65">{p.desc}</p>
-              <p className="mt-4 font-jakarta text-3xl font-extrabold text-bk-ink">
-                {p.price}
-                {p.unit && (
-                  <span className="ml-1 text-sm font-medium text-bk-ink/60">{p.unit}</span>
-                )}
-              </p>
-              <ul className="mt-4 space-y-2 text-sm text-bk-ink/80">
-                {p.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-bk" strokeWidth={3} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to={p.to}
-                className={`${p.popular ? btnPrimary : btnOutline} mt-6 w-full !py-2.5 text-sm`}
+              Mensuel
+            </button>
+            <button
+              type="button"
+              onClick={() => setYearly(true)}
+              aria-pressed={yearly}
+              className={`rounded-full px-4 py-2 transition ${yearly ? "bg-bk text-white" : "text-bk-ink/70"}`}
+            >
+              Annuel : 2 mois offerts
+            </button>
+          </div>
+        </div>
+        <div>
+          <div className="grid items-stretch gap-5 pt-6 md:grid-cols-3">
+            {plans.map((p) => (
+              <div
+                key={p.name}
+                className={`relative flex flex-col rounded-3xl bg-white p-6 ${
+                  p.popular
+                    ? "border-2 border-bk shadow-[0_18px_50px_rgba(11,122,66,0.22)]"
+                    : "border border-bk-ink/5 shadow-[0_8px_28px_rgba(10,59,37,0.07)]"
+                }`}
               >
-                {p.cta}
-              </Link>
-            </div>
-          ))}
+                {p.popular && (
+                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-bk px-4 py-1 text-xs font-bold text-white">
+                    Plus populaire
+                  </span>
+                )}
+                <h3 className="font-jakarta text-xl font-extrabold text-bk-ink">{p.name}</h3>
+                <p className="mt-1 text-sm text-bk-ink/65">{p.desc}</p>
+                <p className="mt-4 font-jakarta text-3xl font-extrabold text-bk-ink">
+                  {p.prices ? fmtPrice(yearly ? p.prices.year : p.prices.month) : "Sur devis"}
+                  {p.prices && (
+                    <span className="ml-1 text-sm font-medium text-bk-ink/60">
+                      / {yearly ? "an" : "mois"}
+                    </span>
+                  )}
+                </p>
+                <p className="mt-1 min-h-5 text-xs font-medium text-bk-ink/55">
+                  {p.prices
+                    ? yearly
+                      ? `au lieu de ${fmtPrice(p.prices.month * 12)}`
+                      : `ou ${fmtPrice(p.prices.year)} par an`
+                    : ""}
+                </p>
+                <ul className="mt-4 flex-1 space-y-2 text-sm text-bk-ink/80">
+                  {p.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-bk" strokeWidth={3} />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  to={p.to}
+                  className={`${p.popular ? btnPrimary : btnOutline} mt-6 w-full !py-2.5 text-center text-sm`}
+                >
+                  {p.cta}
+                </Link>
+              </div>
+            ))}
+          </div>
+          <p className="mt-5 text-sm text-bk-ink/65">
+            Boutique supplémentaire : {fmtPrice(PRICES.extraShop)} par mois. Paiement par Orange
+            Money ou Moov Money.
+          </p>
         </div>
       </div>
     </section>

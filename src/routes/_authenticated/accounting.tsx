@@ -1,3 +1,4 @@
+import { usePlan } from "@/lib/plans";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,6 +75,9 @@ type ProductLite = { id: string; name: string; cost_price: number };
 
 function AccountingPage() {
   const { current } = useShops();
+  const { can: canUsePlan } = usePlan();
+  const longHistory = canUsePlan("long_history");
+  const canNetProfit = canUsePlan("net_profit");
   const [range, setRange] = useState<Range>("30");
   const [sales, setSales] = useState<Sale[]>([]);
   const [items, setItems] = useState<
@@ -251,8 +255,12 @@ function AccountingPage() {
               <SelectContent>
                 <SelectItem value="30">30 derniers jours</SelectItem>
                 <SelectItem value="90">3 derniers mois</SelectItem>
-                <SelectItem value="180">6 derniers mois</SelectItem>
-                <SelectItem value="365">Cette année</SelectItem>
+                <SelectItem value="180" disabled={!longHistory}>
+                  6 derniers mois{longHistory ? "" : " (Pro)"}
+                </SelectItem>
+                <SelectItem value="365" disabled={!longHistory}>
+                  Cette année{longHistory ? "" : " (Pro)"}
+                </SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" onClick={exportSummary}>
@@ -294,27 +302,37 @@ function AccountingPage() {
         />
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-3">
-        <StatCard
-          label="Dépenses réelles saisies"
-          value={fmtMoney(totalDepensesReelles, cur)}
-          icon={ReceiptText}
-          tone="destructive"
-          delta={`${expenses.length} dépense(s)`}
-        />
-        <StatCard
-          label="Bénéfice net estimé"
-          value={fmtMoney(beneficeNet, cur)}
-          icon={Wallet}
-          tone={beneficeNet >= 0 ? "success" : "destructive"}
-          delta="bénéfice − loyer, salaires, transport…"
-        />
-        <div className="flex items-end">
-          <Button variant="outline" onClick={() => setExpOpen(true)} className="w-full">
-            <Plus className="mr-2 h-4 w-4" /> Ajouter une dépense
-          </Button>
+      {canNetProfit ? (
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <StatCard
+            label="Dépenses réelles saisies"
+            value={fmtMoney(totalDepensesReelles, cur)}
+            icon={ReceiptText}
+            tone="destructive"
+            delta={`${expenses.length} dépense(s)`}
+          />
+          <StatCard
+            label="Bénéfice net estimé"
+            value={fmtMoney(beneficeNet, cur)}
+            icon={Wallet}
+            tone={beneficeNet >= 0 ? "success" : "destructive"}
+            delta="bénéfice − loyer, salaires, transport…"
+          />
+          <div className="flex items-end">
+            <Button variant="outline" onClick={() => setExpOpen(true)} className="w-full">
+              <Plus className="mr-2 h-4 w-4" /> Ajouter une dépense
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="mt-4 rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm">
+          <p className="font-semibold text-foreground">Bénéfice net et dépenses : formule Pro</p>
+          <p className="mt-1 text-muted-foreground">
+            Saisissez votre loyer, vos salaires et vos autres dépenses pour voir ce qu&apos;il vous
+            reste vraiment chaque mois. Disponible avec la formule Pro, dans Paramètres.
+          </p>
+        </div>
+      )}
 
       <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
         <p className="flex items-start gap-2">
@@ -379,7 +397,7 @@ function AccountingPage() {
       </Card>
 
       {/* Dépenses réelles */}
-      {expenses.length > 0 && (
+      {canNetProfit && expenses.length > 0 && (
         <Card className="mt-6 shadow-soft">
           <CardHeader>
             <CardTitle className="font-display flex items-center gap-2">

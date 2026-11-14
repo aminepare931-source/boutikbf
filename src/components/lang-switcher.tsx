@@ -39,7 +39,9 @@ export function LangSwitcher({ compact = false }: { compact?: boolean }) {
                 l.code === lang ? "font-semibold text-bk" : "text-bk-ink"
               }`}
             >
-              <span className="w-6 text-center">{l.flag}</span>
+              <span className="w-8 text-center text-xs font-bold text-muted-foreground">
+                {l.short}
+              </span>
               <span className="flex-1">{l.native}</span>
               <span className="text-[10px] uppercase text-bk-ink/40">{l.code}</span>
             </button>

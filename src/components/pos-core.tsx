@@ -1,3 +1,4 @@
+import { usePlan } from "@/lib/plans";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -172,6 +173,10 @@ function PosCore({ mode }: { mode: PosMode }) {
   const [customersLite, setCustomersLite] = useState<CustomerLite[]>([]);
   const [redeem, setRedeem] = useState(false);
   const [shift, setShift] = useState<{ id: string; opened_at: string; float: number } | null>(null);
+  // Contrôle de caisse (ouverture / clôture avec comptage) : formule Pro. Une caisse déjà ouverte
+  // peut toujours être clôturée.
+  const { can: canUsePlan } = usePlan();
+  const canCashControl = canUsePlan("cash_control");
   const [shiftOpenDlg, setShiftOpenDlg] = useState(false);
   const [shiftCloseDlg, setShiftCloseDlg] = useState(false);
   const [shiftFloat, setShiftFloat] = useState("0");
@@ -974,9 +979,11 @@ function PosCore({ mode }: { mode: PosMode }) {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {!shift ? (
-              <Button variant="outline" size="sm" onClick={() => setShiftOpenDlg(true)}>
-                <PlayCircle className="mr-1.5 h-4 w-4 text-success" /> Ouvrir la caisse
-              </Button>
+              canCashControl ? (
+                <Button variant="outline" size="sm" onClick={() => setShiftOpenDlg(true)}>
+                  <PlayCircle className="mr-1.5 h-4 w-4 text-success" /> Ouvrir la caisse
+                </Button>
+              ) : null
             ) : (
               <Button variant="outline" size="sm" onClick={() => setShiftCloseDlg(true)}>
                 <StopCircle className="mr-1.5 h-4 w-4 text-destructive" /> Clôturer (

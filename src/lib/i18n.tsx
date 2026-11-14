@@ -3,13 +3,13 @@ import { translations, type Language, type TranslationSet } from "./translations
 
 export type { Language };
 
-export const LANGUAGES: { code: Language; label: string; native: string; flag: string }[] = [
-  { code: "fr", label: "Français", native: "Français", flag: "🇫🇷" },
-  { code: "en", label: "Anglais", native: "English", flag: "🇬🇧" },
-  { code: "mo", label: "Mooré", native: "Mooré", flag: "🇧🇫" },
-  { code: "di", label: "Dioula", native: "Jùla", flag: "🇧🇫" },
-  { code: "ff", label: "Pular", native: "Pular", flag: "🇧🇫" },
-  { code: "gma", label: "Gourmanchéma", native: "Gourmanché", flag: "🇧🇫" },
+export const LANGUAGES: { code: Language; label: string; native: string; short: string }[] = [
+  { code: "fr", label: "Français", native: "Français", short: "FR" },
+  { code: "en", label: "Anglais", native: "English", short: "EN" },
+  { code: "mo", label: "Mooré", native: "Mooré", short: "MO" },
+  { code: "di", label: "Dioula", native: "Jùla", short: "DI" },
+  { code: "ff", label: "Pular", native: "Pular", short: "FF" },
+  { code: "gma", label: "Gourmanchéma", native: "Gourmanché", short: "GMA" },
 ];
 
 const KEY = "boutikbf-lang";
