@@ -62,7 +62,7 @@ export const DEFAULT_SETTINGS: ShopSettings = {
   referencePrefix: "V",
   requireShift: false,
   receiptHeader: "",
-  receiptFooter: "Merci de votre visite 🇧🇫",
+  receiptFooter: "Merci de votre visite",
   showCustomerOnReceipt: true,
   showPointsOnReceipt: true,
   pointsPer: 100,
