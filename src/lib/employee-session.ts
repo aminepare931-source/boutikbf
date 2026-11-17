@@ -54,18 +54,26 @@ export function getEmployeeSession(): EmployeeSession | null {
 
 export type EmployeeLoginResult =
   | { ok: true; session: EmployeeSession }
-  | { ok: false; error: "invalid_credentials" | "too_many_attempts" | "network" };
+  | { ok: false; error: "invalid_credentials" | "too_many_attempts" | "shop_required" | "network" };
 
-export async function employeeLogin(name: string, pin: string): Promise<EmployeeLoginResult> {
+export async function employeeLogin(
+  name: string,
+  pin: string,
+  shop?: string,
+): Promise<EmployeeLoginResult> {
   const { data, error } = await (supabase as any).rpc("employee_login", {
     p_name: name,
     p_pin: pin,
+    p_shop: shop?.trim() || null,
   });
   if (error || !data) return { ok: false, error: "network" };
   if (!data.ok) {
     return {
       ok: false,
-      error: data.error === "too_many_attempts" ? "too_many_attempts" : "invalid_credentials",
+      error:
+        data.error === "too_many_attempts" || data.error === "shop_required"
+          ? data.error
+          : "invalid_credentials",
     };
   }
   const session: EmployeeSession = {

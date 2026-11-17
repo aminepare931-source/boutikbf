@@ -20,6 +20,16 @@ function EmployeeAuthPage() {
   const navigate = useNavigate();
   const [pin, setPin] = useState("");
   const [name, setName] = useState("");
+  // Code de la boutique : lien ?b=code, sinon dernier code utilisé sur cet appareil
+  const [shop, setShop] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return (
+      new URLSearchParams(window.location.search).get("b") ??
+      localStorage.getItem("boutikbf-employee-shop") ??
+      ""
+    );
+  });
+  const [shopRequired, setShopRequired] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const goHome = (role: EmployeeRole) => {
@@ -40,17 +50,21 @@ function EmployeeAuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await employeeLogin(name, pin.trim());
+      const res = await employeeLogin(name, pin.trim(), shop);
       if (!res.ok) {
+        if (res.error === "shop_required") setShopRequired(true);
         toast.error(
-          res.error === "too_many_attempts"
-            ? "Trop d'essais. Réessayez dans 15 minutes."
-            : res.error === "network"
-              ? "Connexion impossible. Vérifiez votre réseau."
-              : "Nom ou code PIN incorrect",
+          res.error === "shop_required"
+            ? "Plusieurs personnes portent ce nom : entrez le code de votre boutique."
+            : res.error === "too_many_attempts"
+              ? "Trop d'essais. Réessayez dans 15 minutes."
+              : res.error === "network"
+                ? "Connexion impossible. Vérifiez votre réseau."
+                : "Nom ou code PIN incorrect",
         );
         return;
       }
+      if (shop.trim()) localStorage.setItem("boutikbf-employee-shop", shop.trim());
       toast.success(`Bienvenue ${res.session.name} !`);
       goHome(res.session.role);
     } catch (error) {
@@ -102,6 +116,23 @@ function EmployeeAuthPage() {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="shop">
+                  Code de la boutique{shopRequired ? "" : " (donné par votre patron)"}
+                </Label>
+                <Input
+                  id="shop"
+                  type="text"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  placeholder="Ex: ma-boutique"
+                  value={shop}
+                  onChange={(e) => setShop(e.target.value)}
+                  className="h-11"
+                  required={shopRequired}
+                />
               </div>
 
               <div className="space-y-2">

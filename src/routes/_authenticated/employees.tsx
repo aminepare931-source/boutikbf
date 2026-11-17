@@ -369,6 +369,27 @@ function EmployeesPage() {
         }
       />
 
+      {current?.slug && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 p-3 text-sm">
+          <p>
+            Connexion de l&apos;équipe : page <strong>/auth-employee</strong>, code boutique{" "}
+            <strong>{current.slug}</strong>
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              navigator.clipboard
+                ?.writeText(`${window.location.origin}/auth-employee?b=${current.slug}`)
+                .then(() => toast.success("Lien de connexion copié"))
+                .catch(() => toast.error("Copie impossible"));
+            }}
+          >
+            Copier le lien de connexion
+          </Button>
+        </div>
+      )}
+
       {atLimit && (
         <div className="mb-4 rounded-xl border border-warning/30 bg-warning/5 p-3 text-sm">
           Tu as atteint la limite d'employés de ta formule ({planLimit}). Passe à la formule Pro (10
