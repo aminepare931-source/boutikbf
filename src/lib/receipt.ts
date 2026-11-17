@@ -189,7 +189,7 @@ export function openReceipt(d: ReceiptData) {
   w.document.close();
 }
 
-function escapeHtml(s: string) {
+export function escapeHtml(s: string) {
   return String(s).replace(
     /[&<>"']/g,
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,

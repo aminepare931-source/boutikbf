@@ -1,3 +1,4 @@
+import { escapeHtml } from "@/lib/receipt";
 import { usePlan } from "@/lib/plans";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
@@ -596,13 +597,13 @@ function ZReport({ currency }: { currency: string }) {
 <style>body{font-family:sans-serif;max-width:640px;margin:20px auto;color:#111}h1{font-size:18px}table{width:100%;border-collapse:collapse;margin:12px 0}td,th{padding:6px 4px;border-bottom:1px solid #ddd;text-align:left;font-size:14px}td.r,th.r{text-align:right}.tot{font-weight:700;border-top:2px solid #111}.noprint{margin-bottom:12px}@media print{.noprint{display:none}}</style>
 </head><body>
 <div class="noprint"><button onclick="window.print()" style="background:#ce1126;color:#fff;border:0;padding:8px 14px;border-radius:6px;font-weight:600;cursor:pointer">Imprimer</button></div>
-<h1>${current.name} — Rapport de caisse (Z)</h1>
-<p>Journée du <b>${day}</b> · ${rows.length} vente(s) · ${fmtNumber(rows.reduce((a, s) => a + Number(s.total), 0))} ${currency}</p>
+<h1>${escapeHtml(current.name)} — Rapport de caisse (Z)</h1>
+<p>Journée du <b>${escapeHtml(day)}</b> · ${rows.length} vente(s) · ${fmtNumber(rows.reduce((a, s) => a + Number(s.total), 0))} ${currency}</p>
 <table><tr><th>Mode</th><th class="r">Ventes</th><th class="r">Montant</th></tr>
 ${[...byMethod.entries()]
   .map(
     ([m, e]) =>
-      `<tr><td>${Z_METHOD_LABEL[m] ?? m}</td><td class="r">${e.n}</td><td class="r">${fmtMoney(e.total, currency)}</td></tr>`,
+      `<tr><td>${escapeHtml(Z_METHOD_LABEL[m] ?? m)}</td><td class="r">${e.n}</td><td class="r">${fmtMoney(e.total, currency)}</td></tr>`,
   )
   .join("")}</table>
 <table>
@@ -619,7 +620,7 @@ ${
 ${[...byCashier.entries()]
   .map(
     ([n, e]) =>
-      `<tr><td>${n}</td><td class="r">${e.n}</td><td class="r">${fmtMoney(e.total, currency)}</td></tr>`,
+      `<tr><td>${escapeHtml(n)}</td><td class="r">${e.n}</td><td class="r">${fmtMoney(e.total, currency)}</td></tr>`,
   )
   .join("")}</table>
 </body></html>`;
