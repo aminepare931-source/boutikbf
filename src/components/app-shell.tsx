@@ -1,3 +1,4 @@
+import { InstallBanner } from "@/components/install-banner";
 import { setExportsAllowed } from "@/lib/export-csv";
 import { can, fmtPrice, planLimitMessage, PRICES } from "@/lib/plans";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
@@ -979,7 +980,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </button>
               </div>
             ) : (
-              children
+              <>
+                <InstallBanner />
+                {children}
+              </>
             )}
           </motion.div>
         </main>

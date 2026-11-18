@@ -5,8 +5,8 @@
  *    utilise IndexedDB via offline-queue.ts, pas ce cache)
  *  - jamais de cache des appels supabase (cross-origin)
  */
-const ASSETS = "boutikbf-assets-v1";
-const PAGES = "boutikbf-pages-v1";
+const ASSETS = "boutikbf-assets-v2";
+const PAGES = "boutikbf-pages-v2";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

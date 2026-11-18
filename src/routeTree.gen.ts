@@ -20,9 +20,11 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as DisplayRouteImport } from './routes/display'
 import { Route as EmployeeRouteImport } from './routes/employee'
+import { Route as InstallerRouteImport } from './routes/installer'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
 import { Route as RemoteScanRouteImport } from './routes/remote-scan'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as StartRouteImport } from './routes/start'
 import { Route as SuperadminRouteImport } from './routes/superadmin'
 import { Route as AuthenticatedAccountingRouteImport } from './routes/_authenticated/accounting'
 import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authenticated/categories'
@@ -108,6 +110,11 @@ const EmployeeRoute = EmployeeRouteImport.update({
   path: '/employee',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InstallerRoute = InstallerRouteImport.update({
+  id: '/installer',
+  path: '/installer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
   id: '/mentions-legales',
   path: '/mentions-legales',
@@ -121,6 +128,11 @@ const RemoteScanRoute = RemoteScanRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StartRoute = StartRouteImport.update({
+  id: '/start',
+  path: '/start',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SuperadminRoute = SuperadminRouteImport.update({
@@ -286,9 +298,11 @@ export interface FileRoutesByFullPath {
   '/cookies': typeof CookiesRoute
   '/display': typeof DisplayRoute
   '/employee': typeof EmployeeRouteWithChildren
+  '/installer': typeof InstallerRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/remote-scan': typeof RemoteScanRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/start': typeof StartRoute
   '/superadmin': typeof SuperadminRouteWithChildren
   '/accounting': typeof AuthenticatedAccountingRoute
   '/categories': typeof AuthenticatedCategoriesRoute
@@ -331,9 +345,11 @@ export interface FileRoutesByTo {
   '/cookies': typeof CookiesRoute
   '/display': typeof DisplayRoute
   '/employee': typeof EmployeeRouteWithChildren
+  '/installer': typeof InstallerRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/remote-scan': typeof RemoteScanRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/start': typeof StartRoute
   '/accounting': typeof AuthenticatedAccountingRoute
   '/categories': typeof AuthenticatedCategoriesRoute
   '/clients': typeof AuthenticatedClientsRoute
@@ -377,9 +393,11 @@ export interface FileRoutesById {
   '/cookies': typeof CookiesRoute
   '/display': typeof DisplayRoute
   '/employee': typeof EmployeeRouteWithChildren
+  '/installer': typeof InstallerRoute
   '/mentions-legales': typeof MentionsLegalesRoute
   '/remote-scan': typeof RemoteScanRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/start': typeof StartRoute
   '/superadmin': typeof SuperadminRouteWithChildren
   '/_authenticated/accounting': typeof AuthenticatedAccountingRoute
   '/_authenticated/categories': typeof AuthenticatedCategoriesRoute
@@ -424,9 +442,11 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/display'
     | '/employee'
+    | '/installer'
     | '/mentions-legales'
     | '/remote-scan'
     | '/reset-password'
+    | '/start'
     | '/superadmin'
     | '/accounting'
     | '/categories'
@@ -469,9 +489,11 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/display'
     | '/employee'
+    | '/installer'
     | '/mentions-legales'
     | '/remote-scan'
     | '/reset-password'
+    | '/start'
     | '/accounting'
     | '/categories'
     | '/clients'
@@ -514,9 +536,11 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/display'
     | '/employee'
+    | '/installer'
     | '/mentions-legales'
     | '/remote-scan'
     | '/reset-password'
+    | '/start'
     | '/superadmin'
     | '/_authenticated/accounting'
     | '/_authenticated/categories'
@@ -561,9 +585,11 @@ export interface RootRouteChildren {
   CookiesRoute: typeof CookiesRoute
   DisplayRoute: typeof DisplayRoute
   EmployeeRoute: typeof EmployeeRouteWithChildren
+  InstallerRoute: typeof InstallerRoute
   MentionsLegalesRoute: typeof MentionsLegalesRoute
   RemoteScanRoute: typeof RemoteScanRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  StartRoute: typeof StartRoute
   SuperadminRoute: typeof SuperadminRouteWithChildren
   FShopIdCustomerIdRoute: typeof FShopIdCustomerIdRoute
 }
@@ -647,6 +673,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmployeeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/installer': {
+      id: '/installer'
+      path: '/installer'
+      fullPath: '/installer'
+      preLoaderRoute: typeof InstallerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mentions-legales': {
       id: '/mentions-legales'
       path: '/mentions-legales'
@@ -666,6 +699,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/start': {
+      id: '/start'
+      path: '/start'
+      fullPath: '/start'
+      preLoaderRoute: typeof StartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/superadmin': {
@@ -978,9 +1018,11 @@ const rootRouteChildren: RootRouteChildren = {
   CookiesRoute: CookiesRoute,
   DisplayRoute: DisplayRoute,
   EmployeeRoute: EmployeeRouteWithChildren,
+  InstallerRoute: InstallerRoute,
   MentionsLegalesRoute: MentionsLegalesRoute,
   RemoteScanRoute: RemoteScanRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  StartRoute: StartRoute,
   SuperadminRoute: SuperadminRouteWithChildren,
   FShopIdCustomerIdRoute: FShopIdCustomerIdRoute,
 }

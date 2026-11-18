@@ -1,3 +1,4 @@
+import { GettingStarted } from "@/components/getting-started";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -233,6 +234,8 @@ function Dashboard() {
           ) : undefined
         }
       />
+
+      {current && <GettingStarted shopId={current.id} />}
 
       {/* Main Stats Cards Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

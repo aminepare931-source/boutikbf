@@ -115,7 +115,11 @@ function NavMenu({
   items,
 }: {
   label: string;
-  items: { label: string; href?: string; to?: "/a-propos" | "/contact" | "/confidentialite" }[];
+  items: {
+    label: string;
+    href?: string;
+    to?: "/a-propos" | "/contact" | "/confidentialite" | "/installer";
+  }[];
 }) {
   return (
     <div className="group relative">
@@ -184,6 +188,7 @@ function Header() {
           <NavMenu
             label="Ressources"
             items={[
+              { label: "Installer l'application", to: "/installer" },
               { label: "À propos", to: "/a-propos" },
               { label: "Contact", to: "/contact" },
               { label: "Confidentialité", to: "/confidentialite" },
@@ -939,6 +944,7 @@ function Footer() {
   ];
   const routeLinks = [
     { label: "FAQ", to: "/contact" as const },
+    { label: "Installer l'application", to: "/installer" as const },
     { label: "À propos", to: "/a-propos" as const },
     { label: "Contact", to: "/contact" as const },
   ];

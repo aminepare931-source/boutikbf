@@ -140,6 +140,11 @@ function AuthPage() {
       return toast.error(error.message);
     }
     toast.success("Connecté");
+    try {
+      localStorage.setItem("boutikbf-last-login", "owner");
+    } catch {
+      /* stockage indisponible */
+    }
     navigate({ to: "/dashboard" });
   };
 

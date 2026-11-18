@@ -1,26 +1,44 @@
 {
+  "id": "/",
   "name": "BoutikBF — Gestion de boutique",
   "short_name": "BoutikBF",
-  "description": "Caisse, stock, ventes et clients : toute votre boutique, même hors-ligne.",
-  "start_url": "/dashboard",
+  "description": "Caisse, stock, ventes et clients : toute votre boutique, même sans connexion.",
+  "start_url": "/start?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#009e49",
   "lang": "fr",
+  "dir": "ltr",
+  "categories": ["business", "finance", "productivity"],
   "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
     {
-      "src": "/logo.png",
-      "sizes": "any",
-      "type": "image/png",
-      "purpose": "any"
+      "name": "Caisse",
+      "short_name": "Caisse",
+      "description": "Ouvrir la caisse et encaisser une vente",
+      "url": "/pos",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
-      "src": "/logo.png",
-      "sizes": "any",
-      "type": "image/png",
-      "purpose": "maskable"
+      "name": "Ventes",
+      "short_name": "Ventes",
+      "description": "Voir les ventes",
+      "url": "/sales",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Produits",
+      "short_name": "Produits",
+      "description": "Gérer le stock et les produits",
+      "url": "/products",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

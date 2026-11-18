@@ -52,6 +52,21 @@ export function getEmployeeSession(): EmployeeSession | null {
   }
 }
 
+/** Page d'accueil d'un employé selon son rôle. */
+export function employeeHomePath(role: EmployeeRole) {
+  switch (role) {
+    case "comptable":
+      return "/employee/accounting" as const;
+    case "magasinier":
+      return "/employee/stock" as const;
+    case "gerant":
+    case "superviseur":
+      return "/employee/dashboard" as const;
+    default:
+      return "/employee/pos" as const;
+  }
+}
+
 export type EmployeeLoginResult =
   | { ok: true; session: EmployeeSession }
   | { ok: false; error: "invalid_credentials" | "too_many_attempts" | "shop_required" | "network" };
@@ -85,6 +100,8 @@ export async function employeeLogin(
     expiresAt: data.expires_at,
   };
   localStorage.setItem(EMPLOYEE_SESSION_KEY, JSON.stringify(session));
+  // Cet appareil sert à un employé : « Ouvrir l'app » le ramènera à la connexion employé
+  localStorage.setItem("boutikbf-last-login", "employee");
   return { ok: true, session };
 }
 

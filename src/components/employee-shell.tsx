@@ -1,3 +1,4 @@
+import { InstallBanner } from "@/components/install-banner";
 import { employeeLogout } from "@/lib/employee-session";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
@@ -252,7 +253,10 @@ export function EmployeeShell({
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <InstallBanner />
+          {children}
+        </main>
       </div>
     </div>
   );
