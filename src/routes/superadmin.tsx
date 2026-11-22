@@ -1,5 +1,13 @@
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Store, Users, ShieldCheck, ArrowLeft, LogOut } from "lucide-react";
+import {
+  CreditCard,
+  LayoutDashboard,
+  Store,
+  Users,
+  ShieldCheck,
+  ArrowLeft,
+  LogOut,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo-trim.png";
@@ -21,6 +29,7 @@ export const Route = createFileRoute("/superadmin")({
 const NAV = [
   { to: "/superadmin", label: "Vue d'ensemble", icon: LayoutDashboard, exact: true },
   { to: "/superadmin/shops", label: "Boutiques", icon: Store },
+  { to: "/superadmin/payments", label: "Paiements", icon: CreditCard },
   { to: "/superadmin/users", label: "Utilisateurs", icon: Users },
   { to: "/superadmin/admins", label: "Admins & journal", icon: ShieldCheck },
 ] as const;

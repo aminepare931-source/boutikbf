@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AProposRouteImport } from './routes/a-propos'
+import { Route as AfficheRouteImport } from './routes/affiche'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthEmployeeRouteImport } from './routes/auth-employee'
 import { Route as ConditionsRouteImport } from './routes/conditions'
@@ -49,10 +50,16 @@ import { Route as EmployeeSalesRouteImport } from './routes/employee/sales'
 import { Route as EmployeeStockRouteImport } from './routes/employee/stock'
 import { Route as EmployeeSuppliersRouteImport } from './routes/employee/suppliers'
 import { Route as EmployeeTeamRouteImport } from './routes/employee/team'
+import { Route as PaiementRetourRouteImport } from './routes/paiement.retour'
 import { Route as SuperadminIndexRouteImport } from './routes/superadmin/index'
 import { Route as SuperadminAdminsRouteImport } from './routes/superadmin/admins'
+import { Route as SuperadminPaymentsRouteImport } from './routes/superadmin/payments'
 import { Route as SuperadminShopsRouteImport } from './routes/superadmin/shops'
 import { Route as SuperadminUsersRouteImport } from './routes/superadmin/users'
+import { Route as ApiPaymentsCheckoutRouteImport } from './routes/api.payments.checkout'
+import { Route as ApiPaymentsConfigRouteImport } from './routes/api.payments.config'
+import { Route as ApiPaymentsConfirmRouteImport } from './routes/api.payments.confirm'
+import { Route as ApiWebhooksGeniuspayRouteImport } from './routes/api.webhooks.geniuspay'
 import { Route as FShopIdCustomerIdRouteImport } from './routes/f.$shopId.$customerId'
 import { Route as SuperadminShopShopIdRouteImport } from './routes/superadmin/shop.$shopId'
 
@@ -68,6 +75,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AProposRoute = AProposRouteImport.update({
   id: '/a-propos',
   path: '/a-propos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AfficheRoute = AfficheRouteImport.update({
+  id: '/affiche',
+  path: '/affiche',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -256,6 +268,11 @@ const EmployeeTeamRoute = EmployeeTeamRouteImport.update({
   path: '/team',
   getParentRoute: () => EmployeeRoute,
 } as any)
+const PaiementRetourRoute = PaiementRetourRouteImport.update({
+  id: '/paiement/retour',
+  path: '/paiement/retour',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SuperadminIndexRoute = SuperadminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -264,6 +281,11 @@ const SuperadminIndexRoute = SuperadminIndexRouteImport.update({
 const SuperadminAdminsRoute = SuperadminAdminsRouteImport.update({
   id: '/admins',
   path: '/admins',
+  getParentRoute: () => SuperadminRoute,
+} as any)
+const SuperadminPaymentsRoute = SuperadminPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
   getParentRoute: () => SuperadminRoute,
 } as any)
 const SuperadminShopsRoute = SuperadminShopsRouteImport.update({
@@ -275,6 +297,26 @@ const SuperadminUsersRoute = SuperadminUsersRouteImport.update({
   id: '/users',
   path: '/users',
   getParentRoute: () => SuperadminRoute,
+} as any)
+const ApiPaymentsCheckoutRoute = ApiPaymentsCheckoutRouteImport.update({
+  id: '/api/payments/checkout',
+  path: '/api/payments/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPaymentsConfigRoute = ApiPaymentsConfigRouteImport.update({
+  id: '/api/payments/config',
+  path: '/api/payments/config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPaymentsConfirmRoute = ApiPaymentsConfirmRouteImport.update({
+  id: '/api/payments/confirm',
+  path: '/api/payments/confirm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebhooksGeniuspayRoute = ApiWebhooksGeniuspayRouteImport.update({
+  id: '/api/webhooks/geniuspay',
+  path: '/api/webhooks/geniuspay',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const FShopIdCustomerIdRoute = FShopIdCustomerIdRouteImport.update({
   id: '/f/$shopId/$customerId',
@@ -290,6 +332,7 @@ const SuperadminShopShopIdRoute = SuperadminShopShopIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/a-propos': typeof AProposRoute
+  '/affiche': typeof AfficheRoute
   '/auth': typeof AuthRoute
   '/auth-employee': typeof AuthEmployeeRoute
   '/conditions': typeof ConditionsRoute
@@ -327,16 +370,23 @@ export interface FileRoutesByFullPath {
   '/employee/stock': typeof EmployeeStockRoute
   '/employee/suppliers': typeof EmployeeSuppliersRoute
   '/employee/team': typeof EmployeeTeamRoute
+  '/paiement/retour': typeof PaiementRetourRoute
   '/superadmin/admins': typeof SuperadminAdminsRoute
+  '/superadmin/payments': typeof SuperadminPaymentsRoute
   '/superadmin/shops': typeof SuperadminShopsRoute
   '/superadmin/users': typeof SuperadminUsersRoute
   '/superadmin/': typeof SuperadminIndexRoute
+  '/api/payments/checkout': typeof ApiPaymentsCheckoutRoute
+  '/api/payments/config': typeof ApiPaymentsConfigRoute
+  '/api/payments/confirm': typeof ApiPaymentsConfirmRoute
+  '/api/webhooks/geniuspay': typeof ApiWebhooksGeniuspayRoute
   '/f/$shopId/$customerId': typeof FShopIdCustomerIdRoute
   '/superadmin/shop/$shopId': typeof SuperadminShopShopIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/a-propos': typeof AProposRoute
+  '/affiche': typeof AfficheRoute
   '/auth': typeof AuthRoute
   '/auth-employee': typeof AuthEmployeeRoute
   '/conditions': typeof ConditionsRoute
@@ -373,10 +423,16 @@ export interface FileRoutesByTo {
   '/employee/stock': typeof EmployeeStockRoute
   '/employee/suppliers': typeof EmployeeSuppliersRoute
   '/employee/team': typeof EmployeeTeamRoute
+  '/paiement/retour': typeof PaiementRetourRoute
   '/superadmin/admins': typeof SuperadminAdminsRoute
+  '/superadmin/payments': typeof SuperadminPaymentsRoute
   '/superadmin/shops': typeof SuperadminShopsRoute
   '/superadmin/users': typeof SuperadminUsersRoute
   '/superadmin': typeof SuperadminIndexRoute
+  '/api/payments/checkout': typeof ApiPaymentsCheckoutRoute
+  '/api/payments/config': typeof ApiPaymentsConfigRoute
+  '/api/payments/confirm': typeof ApiPaymentsConfirmRoute
+  '/api/webhooks/geniuspay': typeof ApiWebhooksGeniuspayRoute
   '/f/$shopId/$customerId': typeof FShopIdCustomerIdRoute
   '/superadmin/shop/$shopId': typeof SuperadminShopShopIdRoute
 }
@@ -385,6 +441,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/a-propos': typeof AProposRoute
+  '/affiche': typeof AfficheRoute
   '/auth': typeof AuthRoute
   '/auth-employee': typeof AuthEmployeeRoute
   '/conditions': typeof ConditionsRoute
@@ -422,10 +479,16 @@ export interface FileRoutesById {
   '/employee/stock': typeof EmployeeStockRoute
   '/employee/suppliers': typeof EmployeeSuppliersRoute
   '/employee/team': typeof EmployeeTeamRoute
+  '/paiement/retour': typeof PaiementRetourRoute
   '/superadmin/admins': typeof SuperadminAdminsRoute
+  '/superadmin/payments': typeof SuperadminPaymentsRoute
   '/superadmin/shops': typeof SuperadminShopsRoute
   '/superadmin/users': typeof SuperadminUsersRoute
   '/superadmin/': typeof SuperadminIndexRoute
+  '/api/payments/checkout': typeof ApiPaymentsCheckoutRoute
+  '/api/payments/config': typeof ApiPaymentsConfigRoute
+  '/api/payments/confirm': typeof ApiPaymentsConfirmRoute
+  '/api/webhooks/geniuspay': typeof ApiWebhooksGeniuspayRoute
   '/f/$shopId/$customerId': typeof FShopIdCustomerIdRoute
   '/superadmin/shop/$shopId': typeof SuperadminShopShopIdRoute
 }
@@ -434,6 +497,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/a-propos'
+    | '/affiche'
     | '/auth'
     | '/auth-employee'
     | '/conditions'
@@ -471,16 +535,23 @@ export interface FileRouteTypes {
     | '/employee/stock'
     | '/employee/suppliers'
     | '/employee/team'
+    | '/paiement/retour'
     | '/superadmin/admins'
+    | '/superadmin/payments'
     | '/superadmin/shops'
     | '/superadmin/users'
     | '/superadmin/'
+    | '/api/payments/checkout'
+    | '/api/payments/config'
+    | '/api/payments/confirm'
+    | '/api/webhooks/geniuspay'
     | '/f/$shopId/$customerId'
     | '/superadmin/shop/$shopId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/a-propos'
+    | '/affiche'
     | '/auth'
     | '/auth-employee'
     | '/conditions'
@@ -517,10 +588,16 @@ export interface FileRouteTypes {
     | '/employee/stock'
     | '/employee/suppliers'
     | '/employee/team'
+    | '/paiement/retour'
     | '/superadmin/admins'
+    | '/superadmin/payments'
     | '/superadmin/shops'
     | '/superadmin/users'
     | '/superadmin'
+    | '/api/payments/checkout'
+    | '/api/payments/config'
+    | '/api/payments/confirm'
+    | '/api/webhooks/geniuspay'
     | '/f/$shopId/$customerId'
     | '/superadmin/shop/$shopId'
   id:
@@ -528,6 +605,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/a-propos'
+    | '/affiche'
     | '/auth'
     | '/auth-employee'
     | '/conditions'
@@ -565,10 +643,16 @@ export interface FileRouteTypes {
     | '/employee/stock'
     | '/employee/suppliers'
     | '/employee/team'
+    | '/paiement/retour'
     | '/superadmin/admins'
+    | '/superadmin/payments'
     | '/superadmin/shops'
     | '/superadmin/users'
     | '/superadmin/'
+    | '/api/payments/checkout'
+    | '/api/payments/config'
+    | '/api/payments/confirm'
+    | '/api/webhooks/geniuspay'
     | '/f/$shopId/$customerId'
     | '/superadmin/shop/$shopId'
   fileRoutesById: FileRoutesById
@@ -577,6 +661,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AProposRoute: typeof AProposRoute
+  AfficheRoute: typeof AfficheRoute
   AuthRoute: typeof AuthRoute
   AuthEmployeeRoute: typeof AuthEmployeeRoute
   ConditionsRoute: typeof ConditionsRoute
@@ -591,6 +676,11 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   StartRoute: typeof StartRoute
   SuperadminRoute: typeof SuperadminRouteWithChildren
+  PaiementRetourRoute: typeof PaiementRetourRoute
+  ApiPaymentsCheckoutRoute: typeof ApiPaymentsCheckoutRoute
+  ApiPaymentsConfigRoute: typeof ApiPaymentsConfigRoute
+  ApiPaymentsConfirmRoute: typeof ApiPaymentsConfirmRoute
+  ApiWebhooksGeniuspayRoute: typeof ApiWebhooksGeniuspayRoute
   FShopIdCustomerIdRoute: typeof FShopIdCustomerIdRoute
 }
 
@@ -615,6 +705,13 @@ declare module '@tanstack/react-router' {
       path: '/a-propos'
       fullPath: '/a-propos'
       preLoaderRoute: typeof AProposRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/affiche': {
+      id: '/affiche'
+      path: '/affiche'
+      fullPath: '/affiche'
+      preLoaderRoute: typeof AfficheRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -876,6 +973,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmployeeTeamRouteImport
       parentRoute: typeof EmployeeRoute
     }
+    '/paiement/retour': {
+      id: '/paiement/retour'
+      path: '/paiement/retour'
+      fullPath: '/paiement/retour'
+      preLoaderRoute: typeof PaiementRetourRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/superadmin/': {
       id: '/superadmin/'
       path: '/'
@@ -888,6 +992,13 @@ declare module '@tanstack/react-router' {
       path: '/admins'
       fullPath: '/superadmin/admins'
       preLoaderRoute: typeof SuperadminAdminsRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
+    '/superadmin/payments': {
+      id: '/superadmin/payments'
+      path: '/payments'
+      fullPath: '/superadmin/payments'
+      preLoaderRoute: typeof SuperadminPaymentsRouteImport
       parentRoute: typeof SuperadminRoute
     }
     '/superadmin/shops': {
@@ -903,6 +1014,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/superadmin/users'
       preLoaderRoute: typeof SuperadminUsersRouteImport
       parentRoute: typeof SuperadminRoute
+    }
+    '/api/payments/checkout': {
+      id: '/api/payments/checkout'
+      path: '/api/payments/checkout'
+      fullPath: '/api/payments/checkout'
+      preLoaderRoute: typeof ApiPaymentsCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments/config': {
+      id: '/api/payments/config'
+      path: '/api/payments/config'
+      fullPath: '/api/payments/config'
+      preLoaderRoute: typeof ApiPaymentsConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments/confirm': {
+      id: '/api/payments/confirm'
+      path: '/api/payments/confirm'
+      fullPath: '/api/payments/confirm'
+      preLoaderRoute: typeof ApiPaymentsConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webhooks/geniuspay': {
+      id: '/api/webhooks/geniuspay'
+      path: '/api/webhooks/geniuspay'
+      fullPath: '/api/webhooks/geniuspay'
+      preLoaderRoute: typeof ApiWebhooksGeniuspayRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/f/$shopId/$customerId': {
       id: '/f/$shopId/$customerId'
@@ -988,6 +1127,7 @@ const EmployeeRouteWithChildren = EmployeeRoute._addFileChildren(
 
 interface SuperadminRouteChildren {
   SuperadminAdminsRoute: typeof SuperadminAdminsRoute
+  SuperadminPaymentsRoute: typeof SuperadminPaymentsRoute
   SuperadminShopsRoute: typeof SuperadminShopsRoute
   SuperadminUsersRoute: typeof SuperadminUsersRoute
   SuperadminIndexRoute: typeof SuperadminIndexRoute
@@ -996,6 +1136,7 @@ interface SuperadminRouteChildren {
 
 const SuperadminRouteChildren: SuperadminRouteChildren = {
   SuperadminAdminsRoute: SuperadminAdminsRoute,
+  SuperadminPaymentsRoute: SuperadminPaymentsRoute,
   SuperadminShopsRoute: SuperadminShopsRoute,
   SuperadminUsersRoute: SuperadminUsersRoute,
   SuperadminIndexRoute: SuperadminIndexRoute,
@@ -1010,6 +1151,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AProposRoute: AProposRoute,
+  AfficheRoute: AfficheRoute,
   AuthRoute: AuthRoute,
   AuthEmployeeRoute: AuthEmployeeRoute,
   ConditionsRoute: ConditionsRoute,
@@ -1024,6 +1166,11 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   StartRoute: StartRoute,
   SuperadminRoute: SuperadminRouteWithChildren,
+  PaiementRetourRoute: PaiementRetourRoute,
+  ApiPaymentsCheckoutRoute: ApiPaymentsCheckoutRoute,
+  ApiPaymentsConfigRoute: ApiPaymentsConfigRoute,
+  ApiPaymentsConfirmRoute: ApiPaymentsConfirmRoute,
+  ApiWebhooksGeniuspayRoute: ApiWebhooksGeniuspayRoute,
   FShopIdCustomerIdRoute: FShopIdCustomerIdRoute,
 }
 export const routeTree = rootRouteImport

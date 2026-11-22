@@ -1,5 +1,5 @@
 import { planLimitMessage, usePlan } from "@/lib/plans";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, EmptyState } from "@/components/page-parts";
@@ -386,6 +386,11 @@ function EmployeesPage() {
             }}
           >
             Copier le lien de connexion
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/affiche" search={{ mode: "equipe", b: current.slug, n: current.name }}>
+              Imprimer l&apos;affichette
+            </Link>
           </Button>
         </div>
       )}

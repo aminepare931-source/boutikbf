@@ -1,3 +1,5 @@
+import { OnlinePayButton } from "@/components/online-pay-button";
+import { usePaymentsEnabled } from "@/lib/payments/client";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -181,6 +183,7 @@ function SettingsPage() {
   const [uploading, setUploading] = useState(false);
   const [selectingPlan, setSelectingPlan] = useState<string | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const onlineEnabled = usePaymentsEnabled();
   const [selectedPlanDetails, setSelectedPlanDetails] = useState<{
     id: string;
     name: string;
@@ -710,11 +713,14 @@ function SettingsPage() {
               <AlertTriangle className="h-6 w-6 animate-pulse" />
             </div>
             <DialogTitle className="font-display text-xl font-bold tracking-tight text-foreground">
-              Paiements en ligne indisponibles
+              {onlineEnabled && selectedPlanDetails?.id !== "sur-mesure"
+                ? "Payer votre abonnement"
+                : "Paiements en ligne indisponibles"}
             </DialogTitle>
             <DialogDescription className="text-sm font-medium text-muted-foreground/90 mt-1">
-              Les paiements électroniques directs par carte et mobile money sont temporairement
-              indisponibles (documents en cours d&apos;examen par les opérateurs).
+              {onlineEnabled && selectedPlanDetails?.id !== "sur-mesure"
+                ? "Réglez en ligne par Orange Money ou Moov Money, ou par transfert manuel ci-dessous."
+                : "Les paiements électroniques directs par carte et mobile money sont temporairement indisponibles (documents en cours d'examen par les opérateurs)."}
             </DialogDescription>
           </DialogHeader>
 
@@ -734,9 +740,19 @@ function SettingsPage() {
                 </div>
               </div>
 
+              {current && (
+                <OnlinePayButton
+                  shopId={current.id}
+                  planId={selectedPlanDetails.id}
+                  defaultPeriod={"month"}
+                />
+              )}
+
               <div className="space-y-3">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Instructions de Paiement Local
+                  {onlineEnabled && selectedPlanDetails.id !== "sur-mesure"
+                    ? "Ou payez par transfert manuel"
+                    : "Instructions de Paiement Local"}
                 </h4>
                 <div className="p-4 rounded-xl bg-gradient-to-br from-amber-500/[0.04] to-orange-500/[0.04] border border-amber-500/10 space-y-3">
                   <div className="flex items-start gap-2.5">
